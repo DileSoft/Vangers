@@ -27,3 +27,5 @@ http://www.gog.com/game/vangers
 * clunk (https://github.com/stalkerg/clunk)
 * ffmpeg
 * zlib
+
+
