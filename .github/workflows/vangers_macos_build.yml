@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-10.15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - name: update repos
@@ -12,7 +12,7 @@ jobs:
     - name: install libs
       run: |
         brew install ninja yasm dylibbundler
-        brew install -s ./formulas/libogg.rb
+        brew reinstall -s ./formulas/libogg.rb
         brew reinstall -s ./formulas/libvorbis.rb
         brew install -s ./formulas/sdl2.rb
         brew install -s ./formulas/sdl2_net.rb
