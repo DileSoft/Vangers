@@ -1,5 +1,11 @@
 name: Vangers MacOS Build
 
+on:
+  push:
+    branches: [ * ]
+  pull_request:
+    branches: [ * ]
+
 jobs:
   build:
     runs-on: macos-10.15
