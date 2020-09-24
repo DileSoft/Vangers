@@ -13,7 +13,7 @@ jobs:
       run: |
         brew install ninja yasm dylibbundler
         brew install -s ./formulas/libogg.rb
-        brew install -s ./formulas/libvorbis.rb
+        brew reinstall -s ./formulas/libvorbis.rb
         brew install -s ./formulas/sdl2.rb
         brew install -s ./formulas/sdl2_net.rb
     - name: clunk -- download lib
