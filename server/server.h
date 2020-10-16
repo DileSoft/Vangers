@@ -296,6 +296,7 @@ struct Server {
 	unsigned int time_to_live;
 	unsigned int time_to_destroy;
 	int next_broadcast;
+	int next_hub;
 
 	int n_games[NUMBER_MP_GAMES];
 	int n_players_max[NUMBER_MP_GAMES], n_players_sum[NUMBER_MP_GAMES];

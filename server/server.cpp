@@ -1,5 +1,7 @@
 #include "kdsplus.h"
 #include "xerrhand.h"
+#include <sstream>
+#include <ctime>
 
 #define LAG -3000
 //#define EVENTS_LOG
@@ -1679,6 +1681,7 @@ Server::Server(int main_port, int broadcast_port, int time_to_live) {
 
 	transferring = 0;
 	next_broadcast = 0;
+	next_hub = 0;
 	games_IDs_counter = 0;
 	Server::time_to_live = time_to_live;
 	time_to_destroy = 0;
@@ -1779,6 +1782,19 @@ void Server::consoleReport(int players) {
 
 int Server::quant() {
 	// fout < "Quant: " <= frame < "\t" <= SDL_GetTicks() < "\n";
+	//std::cout << "Test" << SDL_GetTicks() << "\n";
+	if (std::time(0) - next_hub >= 10) {
+		next_hub = std::time(0);
+		std::ostringstream s1;
+		s1 << "curl -v --header \"Content-Type: application/json\" --data {\\\"username\\\":\\\"" << games.size() << "\\\",\\\"password\\\":\\\"xyz\\\"} http://vangers.dilesoft.ru/server/test.php";
+		#ifdef _WIN32
+			s1 << " >nul 2>nul";
+		#else
+			s1 << " >/dev/null 2>/dev/null";
+		#endif
+		system(s1.str().c_str());
+	}
+	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
 	if (next_broadcast < SDL_GetTicks()) {
 		next_broadcast = SDL_GetTicks() + 1000;
 		int n_players = 0;
