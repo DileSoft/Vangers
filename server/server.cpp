@@ -1786,12 +1786,8 @@ int Server::quant() {
 	if (std::time(0) - next_hub >= 10) {
 		next_hub = std::time(0);
 		std::ostringstream s1;
-		s1 << "curl -v --header \"Content-Type: application/json\" --data {\\\"username\\\":\\\"" << games.size() << "\\\",\\\"password\\\":\\\"xyz\\\"} http://vangers.dilesoft.ru/server/test.php";
-		#ifdef _WIN32
-			s1 << " >nul 2>nul";
-		#else
-			s1 << " >/dev/null 2>/dev/null";
-		#endif
+		s1 << "curl -v --header 'Content-Type: application/json' --data '{\"username\": \"" << games.size() << "\", \"password\":\"xyz\"}' http://vangers.dilesoft.ru/server/test.php";
+		s1 << " >/dev/null 2>/dev/null &";
 		system(s1.str().c_str());
 	}
 	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
