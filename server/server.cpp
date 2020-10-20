@@ -2,6 +2,8 @@
 #include "xerrhand.h"
 #include <sstream>
 #include <ctime>
+#include "json.hpp"
+using json = nlohmann::json;
 
 #include <random>
 
@@ -1822,10 +1824,24 @@ int Server::quant() {
 	if (std::time(0) - next_hub >= 10) {
 		std::cout << uuid::generate_uuid_v4() << std::endl;
 		next_hub = std::time(0);
-		std::ostringstream s1;
-		s1 << "curl -v --header 'Content-Type: application/json' --data '{\"username\": \"" << games.size() << "\", \"password\":\"xyz\"}' http://vangers.dilesoft.ru/server/test.php";
-		s1 << " >/dev/null 2>/dev/null &";
-		system(s1.str().c_str());
+		std::ostringstream ssend;
+		json jdata = {
+			{"games", json::array()}
+		};
+		int n_players = 0;
+		Game *g = games.first();
+		while (g) {
+			json jg = json::object();
+			jg["name"] = g->name;
+			jg["players"] = g->players.size();
+			jg["type"] = (g->data.GameType == VAN_WAR ? "V" : (g->data.GameType == MECHOSOMA ? "M" : "P"));
+			jdata["games"].push_back(jg);
+			g = g->next;
+		}
+		ssend << "curl -v --header 'Content-Type: application/json' --data '" << jdata << "' http://vangers.dilesoft.ru/server/test.php";
+		ssend << " >/dev/null 2>/dev/null &";
+		system(ssend.str().c_str());
+		std::cout << jdata << std::endl;
 	}
 	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
 	if (next_broadcast < SDL_GetTicks()) {
