@@ -2,6 +2,7 @@
 #include "xerrhand.h"
 #include <sstream>
 #include <ctime>
+#include <iomanip>
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -1823,9 +1824,9 @@ int Server::quant() {
 	// fout < "Quant: " <= frame < "\t" <= SDL_GetTicks() < "\n";
 	//std::cout << "Test" << SDL_GetTicks() << "\n";
 	if (std::time(0) - next_hub >= 10) {
-		std::cout << uuid::generate_uuid_v4() << std::endl;
 		next_hub = std::time(0);
 		std::ostringstream ssend;
+		std::ostringstream sscript;
 		json jdata = {
 			{"games", json::array()}
 		};
@@ -1855,10 +1856,16 @@ int Server::quant() {
 			jdata["games"].push_back(jg);
 			g = g->next;
 		}
-		ssend << "curl -v --header 'Content-Type: application/json' --data '" << jdata << "' http://vangers.dilesoft.ru/server/test.php";
+		
+		std::ostringstream serialized;
+		serialized << std::quoted(jdata.dump());
+		ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
 		ssend << " >/dev/null 2>/dev/null &";
 		system(ssend.str().c_str());
-		std::cout << jdata << std::endl;
+		sscript << "python3 script.py " << serialized.str();
+		sscript << " >/dev/null 2>/dev/null &";
+		system(sscript.str().c_str());
+		std::cout << serialized.str() << std::endl;
 	}
 	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
 	if (next_broadcast < SDL_GetTicks()) {
