@@ -1,6 +1,7 @@
 #include "../lib/xtool/xglobal.h"
 #include "multiplayer.h"
 #include "xsocket.h"
+#include <sstream>
 
 #define DIRECT_SENDING_OBJECT 1
 
@@ -238,6 +239,7 @@ struct Game {
 
 	unsigned int birth_time;
 	char name[128];
+	char uuid[128];
 	ServerData data;
 
 	Game *next;
@@ -321,6 +323,7 @@ struct Server {
 	RatingData *search_rating_data(char *player_name, char *player_password, int MP_game);
 	void add_rating_data(Player *player, int MP_game);
 	void get_top_list(OutputEventBuffer &out_buffer, int MP_game);
+	std::string get_time_string(int birth_time);
 };
 
 /*******************************************************************************

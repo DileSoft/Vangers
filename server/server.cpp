@@ -99,6 +99,7 @@ ServerData::ServerData() {
 
 Game::Game(int ID) {
 	Game::ID = ID;
+	strcpy(Game::uuid, uuid::generate_uuid_v4().c_str());
 	name[0] = 0;
 	client_version = 0;
 	birth_time = SDL_GetTicks();
@@ -1833,8 +1834,24 @@ int Server::quant() {
 		while (g) {
 			json jg = json::object();
 			jg["name"] = g->name;
-			jg["players"] = g->players.size();
+			jg["players"] = json::array();
+			jg["birth_time"] = Server::get_time_string(g->birth_time);
+			Player *p = g->players.first();
+			while (p) {
+				json jp = json::object();
+				jp["name"] = p->name;
+				jp["kills"] = p->body.kills;
+				jp["deaths"] = p->body.deaths;
+				jp["color"] = p->body.color;
+				jp["world"] = p->body.world;
+				jp["beebos"] = p->body.beebos;
+				jp["rating"] = p->body.rating;
+				jp["birth_time"] = Server::get_time_string(p->birth_time);
+				jg["players"].push_back(jp);
+				p = p->next;
+			}
 			jg["type"] = (g->data.GameType == VAN_WAR ? "V" : (g->data.GameType == MECHOSOMA ? "M" : "P"));
+			jg["uuid"] = g->uuid;
 			jdata["games"].push_back(jg);
 			g = g->next;
 		}
@@ -1935,6 +1952,18 @@ void Server::analyse_statistics(Game *g) {
 		}
 		stat_log < "\n";
 	}
+}
+
+std::string Server::get_time_string(int birth_time) {
+	std::ostringstream stream;
+	int t = (SDL_GetTicks() - birth_time) / 1000;
+	int ts = t % 60;
+	t /= 60;
+	int tm = t % 60;
+	t /= 60;
+	int th = t % 24;
+	stream << th << ":" << tm << ":" << ts;
+	return stream.str();
 }
 
 void Server::get_games_list(OutputEventBuffer &out_buffer, int client_version) {
