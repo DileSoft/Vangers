@@ -1840,8 +1840,10 @@ int Server::quant() {
 			Player *p = g->players.first();
 			while (p) {
 				json jp = json::object();
-				jp["x"] = p->x;
-				jp["y"] = p->y;
+				if (p->x && p->y) {
+					jp["x"] = p->x;
+					jp["y"] = p->y;
+				}
 				jp["name"] = p->name;
 				jp["kills"] = p->body.kills;
 				jp["deaths"] = p->body.deaths;
@@ -1850,6 +1852,30 @@ int Server::quant() {
 				jp["beebos"] = p->body.beebos;
 				jp["rating"] = p->body.rating;
 				jp["birth_time"] = Server::get_time_string(p->birth_time);
+				json js = json::object();
+				switch (g->data.GameType) {
+					case VAN_WAR:
+						js["MaxLiveTime"] = p->body.VanVarStat.MaxLiveTime;
+						js["MinLiveTime"] = p->body.VanVarStat.MinLiveTime;
+						js["KillFreq"] = p->body.VanVarStat.KillFreq;
+						js["DeathFreq"] = p->body.VanVarStat.DeathFreq;
+						break;
+					case MECHOSOMA:
+						js["ItemCount1"] = p->body.MechosomaStat.ItemCount1;
+						js["ItemCount2"] = p->body.MechosomaStat.ItemCount2;
+						js["MaxTransitTime"] = p->body.MechosomaStat.MaxTransitTime;
+						js["MinTransitTime"] = p->body.MechosomaStat.MinTransitTime;
+						js["SneakCount"] = p->body.MechosomaStat.SneakCount;
+						js["LostCount"] = p->body.MechosomaStat.LostCount;
+						break;
+					case PASSEMBLOSS:
+						js["TotalTime"] = p->body.PassemblossStat.TotalTime;
+						js["CheckpointLighting"] = p->body.PassemblossStat.CheckpointLighting;
+						js["MinTime"] = p->body.PassemblossStat.MinTime;
+						js["MaxTime"] = p->body.PassemblossStat.MaxTime;
+						break;
+				}
+				jp["statistics"] = js;
 				jg["players"].push_back(jp);
 				p = p->next;
 			}
