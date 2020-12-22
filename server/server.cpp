@@ -1823,7 +1823,7 @@ void Server::consoleReport(int players) {
 int Server::quant() {
 	// fout < "Quant: " <= frame < "\t" <= SDL_GetTicks() < "\n";
 	//std::cout << "Test" << SDL_GetTicks() << "\n";
-	if (std::time(0) - next_hub >= 10) {
+	if (std::time(0) - next_hub >= 1) {
 		next_hub = std::time(0);
 		std::ostringstream ssend;
 		std::ostringstream sscript;
@@ -1859,9 +1859,9 @@ int Server::quant() {
 		
 		std::ostringstream serialized;
 		serialized << std::quoted(jdata.dump());
-		ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
-		ssend << " >/dev/null 2>/dev/null &";
-		system(ssend.str().c_str());
+		//ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
+		//ssend << " >/dev/null 2>/dev/null &";
+		//system(ssend.str().c_str());
 		sscript << "python3 script.py " << serialized.str();
 		sscript << " >/dev/null 2>/dev/null &";
 		system(sscript.str().c_str());
