@@ -1840,6 +1840,8 @@ int Server::quant() {
 			Player *p = g->players.first();
 			while (p) {
 				json jp = json::object();
+				jp["x"] = p->x;
+				jp["y"] = p->y;
 				jp["name"] = p->name;
 				jp["kills"] = p->body.kills;
 				jp["deaths"] = p->body.deaths;
