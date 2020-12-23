@@ -1835,7 +1835,11 @@ int Server::quant() {
 			Game *g = games.first();
 			while (g) {
 				json jg = json::object();
-				jg["name"] = g->name;
+				try {
+					jg["name"] = g->name;
+				} catch (...) {
+					jg["name"] = "Wrong name";
+				}
 				jg["players"] = json::array();
 				jg["birth_time"] = Server::get_time_string(g->birth_time);
 				Player *p = g->players.first();
@@ -1845,7 +1849,11 @@ int Server::quant() {
 						jp["x"] = p->x;
 						jp["y"] = p->y;
 					}
-					jp["name"] = p->name;
+					try {
+						jp["name"] = p->name;
+					} catch (...) {
+						jp["name"] = "Wrong name";
+					}
 					jp["kills"] = p->body.kills;
 					jp["deaths"] = p->body.deaths;
 					jp["color"] = p->body.color;
