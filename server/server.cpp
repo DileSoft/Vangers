@@ -1823,7 +1823,7 @@ void Server::consoleReport(int players) {
 int Server::quant() {
 	// fout < "Quant: " <= frame < "\t" <= SDL_GetTicks() < "\n";
 	//std::cout << "Test" << SDL_GetTicks() << "\n";
-	if (std::time(0) - next_hub >= 1) {
+	if (true || std::time(0) - next_hub >= 1) {
 		next_hub = std::time(0);
 		std::ostringstream ssend;
 		std::ostringstream sscript;
