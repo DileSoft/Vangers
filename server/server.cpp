@@ -1823,89 +1823,85 @@ void Server::consoleReport(int players) {
 int Server::quant() {
 	// fout < "Quant: " <= frame < "\t" <= SDL_GetTicks() < "\n";
 	//std::cout << "Test" << SDL_GetTicks() << "\n";
-	try {
-		if (std::time(0) - next_hub >= 1) {
-			next_hub = std::time(0);
-			std::ostringstream ssend;
-			std::ostringstream sscript;
-			json jdata = {
-				{"games", json::array()}
-			};
-			int n_players = 0;
-			Game *g = games.first();
-			while (g) {
-				json jg = json::object();
-				try {
-					jg["name"] = g->name;
-				} catch (...) {
-					jg["name"] = "Wrong name";
-				}
-				jg["players"] = json::array();
-				jg["birth_time"] = Server::get_time_string(g->birth_time);
-				Player *p = g->players.first();
-				while (p) {
-					json jp = json::object();
-					if (p->x && p->y) {
-						jp["x"] = p->x;
-						jp["y"] = p->y;
-					}
-					try {
-						jp["name"] = p->name;
-					} catch (...) {
-						jp["name"] = "Wrong name";
-					}
-					jp["kills"] = p->body.kills;
-					jp["deaths"] = p->body.deaths;
-					jp["color"] = p->body.color;
-					jp["world"] = p->body.world;
-					jp["beebos"] = p->body.beebos;
-					jp["rating"] = p->body.rating;
-					jp["birth_time"] = Server::get_time_string(p->birth_time);
-					json js = json::object();
-					switch (g->data.GameType) {
-						case VAN_WAR:
-							js["MaxLiveTime"] = p->body.VanVarStat.MaxLiveTime;
-							js["MinLiveTime"] = p->body.VanVarStat.MinLiveTime;
-							js["KillFreq"] = p->body.VanVarStat.KillFreq;
-							js["DeathFreq"] = p->body.VanVarStat.DeathFreq;
-							break;
-						case MECHOSOMA:
-							js["ItemCount1"] = p->body.MechosomaStat.ItemCount1;
-							js["ItemCount2"] = p->body.MechosomaStat.ItemCount2;
-							js["MaxTransitTime"] = p->body.MechosomaStat.MaxTransitTime;
-							js["MinTransitTime"] = p->body.MechosomaStat.MinTransitTime;
-							js["SneakCount"] = p->body.MechosomaStat.SneakCount;
-							js["LostCount"] = p->body.MechosomaStat.LostCount;
-							break;
-						case PASSEMBLOSS:
-							js["TotalTime"] = p->body.PassemblossStat.TotalTime;
-							js["CheckpointLighting"] = p->body.PassemblossStat.CheckpointLighting;
-							js["MinTime"] = p->body.PassemblossStat.MinTime;
-							js["MaxTime"] = p->body.PassemblossStat.MaxTime;
-							break;
-					}
-					jp["statistics"] = js;
-					jg["players"].push_back(jp);
-					p = p->next;
-				}
-				jg["type"] = (g->data.GameType == VAN_WAR ? "V" : (g->data.GameType == MECHOSOMA ? "M" : "P"));
-				jg["uuid"] = g->uuid;
-				jdata["games"].push_back(jg);
-				g = g->next;
+	if (std::time(0) - next_hub >= 1) {
+		next_hub = std::time(0);
+		std::ostringstream ssend;
+		std::ostringstream sscript;
+		json jdata = {
+			{"games", json::array()}
+		};
+		int n_players = 0;
+		Game *g = games.first();
+		while (g) {
+			json jg = json::object();
+			try {
+				jg["name"] = g->name;
+			} catch (...) {
+				jg["name"] = "Wrong name";
 			}
-			
-			std::ostringstream serialized;
-			serialized << std::quoted(jdata.dump());
-			//ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
-			//ssend << " >/dev/null 2>/dev/null &";
-			//system(ssend.str().c_str());
-			sscript << "python3 script.py " << serialized.str();
-			sscript << " >/dev/null 2>/dev/null &";
-			system(sscript.str().c_str());
-			std::cout << serialized.str() << std::endl;
+			jg["players"] = json::array();
+			jg["birth_time"] = Server::get_time_string(g->birth_time);
+			Player *p = g->players.first();
+			while (p) {
+				json jp = json::object();
+				if (p->x && p->y) {
+					jp["x"] = p->x;
+					jp["y"] = p->y;
+				}
+				try {
+					jp["name"] = p->name;
+				} catch (...) {
+					jp["name"] = "Wrong name";
+				}
+				jp["kills"] = p->body.kills;
+				jp["deaths"] = p->body.deaths;
+				jp["color"] = p->body.color;
+				jp["world"] = p->body.world;
+				jp["beebos"] = p->body.beebos;
+				jp["rating"] = p->body.rating;
+				jp["birth_time"] = Server::get_time_string(p->birth_time);
+				json js = json::object();
+				switch (g->data.GameType) {
+					case VAN_WAR:
+						js["MaxLiveTime"] = p->body.VanVarStat.MaxLiveTime;
+						js["MinLiveTime"] = p->body.VanVarStat.MinLiveTime;
+						js["KillFreq"] = p->body.VanVarStat.KillFreq;
+						js["DeathFreq"] = p->body.VanVarStat.DeathFreq;
+						break;
+					case MECHOSOMA:
+						js["ItemCount1"] = p->body.MechosomaStat.ItemCount1;
+						js["ItemCount2"] = p->body.MechosomaStat.ItemCount2;
+						js["MaxTransitTime"] = p->body.MechosomaStat.MaxTransitTime;
+						js["MinTransitTime"] = p->body.MechosomaStat.MinTransitTime;
+						js["SneakCount"] = p->body.MechosomaStat.SneakCount;
+						js["LostCount"] = p->body.MechosomaStat.LostCount;
+						break;
+					case PASSEMBLOSS:
+						js["TotalTime"] = p->body.PassemblossStat.TotalTime;
+						js["CheckpointLighting"] = p->body.PassemblossStat.CheckpointLighting;
+						js["MinTime"] = p->body.PassemblossStat.MinTime;
+						js["MaxTime"] = p->body.PassemblossStat.MaxTime;
+						break;
+				}
+				jp["statistics"] = js;
+				jg["players"].push_back(jp);
+				p = p->next;
+			}
+			jg["type"] = (g->data.GameType == VAN_WAR ? "V" : (g->data.GameType == MECHOSOMA ? "M" : "P"));
+			jg["uuid"] = g->uuid;
+			jdata["games"].push_back(jg);
+			g = g->next;
 		}
-	} catch (...) {
 		
+		std::ostringstream serialized;
+		serialized << std::quoted(jdata.dump());
+		//ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
+		//ssend << " >/dev/null 2>/dev/null &";
+		//system(ssend.str().c_str());
+		sscript << "python3 script.py " << serialized.str();
+		sscript << " >/dev/null 2>/dev/null &";
+		system(sscript.str().c_str());
+		std::cout << serialized.str() << std::endl;
 	}
 	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
 	if (next_broadcast < SDL_GetTicks()) {
