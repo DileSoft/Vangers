@@ -1841,6 +1841,37 @@ int Server::quant() {
 			}
 			jg["players"] = json::array();
 			jg["birth_time"] = Server::get_time_string(g->birth_time);
+			Object *o = g->global_objects.first();
+			while (o) {
+				json jo = json::object();
+				//jo["body"] = o->body;
+				jo["x"] = o->x;
+				jo["y"] = o->y;
+				jo["ID"] = o->ID;
+				jo["client_ID"] = o->client_ID;
+				jo["radius"] = o->radius;
+				jg["objects"].push_back(jo);
+				o = o->next;
+			}
+			World *w = g->worlds.first();
+			while (w) {
+				json jw = json::object();
+				jw["id"] = w->ID;
+				Object *o = w->objects.first();
+				while (o) {
+					json jo = json::object();
+					//jo["body"] = o->body;
+					jo["x"] = o->x;
+					jo["y"] = o->y;
+					jo["ID"] = o->ID;
+					jo["client_ID"] = o->client_ID;
+					jo["radius"] = o->radius;
+					jw["objects"].push_back(jo);
+					o = o->next_alt;
+				}
+				jg["worlds"].push_back(jw);
+				w = w->next;
+			}
 			Player *p = g->players.first();
 			while (p) {
 				json jp = json::object();
@@ -1853,12 +1884,15 @@ int Server::quant() {
 				} catch (...) {
 					jp["name"] = "Wrong name";
 				}
+				jp["ID"] = p->ID;
 				jp["kills"] = p->body.kills;
 				jp["deaths"] = p->body.deaths;
 				jp["color"] = p->body.color;
 				jp["world"] = p->body.world;
 				jp["beebos"] = p->body.beebos;
 				jp["rating"] = p->body.rating;
+				jp["data0"] = p->body.Data0;
+				jp["data1"] = p->body.Data1;
 				jp["birth_time"] = Server::get_time_string(p->birth_time);
 				json js = json::object();
 				switch (g->data.GameType) {
@@ -1901,7 +1935,7 @@ int Server::quant() {
 		sscript << "python3 script.py " << serialized.str();
 		sscript << " >/dev/null 2>/dev/null &";
 		system(sscript.str().c_str());
-		std::cout << serialized.str() << std::endl;
+		//std::cout << serialized.str() << std::endl;
 	}
 	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
 	if (next_broadcast < SDL_GetTicks()) {
