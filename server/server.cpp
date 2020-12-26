@@ -1853,6 +1853,40 @@ int Server::quant() {
 			}
 			jg["players"] = json::array();
 			jg["birth_time"] = Server::get_time_string(g->birth_time);
+			json js = json::object();
+			switch (g->data.GameType) {
+				case VAN_WAR:
+					js["InitialCash"] = g->data.Van_War.InitialCash;
+					js["ArtefactsUsing"] = g->data.Van_War.ArtefactsUsing;
+					js["InEscaveTime"] = g->data.Van_War.InEscaveTime;
+					js["Color"] = g->data.Van_War.Color;
+					js["Nascency"] = g->data.Van_War.Nascency;
+					js["TeamMode"] = g->data.Van_War.TeamMode;
+					js["WorldAccess"] = g->data.Van_War.WorldAccess;
+					js["MaxKills"] = g->data.Van_War.MaxKills;
+					js["MaxTime"] = g->data.Van_War.MaxTime;
+					break;
+				case MECHOSOMA:
+					js["InitialCash"] = g->data.Mechosoma.InitialCash;
+					js["ArtefactsUsing"] = g->data.Mechosoma.ArtefactsUsing;
+					js["InEscaveTime"] = g->data.Mechosoma.InEscaveTime;
+					js["Color"] = g->data.Mechosoma.Color;
+					js["World"] = g->data.Mechosoma.World;
+					js["ProductQuantity1"] = g->data.Mechosoma.ProductQuantity1;
+					js["ProductQuantity2"] = g->data.Mechosoma.ProductQuantity2;
+					js["One_at_a_time"] = g->data.Mechosoma.One_at_a_time;
+					js["TeamMode"] = g->data.Mechosoma.TeamMode;
+					break;
+				case PASSEMBLOSS:
+					js["InitialCash"] = g->data.Passembloss.InitialCash;
+					js["ArtefactsUsing"] = g->data.Passembloss.ArtefactsUsing;
+					js["InEscaveTime"] = g->data.Passembloss.InEscaveTime;
+					js["Color"] = g->data.Passembloss.Color;
+					js["CheckpointsNumber"] = g->data.Passembloss.CheckpointsNumber;
+					js["RandomEscave"] = g->data.Passembloss.RandomEscave;
+					break;
+			}
+			jg["settings"] = js;
 			// Object *o = g->global_objects.first();
 			// while (o) {
 			// 	json jo = json::object();
@@ -1944,7 +1978,7 @@ int Server::quant() {
 		//ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
 		//ssend << " >/dev/null 2>/dev/null &";
 		//system(ssend.str().c_str());
-		sscript << "python3 script.py " << serialized.str();
+		sscript << "bash script.sh " << serialized.str();
 		sscript << " >/dev/null 2>/dev/null &";
 		system(sscript.str().c_str());
 		//std::cout << serialized.str() << std::endl;
