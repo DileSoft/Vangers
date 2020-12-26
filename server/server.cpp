@@ -4,6 +4,7 @@
 #include <ctime>
 #include <iomanip>
 #include "json.hpp"
+#include "iconv.hpp"
 using json = nlohmann::json;
 
 #include <random>
@@ -89,6 +90,17 @@ XStream fout("lst", XS_OUT);
 const char *MP_GAMES_NAMES[NUMBER_MP_GAMES] = {"VAN_WAR", "MECHOSOMA", "PASSEMBLOSS"};
 
 XStream stat_log;
+
+std::string convert_866toutf8(char* input_str) {
+	std::string input = input_str;
+	std::string output;
+	iconvpp::converter conv("UTF-8",   // output encoding
+                        "CP866",  // input encoding
+                        false,      // ignore errors (optional, default: fasle)
+                        1024);     // buffer size   (optional, default: 1024)
+	conv.convert(input, output);
+	return output;
+}
 
 /******************************************************************
 				Game
@@ -1835,7 +1847,7 @@ int Server::quant() {
 		while (g) {
 			json jg = json::object();
 			try {
-				jg["name"] = g->name;
+				jg["name"] = convert_866toutf8(g->name);
 			} catch (...) {
 				jg["name"] = "Wrong name";
 			}
@@ -1880,7 +1892,7 @@ int Server::quant() {
 					jp["y"] = p->y;
 				}
 				try {
-					jp["name"] = p->name;
+					jp["name"] = convert_866toutf8(p->name);
 				} catch (...) {
 					jp["name"] = "Wrong name";
 				}
