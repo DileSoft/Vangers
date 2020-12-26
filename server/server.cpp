@@ -1853,37 +1853,37 @@ int Server::quant() {
 			}
 			jg["players"] = json::array();
 			jg["birth_time"] = Server::get_time_string(g->birth_time);
-			Object *o = g->global_objects.first();
-			while (o) {
-				json jo = json::object();
-				//jo["body"] = o->body;
-				jo["x"] = o->x;
-				jo["y"] = o->y;
-				jo["ID"] = o->ID;
-				jo["client_ID"] = o->client_ID;
-				jo["radius"] = o->radius;
-				jg["objects"].push_back(jo);
-				o = o->next;
-			}
-			World *w = g->worlds.first();
-			while (w) {
-				json jw = json::object();
-				jw["id"] = w->ID;
-				Object *o = w->objects.first();
-				while (o) {
-					json jo = json::object();
-					//jo["body"] = o->body;
-					jo["x"] = o->x;
-					jo["y"] = o->y;
-					jo["ID"] = o->ID;
-					jo["client_ID"] = o->client_ID;
-					jo["radius"] = o->radius;
-					jw["objects"].push_back(jo);
-					o = o->next_alt;
-				}
-				jg["worlds"].push_back(jw);
-				w = w->next;
-			}
+			// Object *o = g->global_objects.first();
+			// while (o) {
+			// 	json jo = json::object();
+			// 	//jo["body"] = o->body;
+			// 	jo["x"] = o->x;
+			// 	jo["y"] = o->y;
+			// 	jo["ID"] = o->ID;
+			// 	jo["client_ID"] = o->client_ID;
+			// 	jo["radius"] = o->radius;
+			// 	jg["objects"].push_back(jo);
+			// 	o = o->next;
+			// }
+			// World *w = g->worlds.first();
+			// while (w) {
+			// 	json jw = json::object();
+			// 	jw["id"] = w->ID;
+			// 	Object *o = w->objects.first();
+			// 	while (o) {
+			// 		json jo = json::object();
+			// 		//jo["body"] = o->body;
+			// 		jo["x"] = o->x;
+			// 		jo["y"] = o->y;
+			// 		jo["ID"] = o->ID;
+			// 		jo["client_ID"] = o->client_ID;
+			// 		jo["radius"] = o->radius;
+			// 		jw["objects"].push_back(jo);
+			// 		o = o->next_alt;
+			// 	}
+			// 	jg["worlds"].push_back(jw);
+			// 	w = w->next;
+			// }
 			Player *p = g->players.first();
 			while (p) {
 				json jp = json::object();
