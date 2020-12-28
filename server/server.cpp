@@ -1937,6 +1937,7 @@ int Server::quant() {
 				jp["world"] = p->body.world;
 				jp["beebos"] = p->body.beebos;
 				jp["rating"] = p->body.rating;
+				jp["carindex"] = p->body.CarIndex;
 				jp["data0"] = p->body.Data0;
 				jp["data1"] = p->body.Data1;
 				jp["birth_time"] = Server::get_time_string(p->birth_time);
