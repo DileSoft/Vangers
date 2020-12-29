@@ -1853,6 +1853,7 @@ int Server::quant() {
 			}
 			jg["players"] = json::array();
 			jg["birth_time"] = Server::get_time_string(g->birth_time);
+			jg["initialrnd"] = g->data.InitialRND;
 			json js = json::object();
 			switch (g->data.GameType) {
 				case VAN_WAR:
