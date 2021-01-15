@@ -624,6 +624,28 @@ void iPrmMenu::keytrap(int key)
 		}
 }
 
+static WIN32_FIND_DATA FFdata;
+static HANDLE FFh;
+char* wwin32_findnext(void)
+{
+	if(FindNextFile(FFh,&FFdata) == TRUE){
+		if(FFdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) return wwin32_findnext();
+		return FFdata.cFileName;
+		}
+	else {
+		FindClose(FFh);
+		return NULL;
+		}
+}
+
+char* wwin32_findfirst(char* mask)
+{
+	FFh = FindFirstFile(mask,&FFdata);
+	if(FFh == INVALID_HANDLE_VALUE) return NULL;
+	if(FFdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) return wwin32_findnext();
+	return FFdata.cFileName;
+}
+
 iInputForm::iInputForm(sqElem* _owner,int _x,int _y,int _mode)
 : sqInputBox(_owner,_x,_y,10,10,&sysfont,"P-Form")
 {
@@ -646,12 +668,12 @@ iInputForm::iInputForm(sqElem* _owner,int _x,int _y,int _mode)
 			name -> index = strlen(mapFName);
 			break;
 		case E_PLACEBMPFORM:
-			fname = win32_findfirst("BITMAP\\*.BMP");
+			fname = wwin32_findfirst((char*)"BITMAP\\*.BMP");
 			if(!fname) return;
 			*this + (menu = new sqPopupMenu(this,7,22,NITEMS,&sysfont,0,3));
 			i = 0;
 			do { i++; *menu * new sqMenuBar((uchar*)fname,menu); }
-			while((fname = win32_findnext()) != NULL);
+			while((fname = wwin32_findnext()) != NULL);
 			if(i > NITEMS) i = NITEMS;
 			ady = 22 + (yadd = (i - 1)*16);
 			yadd += 5*24;
@@ -662,12 +684,12 @@ iInputForm::iInputForm(sqElem* _owner,int _x,int _y,int _mode)
 			*this + (params[4] = new sqField(this,"Size: ",4,ady + 5*24,0,&sysfont,(uchar*)itoa(placeBMP.size,tmpstr,10),4,T_NUMERIC));
 			break;
 		case E_MOSAICFORM:
-			fname = win32_findfirst("BITMAP\\MOSAIC\\*.BMP");
+			fname = wwin32_findfirst((char*)"BITMAP\\MOSAIC\\*.BMP");
 			if(!fname) return;
 			*this + (menu = new sqPopupMenu(this,7,22,NITEMS,&sysfont,0,3));
 			i = 0;
 			do { i++; *menu * new sqMenuBar((uchar*)fname,menu); }
-			while((fname = win32_findnext()) != NULL);
+			while((fname = wwin32_findnext()) != NULL);
 			if(mosaicBMP.copt < i) menu -> setpointer(menu -> getbar(mosaicBMP.copt),0);
 			if(i > NITEMS) i = NITEMS;
 			yadd = MAX((i - 1)*16,7*24);
@@ -771,12 +793,12 @@ iInputForm::iInputForm(sqElem* _owner,int _x,int _y,int _mode)
 			*this + (params[1] = new sqField(this,tb.GetBuf(),4,22 + 1*24,0,&sysfont,(uchar*)itoa(curGMap -> CY,tmpstr,10),5,T_NUMERIC));
 			break;
 		case E_FORM3D:
-			fname = win32_findfirst("\\SHAPE3D\\*.C3D");
+			fname = wwin32_findfirst((char*)"SHAPE3D\\*.C3D");
 			if(!fname) return;
 			*this + (menu = new sqPopupMenu(this,7,22,NITEMS,&sysfont,0,3));
 			i = 0;
 			do { i++; *menu * new sqMenuBar((uchar*)fname,menu); }
-			while((fname = win32_findnext()) != NULL);
+			while((fname = wwin32_findnext()) != NULL);
 			if(S3Dcopt < i) menu -> setpointer(menu -> getbar(S3Dcopt),0);
 			if(i > NITEMS) i = NITEMS;
 			ady = 22 + (yadd = (i - 1)*16);

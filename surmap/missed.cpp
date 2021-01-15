@@ -87,16 +87,16 @@ void mainWinMinimize() {
 void mainWinMaximize() {
 }
 
-//http://www.delorie.com/djgpp/doc/libc/libc_166.html
-char* win32_findfirst(const char* mask) {
-	// @caiiiycuk TODO read links
-	abort();
-}
-//http://www.delorie.com/djgpp/doc/libc/libc_167.html
-char* wwin32_findnext() {
-	// @caiiiycuk TODO read links
-	abort();
-}
+// //http://www.delorie.com/djgpp/doc/libc/libc_166.html
+// char* wwin32_findfirst(const char* mask) {
+// 	// @caiiiycuk TODO read links
+// 	abort();
+// }
+// //http://www.delorie.com/djgpp/doc/libc/libc_167.html
+// char* wwin32_findnext() {
+// 	// @caiiiycuk TODO read links
+// 	abort();
+// }
 
 
 // unused methods

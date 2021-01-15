@@ -225,7 +225,7 @@ int xtInitApplication(void)
 
 	switch(videoMode){
 		case 0:
-			if(XGR_Init(640,480,emode)) ErrH.Abort("Error video initialization");
+			if(XGR_Init(1280,720,emode)) ErrH.Abort("Error video initialization");
 			break;
 		case 1:
 			if(XGR_Init(800,600,emode)) ErrH.Abort("Error video initialization");

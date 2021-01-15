@@ -165,6 +165,7 @@ int shape_control(int code)
 
 void load_shape(char* name,int x,int y)
 {
+	name = name+1;
 	XStream c3d(name,XS_IN);
 	XBuffer buf(c3d.size());
 	c3d.read(buf.address(),c3d.size());
