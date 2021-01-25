@@ -139,7 +139,7 @@ int RestoreLog,CGenLog,BorderLog,MobilityLog,InitLog,SSSLog,ROLog,EncodeLog,Dire
 int ForcedCompressed,ForcedUncompressed;
 int ConvertLog;
 int WaterPrm = -1;
-int videoMode;
+int videoMode = 2;
 
 const char* mapFName = "wrlds.dat";
 int ColorShow = 1;
@@ -226,13 +226,13 @@ int xtInitApplication(void)
 
 	switch(videoMode){
 		case 0:
-			if(XGR_Init(1280,720,emode)) ErrH.Abort("Error video initialization");
+			if(XGR_Init(640,480,emode)) ErrH.Abort("Error video initialization");
 			break;
 		case 1:
 			if(XGR_Init(800,600,emode)) ErrH.Abort("Error video initialization");
 			break;
 		case 2:
-			if(XGR_Init(1024,768,emode)) ErrH.Abort("Error video initialization");
+			if(XGR_Init(1280,720,emode)) ErrH.Abort("Error video initialization");
 			break;
 		}
 
