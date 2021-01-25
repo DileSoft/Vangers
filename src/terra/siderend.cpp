@@ -452,7 +452,7 @@ void regRender(int LowX,int LowY,int HiX,int HiY,int changed)
 		const int y = YCYCL(j + LowY);
 		BYTE* pa0 = vMap -> lineT[y];
 		BYTE* pc0 = vMap -> lineTcolor[y];
-		if(!pa0) return;
+		if(!pa0) continue;
 		if(changed) vMap -> changedT[y] = 1;
 		MEMSET(shadowParent,0,(((SizeX*SHADOWDEEP) >> POSPOWER) + 4*MAX_ALT));
 //		MEMSET(shadowParent,0,map_size_x);

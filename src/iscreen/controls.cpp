@@ -5,6 +5,8 @@
 #include "../xjoystick.h"
 
 #include "hfont.h"
+#include "ivmap.h"
+#include "iworld.h"
 #include "iscreen.h"
 #include "ikeys.h"
 #include "controls.h"
@@ -143,6 +145,8 @@ void iKeyControls::init(void)
 	reset();
 }
 
+void iregRender(int LowX,int LowY,int HiX,int HiY);
+
 void iKeyControls::reset(void)
 {
 	int i;
@@ -157,6 +161,13 @@ void iKeyControls::reset(void)
 		memcpy(keyCodes,defaultCodes,iKEY_OBJECT_SIZE * iKEY_MAX_ID * sizeof(int));
 		iKeyFirstInit = 1;
 	}
+	for (int x = 0; x<480; x++) {
+		for (int y = 0; y<480; y++) {
+			ivMap->lineT[x][y] += rand()%20 * (rand()%2 ? 1 : -1);
+			SET_TERRAIN(ivMap->lineT[y][x + H_SIZE], (rand()%8) << TERRAIN_OFFSET);
+		}
+	}
+	iregRender(0,0,800,600);
 }
 
 void iKeyControls::addDefaultCode(int id,int key,int num)

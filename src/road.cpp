@@ -1890,10 +1890,35 @@ void iGameMap::flush()
 	XGR_Flush(xc - xside,yc - yside,xsize,ysize);
 }
 
+void LINE_render(int y);
+
 void iGameMap::draw(int self)
 {
 	static XBuffer status;
 	static int blink,clcnt;
+
+	
+
+	// if (*(vMap->lineT)) 
+	int mouseX = ViewX - 800/2 + XGR_MouseObj.PosX;
+	int mouseY = ViewY - 600/2 + XGR_MouseObj.PosY;
+	{
+		for (int y = mouseY; y<mouseY+100; y++) {
+			if (!vMap->lineT[YCYCL(y)]) {
+				continue;
+			}
+			for (int x = mouseX; x<mouseX+100; x++) {
+				if (vMap->lineT[YCYCL(y)][XCYCL(x)] > 10) {
+					vMap->lineT[YCYCL(y)][XCYCL(x)] = 255;
+					SET_TERRAIN(vMap->lineT[YCYCL(y)][XCYCL(x) + H_SIZE], 7 << TERRAIN_OFFSET);
+				}
+			}
+			// LINE_render(y);
+			// vMap->keepT[y] = 1;
+		}
+		regRender(mouseX,mouseY,mouseX+100,mouseY+100,1);
+	}
+
 	
 	if(!MuteLog && ((ConTimer.counter&7) == 0)) {
 		SoundQuant();
