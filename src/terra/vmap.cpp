@@ -110,7 +110,7 @@ int MAX_LINE = V_SIZE + 8;
 int MAX_LINE = 3000;
 #endif
 #else
-int MAX_LINE = 3000; // 2050;
+int MAX_LINE = 20000; // 2050;
 #endif
 
 #ifdef SESSION
@@ -485,14 +485,14 @@ void vrtMap::sssReserve(void)
 {
 	int max = YCYCL(downLine + 1);
 	int i = upLine;
-	if(MAP_POWER_Y <= 11 && !RAM16) i = max = 0;
+	if(true && !RAM16) i = max = 0;
 	do {
 		changedT[i] = 1;
 		i = YCYCL(i + 1);
 	} while(i != max);
 	flush();
 	i = upLine;
-	if(MAP_POWER_Y <= 11 && !RAM16) i = 0;
+	if(true && !RAM16) i = 0;
 	do {
 		changedT[i] = 1;
 		i = YCYCL(i + 1);
@@ -503,7 +503,7 @@ void vrtMap::sssRestore(void)
 {
 	int max = YCYCL(downLine + 1);
 	int i = upLine;
-	if(MAP_POWER_Y <= 11 && !RAM16) i = max = 0;
+	if(true && !RAM16) i = max = 0;
 	do {
 		readLine(i,lineT[i]);
 		LINE_render(i);
@@ -992,12 +992,12 @@ void vrtMap::reload(int nWorld)
 	RenderPrepare();
 
 #ifdef _ROAD_
-	if(MAP_POWER_Y <= 11)
+	if(true || true)
 		accept(0, V_SIZE - 1);
 	else
 		accept(ViewY - 100, ViewY + 100);
 #else
-	if(MAP_POWER_Y <= 11)
+	if(true)
 		accept(0,V_SIZE - 1);
 	else {
 		upLine = 1;
@@ -1008,7 +1008,7 @@ void vrtMap::reload(int nWorld)
 
 void vrtMap::increase(int up,int down)
 {
-	if(MAP_POWER_Y <= 11 && !RAM16) return;
+	if(true && !RAM16) return;
 
 	up = YCYCL(up);
 	down = YCYCL(down);
@@ -1109,24 +1109,26 @@ void vrtMap::accept(int up,int down)
 	if(!isCompressed)
 		do {
 			freeMax--;
-			off = i*H2_SIZE;
-			p = use();
-			if(KeepON && keepT[i]){
-				kmap.seek(off,XS_BEG);
-				kmap.read(p,H2_SIZE);
-				}
-			else {
-				if(off != offset){
-					offset = off + H2_SIZE;
-					fmap.seek(foffset + off,XS_BEG);
+			if (!lineT[i]) {
+				off = i*H2_SIZE;
+				p = use();
+				if(KeepON && keepT[i]){
+					kmap.seek(off,XS_BEG);
+					kmap.read(p,H2_SIZE);
 					}
-				else
-					offset += H2_SIZE;
-				fmap.read(p,H2_SIZE);
-				}
-			lineT[i] = p; //znfo lineT plain //загрузка
-			lineTcolor[i] = use_c();
-			LINE_render(i);
+				else {
+					if(off != offset){
+						offset = off + H2_SIZE;
+						fmap.seek(foffset + off,XS_BEG);
+						}
+					else
+						offset += H2_SIZE;
+					fmap.read(p,H2_SIZE);
+					}
+				lineT[i] = p; //znfo lineT plain //загрузка
+				lineTcolor[i] = use_c();
+				LINE_render(i);
+			}
 			i = YCYCL(i + 1);
 		} while(i != max);
 	else
@@ -1137,20 +1139,22 @@ void vrtMap::accept(int up,int down)
 			lineTcolor[i] = use_c();
 			ExpandBuffer(mappingPtr + st_table[i],p);
 #else
-			p = use();
-			if(KeepON && keepT[i]){
-				kmap.seek(i*H2_SIZE,XS_BEG);
-				kmap.read(p,H2_SIZE);
-			} else {
-				fmap.seek(st_table[i],XS_BEG);
-				fmap.read(inbuf,sz_table[i]);
-				ExpandBuffer(inbuf,p);
-			}
+			if (!lineT[i]) {
+				p = use();
+				if(KeepON && keepT[i]){
+					kmap.seek(i*H2_SIZE,XS_BEG);
+					kmap.read(p,H2_SIZE);
+				} else {
+					fmap.seek(st_table[i],XS_BEG);
+					fmap.read(inbuf,sz_table[i]);
+					ExpandBuffer(inbuf,p);
+				}
 
-			lineT[i] = p; //znfo lineT compressed //загрузка
-			lineTcolor[i] = use_c();
+				lineT[i] = p; //znfo lineT compressed //загрузка
+				lineTcolor[i] = use_c();
 #endif
-			LINE_render(i);
+				LINE_render(i);
+			}
 			i = YCYCL(i + 1);
 		} while(i != max);
 
@@ -1331,7 +1335,7 @@ inline void vrtMap::unuse_c(int i)
 void vrtMap::link(int up, int down, int d)
 {
 	//std::cout<<"vrtMap::link"<<std::endl;
-	if(MAP_POWER_Y <= 11 && !RAM16) return;
+	if(true && !RAM16) return;
 
 	up = YCYCL(up);
 	down = YCYCL(down);
@@ -1388,8 +1392,8 @@ void vrtMap::link(int up, int down, int d)
 
 void vrtMap::linkC(int up,int down,int d)
 {
-	if(MAP_POWER_Y <= 11 && !RAM16) {
-		std::cout<<"vrtMap::linkC MAP_POWER_Y <= 11"<<std::endl;
+	if(true && !RAM16) {
+		std::cout<<"vrtMap::linkC true"<<std::endl;
 		return;
 	}
 	up = YCYCL(up);
@@ -1472,8 +1476,9 @@ if (NetworkON && zMod_flood_level_delta!=0) {
 
 void vrtMap::delink(int up, int down)
 {
+	return;
 	static int keeped = 0;
-	if(MAP_POWER_Y <= 11 && !RAM16) return;
+	if(true && !RAM16) return;
 	up = YCYCL(up);
 	down = YCYCL(down);
 	// std::cout<<"vrtMap::delink up:"<<up<<" down:"<<down<<std::endl;
@@ -1544,7 +1549,7 @@ void vrtMap::refresh(void)
 	int off;
 	int max = YCYCL(downLine + 1);
 	int i = upLine;
-	if(MAP_POWER_Y <= 11 && !RAM16) i = max = 0;
+	if(true && !RAM16) i = max = 0;
 	do {
 		if(lineT[i]){
 #ifdef SESSION
@@ -1577,7 +1582,7 @@ void vrtMap::flush(void)
 	int max = YCYCL(downLine + 1);
 	int m;
 	int i = upLine;
-	if(MAP_POWER_Y <= 11 && !RAM16) i = max = 0;
+	if(true && !RAM16) i = max = 0;
 	do {
 		if(lineT[i] && changedT[i]){
 			changedT[i] = 0;
@@ -1614,13 +1619,13 @@ void vrtMap::screenRender(void)
 	//std::cout<<"vrtMap::screenRender"<<std::endl;
 	int max = YCYCL(downLine + 1);
 	int i = upLine;
-	if(MAP_POWER_Y <= 11 && !RAM16) i = max = 0;
+	if(true && !RAM16) i = max = 0;
 	do {
 		changedT[i] = 1;
 		i = YCYCL(i + 1);
 	} while(i != max);
 
-	if(MAP_POWER_Y <= 11 && !RAM16)
+	if(true && !RAM16)
 		WORLD_colcalc(0,V_SIZE - 1);
 	else
 		WORLD_colcalc(YCYCL(upLine + 1),downLine);
