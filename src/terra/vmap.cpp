@@ -993,7 +993,10 @@ void vrtMap::reload(int nWorld)
 
 #ifdef _ROAD_
 	if(true || true)
+	{
 		accept(0, V_SIZE - 1);
+		regRender(0,0,H_SIZE-1,V_SIZE-1);
+	}
 	else
 		accept(ViewY - 100, ViewY + 100);
 #else
