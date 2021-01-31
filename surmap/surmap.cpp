@@ -1221,7 +1221,7 @@ void iGameMap::reset(void)
 	FirstDraw = 1;
 	ViewY = CY;
 
-	if(MAP_POWER_Y <= 11)
+	if(true)
 		vMap -> accept(0,V_SIZE - 1);
 	else
 		vMap -> accept(CY - yside - 1,CY + yside + 1);

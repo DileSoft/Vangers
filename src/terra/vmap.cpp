@@ -105,9 +105,9 @@ int KeepON = 0;
 
 #ifdef _SURMAP_
 #if defined(EXTSCREEN) || defined(POSTER) || defined(ACTINT)
-int MAX_LINE = V_SIZE + 8;
+int MAX_LINE = 20000;
 #else
-int MAX_LINE = 3000;
+int MAX_LINE = 20000;
 #endif
 #else
 int MAX_LINE = 20000; // 2050;
