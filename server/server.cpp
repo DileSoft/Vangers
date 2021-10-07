@@ -9,6 +9,10 @@ using json = nlohmann::json;
 
 #include <random>
 
+void public_event(json jdata);
+json get_player_json(Player *p);
+json get_game_json(Game *g);
+
 namespace uuid {
     static std::random_device              rd;
     static std::mt19937                    gen(rd());
@@ -1070,11 +1074,13 @@ int Player::receive() {
 		//		IN_EVENTS_LOG1(Receive_Block,recv_size);
 	}
 	int code;
+	json jdata = json::object();
 	while ((code = in_buffer.current_event()) != 0) {
 		if (!(code & AUXILIARY_EVENT))
 			code &= ~ECHO_EVENT;
 		switch (code) {
 		case CREATE_PERMANENT_OBJECT: {
+			jdata["name"] = "CREATE_PERMANENT_OBJECT";
 			int obj_ID = in_buffer.get_dword();
 			Object *obj = 0;
 			if (NON_GLOBAL_OBJECT(obj_ID)) {
@@ -1138,6 +1144,7 @@ int Player::receive() {
 		} break;
 
 		case DELETE_OBJECT: {
+			jdata["name"] = "DELETE_OBJECT";
 			int obj_ID = in_buffer.get_dword();
 			Object *obj = 0;
 			if (NON_GLOBAL_OBJECT(obj_ID)) {
@@ -1171,6 +1178,7 @@ int Player::receive() {
 		} break;
 
 		case UPDATE_OBJECT: {
+			jdata["name"] = "UPDATE_OBJECT";
 			int obj_ID = in_buffer.get_dword();
 			Object *obj = 0;
 			if (NON_GLOBAL_OBJECT(obj_ID)) {
@@ -1221,6 +1229,7 @@ int Player::receive() {
 		} break;
 
 		case SET_POSITION:
+			jdata["name"] = "SET_POSITION";
 			if (!world) {
 				SERVER_ERROR("Set position before set world", 0);
 				in_buffer.ignore_event();
@@ -1235,15 +1244,18 @@ int Player::receive() {
 			break;
 
 		case TOP_LIST_QUERY:
+			jdata["name"] = "TOP_LIST_QUERY";
 			server->get_top_list(out_buffer, in_buffer.get_byte());
 			IN_EVENTS_LOG(TOP_LIST_QUERY);
 			break;
 		case GAMES_LIST_QUERY:
+			jdata["name"] = "GAMES_LIST_QUERY";
 			code_queue.put(GAMES_LIST_RESPONSE);
 			IN_EVENTS_LOG(GAMES_LIST_QUERY);
 			break;
 
 		case ATTACH_TO_GAME:
+			jdata["name"] = "ATTACH_TO_GAME";
 			if (game || ID)
 				SERVER_ERROR("Player have already been attached to game", game->ID);
 			if ((game = server->games.search(in_buffer.get_int())) == 0 ||
@@ -1263,6 +1275,7 @@ int Player::receive() {
 			break;
 
 		case RESTORE_CONNECTION: {
+			jdata["name"] = "RESTORE_CONNECTION";
 			Player *p;
 			Game *game;
 			if ((game = server->games.search(in_buffer.get_int())) != 0 &&
@@ -1285,6 +1298,7 @@ int Player::receive() {
 		} break;
 
 		case REGISTER_NAME: {
+			jdata["name"] = "REGISTER_NAME";
 			if (name)
 				delete name;
 			int name_len = strlen(in_buffer(in_buffer.tell()));
@@ -1312,6 +1326,7 @@ int Player::receive() {
 		}
 
 		case SET_WORLD: {
+			jdata["name"] = "SET_WORLD";
 			if (world) {
 				SERVER_ERROR("Duplicated set world", ID);
 				in_buffer.ignore_event();
@@ -1339,6 +1354,7 @@ int Player::receive() {
 		} break;
 
 		case LEAVE_WORLD:
+			jdata["name"] = "LEAVE_WORLD";
 			if (!world) {
 				SERVER_ERROR("Leave world before set", 0);
 				in_buffer.ignore_event();
@@ -1349,6 +1365,7 @@ int Player::receive() {
 			break;
 
 		case SERVER_TIME_QUERY:
+			jdata["name"] = "SERVER_TIME_QUERY";
 			out_buffer.begin_event(SERVER_TIME);
 			out_buffer < (unsigned int)GLOBAL_CLOCK();
 			out_buffer.end_event();
@@ -1357,6 +1374,7 @@ int Player::receive() {
 			break;
 
 		case SET_GAME_DATA: {
+			jdata["name"] = "SET_GAME_DATA";
 			if (game->data.GameType != UNCONFIGURED) {
 				DOUT1("Attempt to reassign game data", game->ID);
 			}
@@ -1370,11 +1388,13 @@ int Player::receive() {
 		} break;
 
 		case GET_GAME_DATA:
+			jdata["name"] = "GET_GAME_DATA";
 			code_queue.put(GAME_DATA_RESPONSE);
 			IN_EVENTS_LOG(GET_GAME_DATA);
 			break;
 
 		case SET_PLAYER_DATA: {
+			jdata["name"] = "SET_PLAYER_DATA";
 			int size = in_buffer.event_size() - 1;
 			if (size != sizeof(PlayerBody))
 				SERVER_ERROR("Incorrect Player Body", size);
@@ -1410,11 +1430,13 @@ int Player::receive() {
 		} break;
 
 		case TOTAL_PLAYERS_DATA_QUERY:
+			jdata["name"] = "TOTAL_PLAYERS_DATA_QUERY";
 			code_queue.put(TOTAL_LIST_OF_PLAYERS_DATA);
 			IN_EVENTS_LOG(TOTAL_PLAYERS_DATA_QUERY);
 			break;
 
 		case DIRECT_SENDING: {
+			jdata["name"] = "DIRECT_SENDING";
 			unsigned int mask = in_buffer.get_dword();
 			Object *obj = new Object();
 			obj->ID = DIRECT_SENDING_OBJECT;
@@ -1423,11 +1445,17 @@ int Player::receive() {
 			obj->body_size = in_buffer.event_size() - 5;
 			obj->body = new unsigned char[obj->body_size];
 			in_buffer.read(obj->body, obj->body_size);
+			try {
+				jdata["message"] = convert_866toutf8((char*)obj->body);
+			} catch (...) {
+				jdata["message"] = "Wrong message";
+			}
 			game->process_direct_sending(obj, mask);
 			IN_EVENTS_LOG(DIRECT_SENDING);
 		} break;
 
 		case CLOSE_SOCKET:
+			jdata["name"] = "CLOSE_SOCKET";
 			socket.close();
 			time_to_remove = SDL_GetTicks();
 			break;
@@ -1435,6 +1463,12 @@ int Player::receive() {
 		default:
 			SERVER_ERROR("Incorrect event ID", in_buffer.current_event());
 		}
+		jdata["player"] = get_player_json(this);
+		if (game) {
+			jdata["game"] = get_game_json(game);
+		}
+		jdata["time"] = time(0);
+		public_event(jdata);
 		in_buffer.next_event();
 	}
 	return recv_size;
@@ -1845,132 +1879,17 @@ int Server::quant() {
 		int n_players = 0;
 		Game *g = games.first();
 		while (g) {
-			json jg = json::object();
-			try {
-				jg["name"] = convert_866toutf8(g->name);
-			} catch (...) {
-				jg["name"] = "Wrong name";
-			}
-			jg["players"] = json::array();
+			json jg = get_game_json(g);
 			jg["birth_time"] = Server::get_time_string(g->birth_time);
-			jg["initialrnd"] = g->data.InitialRND;
-			json js = json::object();
-			switch (g->data.GameType) {
-				case VAN_WAR:
-					js["InitialCash"] = g->data.Van_War.InitialCash;
-					js["ArtefactsUsing"] = g->data.Van_War.ArtefactsUsing;
-					js["InEscaveTime"] = g->data.Van_War.InEscaveTime;
-					js["Color"] = g->data.Van_War.Color;
-					js["Nascency"] = g->data.Van_War.Nascency;
-					js["TeamMode"] = g->data.Van_War.TeamMode;
-					js["WorldAccess"] = g->data.Van_War.WorldAccess;
-					js["MaxKills"] = g->data.Van_War.MaxKills;
-					js["MaxTime"] = g->data.Van_War.MaxTime;
-					break;
-				case MECHOSOMA:
-					js["InitialCash"] = g->data.Mechosoma.InitialCash;
-					js["ArtefactsUsing"] = g->data.Mechosoma.ArtefactsUsing;
-					js["InEscaveTime"] = g->data.Mechosoma.InEscaveTime;
-					js["Color"] = g->data.Mechosoma.Color;
-					js["World"] = g->data.Mechosoma.World;
-					js["ProductQuantity1"] = g->data.Mechosoma.ProductQuantity1;
-					js["ProductQuantity2"] = g->data.Mechosoma.ProductQuantity2;
-					js["One_at_a_time"] = g->data.Mechosoma.One_at_a_time;
-					js["TeamMode"] = g->data.Mechosoma.TeamMode;
-					break;
-				case PASSEMBLOSS:
-					js["InitialCash"] = g->data.Passembloss.InitialCash;
-					js["ArtefactsUsing"] = g->data.Passembloss.ArtefactsUsing;
-					js["InEscaveTime"] = g->data.Passembloss.InEscaveTime;
-					js["Color"] = g->data.Passembloss.Color;
-					js["CheckpointsNumber"] = g->data.Passembloss.CheckpointsNumber;
-					js["RandomEscave"] = g->data.Passembloss.RandomEscave;
-					break;
-			}
-			jg["settings"] = js;
-			// Object *o = g->global_objects.first();
-			// while (o) {
-			// 	json jo = json::object();
-			// 	//jo["body"] = o->body;
-			// 	jo["x"] = o->x;
-			// 	jo["y"] = o->y;
-			// 	jo["ID"] = o->ID;
-			// 	jo["client_ID"] = o->client_ID;
-			// 	jo["radius"] = o->radius;
-			// 	jg["objects"].push_back(jo);
-			// 	o = o->next;
-			// }
-			// World *w = g->worlds.first();
-			// while (w) {
-			// 	json jw = json::object();
-			// 	jw["id"] = w->ID;
-			// 	Object *o = w->objects.first();
-			// 	while (o) {
-			// 		json jo = json::object();
-			// 		//jo["body"] = o->body;
-			// 		jo["x"] = o->x;
-			// 		jo["y"] = o->y;
-			// 		jo["ID"] = o->ID;
-			// 		jo["client_ID"] = o->client_ID;
-			// 		jo["radius"] = o->radius;
-			// 		jw["objects"].push_back(jo);
-			// 		o = o->next_alt;
-			// 	}
-			// 	jg["worlds"].push_back(jw);
-			// 	w = w->next;
-			// }
+
 			Player *p = g->players.first();
 			while (p) {
-				json jp = json::object();
-				if (p->x && p->y) {
-					jp["x"] = p->x;
-					jp["y"] = p->y;
-				}
-				try {
-					jp["name"] = convert_866toutf8(p->name);
-				} catch (...) {
-					jp["name"] = "Wrong name";
-				}
-				jp["ID"] = p->ID;
-				jp["kills"] = p->body.kills;
-				jp["deaths"] = p->body.deaths;
-				jp["color"] = p->body.color;
-				jp["world"] = p->body.world;
-				jp["beebos"] = p->body.beebos;
-				jp["rating"] = p->body.rating;
-				jp["carindex"] = p->body.CarIndex;
-				jp["data0"] = p->body.Data0;
-				jp["data1"] = p->body.Data1;
+				json jp = get_player_json(p);
 				jp["birth_time"] = Server::get_time_string(p->birth_time);
-				json js = json::object();
-				switch (g->data.GameType) {
-					case VAN_WAR:
-						js["MaxLiveTime"] = p->body.VanVarStat.MaxLiveTime;
-						js["MinLiveTime"] = p->body.VanVarStat.MinLiveTime;
-						js["KillFreq"] = p->body.VanVarStat.KillFreq;
-						js["DeathFreq"] = p->body.VanVarStat.DeathFreq;
-						break;
-					case MECHOSOMA:
-						js["ItemCount1"] = p->body.MechosomaStat.ItemCount1;
-						js["ItemCount2"] = p->body.MechosomaStat.ItemCount2;
-						js["MaxTransitTime"] = p->body.MechosomaStat.MaxTransitTime;
-						js["MinTransitTime"] = p->body.MechosomaStat.MinTransitTime;
-						js["SneakCount"] = p->body.MechosomaStat.SneakCount;
-						js["LostCount"] = p->body.MechosomaStat.LostCount;
-						break;
-					case PASSEMBLOSS:
-						js["TotalTime"] = p->body.PassemblossStat.TotalTime;
-						js["CheckpointLighting"] = p->body.PassemblossStat.CheckpointLighting;
-						js["MinTime"] = p->body.PassemblossStat.MinTime;
-						js["MaxTime"] = p->body.PassemblossStat.MaxTime;
-						break;
-				}
-				jp["statistics"] = js;
 				jg["players"].push_back(jp);
 				p = p->next;
 			}
-			jg["type"] = (g->data.GameType == VAN_WAR ? "V" : (g->data.GameType == MECHOSOMA ? "M" : "P"));
-			jg["uuid"] = g->uuid;
+
 			jdata["games"].push_back(jg);
 			g = g->next;
 		}
@@ -2271,4 +2190,146 @@ void Server::get_top_list(OutputEventBuffer &out_buffer, int MP_game) {
 		p = p->next;
 	}
 	out_buffer.end_event();
+}
+
+void public_event(json jdata) {
+	std::ostringstream sscript;
+	std::ostringstream serialized;
+	serialized << std::quoted(jdata.dump());
+	sscript << "bash script_events.sh " << serialized.str();
+	sscript << " >/dev/null 2>/dev/null &";
+	system(sscript.str().c_str());
+}
+
+json get_player_json(Player *p) {
+	json jp = json::object();
+	if (p->x && p->y) {
+		jp["x"] = p->x;
+		jp["y"] = p->y;
+	}
+	try {
+		jp["name"] = convert_866toutf8(p->name);
+	} catch (...) {
+		jp["name"] = "Wrong name";
+	}
+	jp["ID"] = p->ID;
+	jp["kills"] = p->body.kills;
+	jp["deaths"] = p->body.deaths;
+	jp["color"] = p->body.color;
+	jp["world"] = p->body.world;
+	jp["beebos"] = p->body.beebos;
+	jp["rating"] = p->body.rating;
+	jp["carindex"] = p->body.CarIndex;
+	jp["data0"] = p->body.Data0;
+	jp["data1"] = p->body.Data1;
+	jp["birth_time_source"] = p->birth_time;
+	json js = json::object();
+	Game* g = p->game;
+	if (g) {
+		switch (g->data.GameType) {
+			case VAN_WAR:
+				js["MaxLiveTime"] = p->body.VanVarStat.MaxLiveTime;
+				js["MinLiveTime"] = p->body.VanVarStat.MinLiveTime;
+				js["KillFreq"] = p->body.VanVarStat.KillFreq;
+				js["DeathFreq"] = p->body.VanVarStat.DeathFreq;
+				break;
+			case MECHOSOMA:
+				js["ItemCount1"] = p->body.MechosomaStat.ItemCount1;
+				js["ItemCount2"] = p->body.MechosomaStat.ItemCount2;
+				js["MaxTransitTime"] = p->body.MechosomaStat.MaxTransitTime;
+				js["MinTransitTime"] = p->body.MechosomaStat.MinTransitTime;
+				js["SneakCount"] = p->body.MechosomaStat.SneakCount;
+				js["LostCount"] = p->body.MechosomaStat.LostCount;
+				break;
+			case PASSEMBLOSS:
+				js["TotalTime"] = p->body.PassemblossStat.TotalTime;
+				js["CheckpointLighting"] = p->body.PassemblossStat.CheckpointLighting;
+				js["MinTime"] = p->body.PassemblossStat.MinTime;
+				js["MaxTime"] = p->body.PassemblossStat.MaxTime;
+				break;
+		}
+	}
+	jp["statistics"] = js;
+	return jp;
+}
+
+json get_game_json(Game *g) {
+	json jg = json::object();
+	try {
+		jg["name"] = convert_866toutf8(g->name);
+	} catch (...) {
+		jg["name"] = "Wrong name";
+	}
+	jg["players"] = json::array();
+	jg["birth_time_source"] = g->birth_time;
+	jg["initialrnd"] = g->data.InitialRND;
+	json js = json::object();
+	switch (g->data.GameType) {
+		case VAN_WAR:
+			js["InitialCash"] = g->data.Van_War.InitialCash;
+			js["ArtefactsUsing"] = g->data.Van_War.ArtefactsUsing;
+			js["InEscaveTime"] = g->data.Van_War.InEscaveTime;
+			js["Color"] = g->data.Van_War.Color;
+			js["Nascency"] = g->data.Van_War.Nascency;
+			js["TeamMode"] = g->data.Van_War.TeamMode;
+			js["WorldAccess"] = g->data.Van_War.WorldAccess;
+			js["MaxKills"] = g->data.Van_War.MaxKills;
+			js["MaxTime"] = g->data.Van_War.MaxTime;
+			break;
+		case MECHOSOMA:
+			js["InitialCash"] = g->data.Mechosoma.InitialCash;
+			js["ArtefactsUsing"] = g->data.Mechosoma.ArtefactsUsing;
+			js["InEscaveTime"] = g->data.Mechosoma.InEscaveTime;
+			js["Color"] = g->data.Mechosoma.Color;
+			js["World"] = g->data.Mechosoma.World;
+			js["ProductQuantity1"] = g->data.Mechosoma.ProductQuantity1;
+			js["ProductQuantity2"] = g->data.Mechosoma.ProductQuantity2;
+			js["One_at_a_time"] = g->data.Mechosoma.One_at_a_time;
+			js["TeamMode"] = g->data.Mechosoma.TeamMode;
+			break;
+		case PASSEMBLOSS:
+			js["InitialCash"] = g->data.Passembloss.InitialCash;
+			js["ArtefactsUsing"] = g->data.Passembloss.ArtefactsUsing;
+			js["InEscaveTime"] = g->data.Passembloss.InEscaveTime;
+			js["Color"] = g->data.Passembloss.Color;
+			js["CheckpointsNumber"] = g->data.Passembloss.CheckpointsNumber;
+			js["RandomEscave"] = g->data.Passembloss.RandomEscave;
+			break;
+	}
+	jg["settings"] = js;
+	// Object *o = g->global_objects.first();
+	// while (o) {
+	// 	json jo = json::object();
+	// 	//jo["body"] = o->body;
+	// 	jo["x"] = o->x;
+	// 	jo["y"] = o->y;
+	// 	jo["ID"] = o->ID;
+	// 	jo["client_ID"] = o->client_ID;
+	// 	jo["radius"] = o->radius;
+	// 	jg["objects"].push_back(jo);
+	// 	o = o->next;
+	// }
+	// World *w = g->worlds.first();
+	// while (w) {
+	// 	json jw = json::object();
+	// 	jw["id"] = w->ID;
+	// 	Object *o = w->objects.first();
+	// 	while (o) {
+	// 		json jo = json::object();
+	// 		//jo["body"] = o->body;
+	// 		jo["x"] = o->x;
+	// 		jo["y"] = o->y;
+	// 		jo["ID"] = o->ID;
+	// 		jo["client_ID"] = o->client_ID;
+	// 		jo["radius"] = o->radius;
+	// 		jw["objects"].push_back(jo);
+	// 		o = o->next_alt;
+	// 	}
+	// 	jg["worlds"].push_back(jw);
+	// 	w = w->next;
+	// }
+	jg["type"] = (g->data.GameType == VAN_WAR ? "V" : (g->data.GameType == MECHOSOMA ? "M" : "P"));
+	jg["uuid"] = g->uuid;
+
+	return jg;
 }
