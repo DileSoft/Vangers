@@ -2330,6 +2330,7 @@ json get_game_json(Game *g) {
 	// }
 	jg["type"] = (g->data.GameType == VAN_WAR ? "V" : (g->data.GameType == MECHOSOMA ? "M" : "P"));
 	jg["uuid"] = g->uuid;
+	jg["ID"] = g->ID;
 
 	return jg;
 }
