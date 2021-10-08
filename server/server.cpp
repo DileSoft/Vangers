@@ -1438,6 +1438,7 @@ int Player::receive() {
 		case DIRECT_SENDING: {
 			jdata["name"] = "DIRECT_SENDING";
 			unsigned int mask = in_buffer.get_dword();
+			jdata["mask"] = mask;
 			Object *obj = new Object();
 			obj->ID = DIRECT_SENDING_OBJECT;
 			obj->client_ID = ID;
