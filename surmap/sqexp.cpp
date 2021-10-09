@@ -152,6 +152,7 @@ int ExclusiveLayerMode;
 int SecondLayerPriority;
 
 int MLstatus,MLprocess;
+MobileLocation* mlobjCurrent;
 
 static const char* ibmFName = "LEVEL.IBM";
 
@@ -372,7 +373,7 @@ void iMainMenu::message(int code,sqElem* object)
 					vMap -> sssKill();
 #endif
 					vMap -> refresh();
-					LoadVPR();
+					// LoadVPR();
 					break;
 				case 12:
 					MLreset();

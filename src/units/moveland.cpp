@@ -71,6 +71,7 @@ char* win32_findfirst(const char* mask)
 extern int ViewX,ViewY;
 extern iGameMap* curGMap;
 extern int MLstatus,MLprocess;
+extern MobileLocation* mlobjCurrent;
 extern std::string path_to_world; 
 /* --------------------------- PROTOTYPE SECTION --------------------------- */
 char* GetTargetName(const char* name);
@@ -1565,13 +1566,30 @@ void MobileLocation::calcBounds(void)
 		}
 }
 
+int MLcounter = 0;
+int MLFrames = 0;
+
 int MLquant(void)
 {
 #ifdef _SURMAP_
 	if(MLstatus || !MLprocess) return 0;
 #endif
 	int ret = 0;
-	for(int i = 0;i < MLTableSize;i++) ret += MLTable[i] -> quant();
+	// for(int i = 0;i < MLTableSize;i++) ret += MLTable[i] -> quant();
+	#ifdef _SURMAP_
+	if (mlobjCurrent) {
+		ret = mlobjCurrent->quant();
+	}
+	#endif
+	// ret += MLTable[MLcounter] -> quant();
+	// MLFrames++;
+	// if (MLFrames > 30) {
+	// 	MLFrames = 0;
+	// 	MLcounter++;
+	// 	if (MLcounter >= MLTableSize) {
+	// 		MLcounter = 0;
+	// 	}
+	// }
 	return ret;
 }
 

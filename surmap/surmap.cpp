@@ -63,6 +63,7 @@ extern ibmFile ibmObj;
 extern int VisiRegR;
 extern MobileLocation* mlobj;
 extern int MLstatus,MLprocess;
+extern MobileLocation* mlobjCurrent;
 
 extern int VLstatus;
 extern int DEFAULT_TERRAIN;
@@ -739,32 +740,32 @@ void iGameMap::keytrap(int key)
 				LayerStatus = DOWN_LAYER;
 				}
 			break;
-		case '1':
+		case SDLK_1:
 			if(TrackStatus)
 				if(!XKey.Pressed(SDLK_LSHIFT)) Track.save(1);
 				else Track.load(1);
 			break;
-		case '2':
+		case SDLK_2:
 			if(TrackStatus)
 				if(!XKey.Pressed(SDLK_LSHIFT)) Track.save(2);
 				else Track.load(2);
 			break;
-		case '3':
+		case SDLK_3:
 			if(TrackStatus)
 				if(!XKey.Pressed(SDLK_LSHIFT)) Track.save(3);
 				else Track.load(3);
 			break;
-		case '4':
+		case SDLK_4:
 			if(TrackStatus)
 				if(!XKey.Pressed(SDLK_LSHIFT)) Track.save(4);
 				else Track.load(4);
 			break;
-		case '5':
+		case SDLK_5:
 			if(TrackStatus)
 				if(!XKey.Pressed(SDLK_LSHIFT)) Track.save(5);
 				else Track.load(5);
 			break;
-		case 'F':
+		case SDLK_f:
 			if(prmFlag & PRM_INFO)
 				prmFlag ^= PRM_INFO;
 			else
@@ -782,13 +783,13 @@ void iGameMap::keytrap(int key)
 					ImpPattern[curImpIndex] -> put((xm - xc + CX) & clip_mask_x,(ym - yc + CY) & clip_mask_y);
 					}
 			break;
-		case 'S':
+		case SDLK_s:
 			if(TrackStatus)
 				Track.save(0);
 			else
 				sqE -> put(E_FORM3D,E_COMMON,XGR_MAXX/2,XGR_MAXY/2);
 			break;
-		case '9':
+		case SDLK_9:
 			Track_show_all ^= 1;
 			break;
 		case SDLK_F1:
@@ -806,34 +807,34 @@ void iGameMap::keytrap(int key)
 			else
 				ClipboardOperation(key - SDLK_F1,0);
 			break;
-		case 'T':
+		case SDLK_t:
 			message(M_SETOBJ,knobTrack);
 			break;
-		case 'R':
+		case SDLK_r:
 			message(M_SETOBJ,knobRender);
 			break;
-		case 'M':
+		case SDLK_m:
 			sqE -> put(E_PRMMENU,E_COMMON,XGR_MAXX/2,XGR_MAXY/2);
 			break;
-		case 'O':
+		case SDLK_o:
 			if(XKey.Pressed(SDLK_LCTRL))
 				MLvisi = 1 - MLvisi;
 			else
 				sqE -> put(E_MOBILOCMENU,E_COMMON,XGR_MAXX/2,XGR_MAXY/2);
 			break;
-		case 'C':
+		case SDLK_c:
 			sqE -> put(E_VALOCMENU,E_COMMON,XGR_MAXX/2,XGR_MAXY/2);
 			break;
 		case SDLK_SLASH:
 			VisiRegR = 1 - VisiRegR;
 			break;
-		case 'E':
+		case SDLK_e:
 			paliterMode = 1 - paliterMode;
 			break;
 		case SDLK_TAB:
 			GridLog = 1 - GridLog;
 			break;
-		case 'B':
+		case SDLK_b:
 			if(TrackStatus){
 				message(M_SETOBJ,knobBuild);
 				message(M_SETOBJ,knobRender);
@@ -841,26 +842,26 @@ void iGameMap::keytrap(int key)
 			else
 				sqE -> put(E_BMPCHOICE,E_COMMON,XGR_MAXX/2,XGR_MAXY/2);
 			break;
-		case 'I':
+		case SDLK_i:
 			if(TrackStatus)
 				message(M_SETOBJ,knobLinking);
 			else
 				sqE -> put(E_IMPCHOICE,E_COMMON,XGR_MAXX/2,XGR_MAXY/2);
 			break;
-		case 'L':
+		case SDLK_l:
 			if(TrackStatus){
 				if(cBranch) Track.lift_branch(cBranch);
 				}
 			else
 				LandBounded = 1 - LandBounded;
 			break;
-		case 'Y':
+		case SDLK_y:
 			sqE -> put(E_LAYERMENU,E_COMMON,XGR_MAXX/2,XGR_MAXY/2);
 			break;
-//		case 'V':
-//			ShowVoxel = 1 - ShowVoxel;
-//			break;
-		case 'Z':
+		case SDLK_x:
+			ShowVoxel = 1 - ShowVoxel;
+			break;
+		case SDLK_z:
 			ZoomLog = 1 - ZoomLog;
 			if(ZoomLog)
 				if(XKey.Pressed(SDLK_LSHIFT))
@@ -877,29 +878,29 @@ void iGameMap::keytrap(int key)
 		case SDLK_BACKQUOTE:
 			vMap -> squeeze();
 			break;
-		case '0':
+		case SDLK_0:
 			analyzeColors();
 			break;
-		case 'P':
+		case SDLK_p:
 			MLstepLog = 1 - MLstepLog;
 			keyP = 0;
 			break;
-		case 'G':
+		case SDLK_g:
 			if(MLstatus == 2) sqE -> put(E_MOBILOCFRAMECHOICE,E_COMMON,XGR_MAXX/2,XGR_MAXY/2);
 			break;
-		case 'A':
+		case SDLK_a:
 			if(MLstatus == 2) MLacceptframe();
 			break;
-		case 'Q':
+		case SDLK_q:
 			if(MLstatus == 2) MLrestoreframe();
 			break;
-		case 'N':
+		case SDLK_n:
 			if(MLstatus == 2) MLinsertframe();
 			break;
-		case 'D':
+		case SDLK_d:
 			if(MLstatus == 2) MLdeleteframe();
 			break;
-		case 'V':
+		case SDLK_v:
 			void MakeAbsML(void);
 			MakeAbsML();
 			break;
@@ -1018,9 +1019,9 @@ void iGameMap::draw(int self)
 	CX += DX; CY += DY;
 	cycleTor(CX,CY);
 
-//	if(ShowVoxel)
-//		vMap -> draw_voxel(TurnAngle,SlopeAngle,TurnSecX,CX,CY,xc,yc,xside,yside);
-//	else
+	// if(ShowVoxel)
+	// 	vMap -> draw_voxel(TurnAngle,SlopeAngle,TurnSecX,CX,CY,xc,yc,xside,yside);
+	// else
 		if(TurnAngle)
 			vMap -> turning(TurnSecX,TurnAngle,CX,CY,xc,yc,xside,yside);
 		else {
@@ -1085,6 +1086,7 @@ void iGameMap::draw(int self)
 		if(mlobj && (!MLstatus || MLstatus == 2)){
 			status.init();
 			status < "ML<" < mlobj -> name < ">, Phase:" <= mlobj -> getCurPhase() < " Step: " <= mlobj -> steps[mlobj -> cFrame] - 1 < /*" Stage: " <= mlobj -> getStage() < */" Frame: " <= mlobj -> cFrame;
+			mlobjCurrent = mlobj;
 			sysfont.draw(xc - xside + 3,yc - yside + 3 + 40 + off,(unsigned char*)(status.GetBuf()),COL1,-1);
 			off += 20;
 			}

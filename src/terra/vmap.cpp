@@ -831,7 +831,7 @@ void vrtMap::load(const char* name,int nWorld)
 	offset = 0;
 	foffset = fmap.tell();
 
-	LoadVPR();
+	// LoadVPR();
 	RenderPrepare();
 
 	//dump_terrain();
@@ -985,7 +985,7 @@ void vrtMap::reload(int nWorld)
 		}
 #endif
 
-	LoadVPR();
+	// LoadVPR();
 	RenderPrepare();
 
 	if(MAP_POWER_Y <= MAX_MAP_IN_MEMORY_POWER) {

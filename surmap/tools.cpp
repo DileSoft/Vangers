@@ -801,7 +801,7 @@ void MobileLocation::makeCopy(MobileLocation* p)
 		table[i] = p -> table[i];
 		f = table + i;
 		ff = p -> table + i;
-		memcpy(f -> delta = new uchar[f -> sz],ff -> delta,f -> sz);
+		// memcpy(f -> delta = new uchar[f -> sz],ff -> delta,f -> sz);
 		if(f -> terrain)
 			memcpy(f -> terrain = new uchar[f -> sz],ff -> terrain,f -> sz);
 		memcpy(f -> signBits = new unsigned[f -> ss],ff -> signBits,f -> ss*4);
