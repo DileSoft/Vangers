@@ -99,7 +99,7 @@ extern int IsMainMenu;
 
 extern bool autoconnect;
 extern char *autoconnectHost;
-extern int  autoconnectPort;
+extern unsigned short  autoconnectPort;
 extern int  autoconnectJoinGame;
 extern int  autoconnectGameID;
 
@@ -788,6 +788,10 @@ int iQuantSecond(void)
 					if((k->type == SDL_KEYDOWN && k->key.keysym.scancode == SDL_SCANCODE_ESCAPE) && actIntLog){
 						iPause ^= 1;
 						acsScreenID = 2;
+						if (iPause) {
+							XGR_Obj.fill(0, XGR_Obj.get_2d_render_buffer());
+							XGR_Obj.fill(0, XGR_Obj.get_2d_rgba_render_buffer());
+						}
 					}
 
 //					if(k->type == SDL_KEYDOWN && k->key.keysym.scancode == SDL_SCANCODE_F11) {
@@ -1231,9 +1235,9 @@ void iInitS_Text(iScreenObject* obj,char* text,int text_len,int font,int space,i
 	while(i < text_len){
 		while(!buf[i]) i ++;
 		if(i < text_len){
-			p = new iS_StringElement;
 			t_sz = strlen(buf + i) + 1;
 			if(t_sz){
+				p = new iS_StringElement;
 				p -> string = new char[t_sz];
 				strcpy(p -> string,buf + i);
 				p -> flags |= EL_TEXT_STRING;
@@ -1288,7 +1292,7 @@ void iScrQuantFinit(void)
 	static unsigned char pal_buf[768];
 	if(iScreenLog){
 		iFinitQuant();
-		set_key_nadlers(&KeyCenter, NULL);
+		set_key_handlers(&KeyCenter, NULL);
 
 		i_slake_pal(iscrPal,16);
 
@@ -1504,8 +1508,6 @@ void aciSwapMatrices(void)
 	put_map(iScreenOffs,0,I_RES_X,I_RES_Y);
 	aScrDisp -> curMatrix -> redraw();
 
-	iScrDisp -> curScr -> show_avi();
-
 #ifdef _ACI_NO_SHOP_ANIMATION_
 	XGR_Flush(0,0,XGR_MAXX,XGR_MAXY);
 #else
@@ -1616,8 +1618,6 @@ void aciCancelMatrix(void)
 	if(aScrDisp -> curMatrix)
 		aScrDisp -> curMatrix -> redraw();
 
-	iScrDisp -> curScr -> show_avi();
-
 #ifdef _ACI_NO_SHOP_ANIMATION_
 	XGR_Flush(0,0,XGR_MAXX,XGR_MAXY);
 #else
@@ -1709,8 +1709,6 @@ void aciShowScMatrix(void)
 		aScrDisp -> curMatrix -> redraw();
 
 	aScrDisp -> secondMatrix -> redraw();
-
-	iScrDisp -> curScr -> show_avi();
 
 #ifdef _ACI_NO_SHOP_ANIMATION_
 	XGR_Flush(0,0,XGR_MAXX,XGR_MAXY);

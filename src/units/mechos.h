@@ -1,3 +1,12 @@
+#ifndef __UNITS__MECHOS_H
+#define __UNITS__MECHOS_H
+
+#include "../3d/3dobject.h"
+#include "../particle/light.h"
+#include "../dast/poly3d.h"
+#include "hobj.h"
+#include "track.h"
+#include "items.h"
 //#define TEST_TRACK
 
 /*
@@ -943,7 +952,7 @@ struct CompasObject
 //const int SPEETLE_AMMO = 0;
 //const int CRUSTEST_AMMO = 1;
 
-const int RES_DRAW_LEFT = 50;
+const int RES_DRAW_LEFT = 150;
 const int RES_DRAW_DOWN = 80;
 const int RES_DRAW_STEP_Y = 10;
 const int RES_DRAW_MAX_SIZE = 300;
@@ -1217,3 +1226,6 @@ inline void aiPutHotBug(int d)
 	aiHotBugData02 ^= aiHotBugAdd01;
 	aiHotBugData03 ^= aiHotBugAdd00;
 };
+
+
+#endif

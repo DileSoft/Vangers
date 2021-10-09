@@ -1,3 +1,5 @@
+#ifndef __TERRA__VMAP_H__
+#define __TERRA__VMAP_H__
 
 const uint H_POWER = MAP_POWER_X;
 const uint H_SIZE = 1 << H_POWER;
@@ -76,7 +78,6 @@ struct vrtMap {
 	void dump_terrain(void);
 	void accept(int up,int down);
 	void change(int up,int down);
-	void another(int up,int down);
 	void request(int up,int down,int left, int right);
 	void quant(void);
 	void link(int up,int down,int d);
@@ -174,3 +175,5 @@ inline double getDistY(double v0,double v1)
 }
 
 const int MLNAMELEN = 15;
+
+#endif

@@ -1,5 +1,5 @@
 #include "../lib/xtool/xglobal.h"
-#include "multiplayer.h"
+#include "../src/multiplayer.h"
 #include "xsocket.h"
 #include <sstream>
 
