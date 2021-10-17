@@ -240,6 +240,7 @@ struct Game {
 	unsigned int birth_time;
 	char name[128];
 	char uuid[128];
+	int start_time;
 	ServerData data;
 
 	Game *next;
