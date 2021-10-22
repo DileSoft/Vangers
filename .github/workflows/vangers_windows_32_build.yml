@@ -20,6 +20,7 @@ jobs:
         mingw-w64-i686-libvorbis
         mingw-w64-i686-nasm
         mingw-w64-i686-yasm
+        mingw-w64-i686-libiconv
         mingw-w64-i686-make'
     - uses: actions/checkout@v1
     - name: clunk -- download
