@@ -10,6 +10,7 @@ using json = nlohmann::json;
 #include <random>
 
 void public_event(json jdata);
+void public_data(Server* server);
 json get_player_json(Player *p);
 json get_game_json(Game *g);
 
@@ -1076,6 +1077,7 @@ int Player::receive() {
 		//		IN_EVENTS_LOG1(Receive_Block,recv_size);
 	}
 	int code;
+	//std::cout << time(0) << "Recieve\n";
 	json jdata = json::object();
 	while ((code = in_buffer.current_event()) != 0) {
 		if (!(code & AUXILIARY_EVENT))
@@ -1476,6 +1478,7 @@ int Player::receive() {
 		}
 		jdata["time"] = time(0);
 		public_event(jdata);
+		public_data(this->server);
 		in_buffer.next_event();
 	}
 	return recv_size;
@@ -1878,45 +1881,11 @@ int Server::quant() {
 	//std::cout << "Test" << SDL_GetTicks() << "\n";
 	if (true || std::time(0) - next_hub >= 1) {
 		next_hub = std::time(0);
-		std::ostringstream ssend;
-		std::ostringstream sscript;
-		json jdata = {
-			{"games", json::array()}
-		};
-		int n_players = 0;
-		Game *g = games.first();
-		try {
-			while (g) {
-				json jg = get_game_json(g);
-				jg["birth_time"] = Server::get_time_string(g->birth_time);
-
-				Player *p = g->players.first();
-				while (p) {
-					json jp = get_player_json(p);
-					jp["birth_time"] = Server::get_time_string(p->birth_time);
-					jg["players"].push_back(jp);
-					p = p->next;
-				}
-
-				jdata["games"].push_back(jg);
-				g = g->next;
-			}
-		} catch (...) {
-			
-		}
-		
-		std::ostringstream serialized;
-		serialized << std::quoted(jdata.dump());
-		//ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
-		//ssend << " >/dev/null 2>/dev/null &";
-		//system(ssend.str().c_str());
-		sscript << "bash script.sh " << serialized.str();
-		sscript << " >/dev/null 2>/dev/null &";
-		system(sscript.str().c_str());
-		//std::cout << serialized.str() << std::endl;
 	}
 	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
 	if (next_broadcast < SDL_GetTicks()) {
+		//std::cout << time(0) << "Quant\n";
+		public_data(this);
 		next_broadcast = SDL_GetTicks() + 1000;
 		int n_players = 0;
 		Game *g = games.first();
@@ -2204,12 +2173,56 @@ void Server::get_top_list(OutputEventBuffer &out_buffer, int MP_game) {
 }
 
 void public_event(json jdata) {
+	try {
+		std::ostringstream sscript;
+		std::ostringstream serialized;
+		serialized << std::quoted(jdata.dump());
+		sscript << "bash script_events.sh " << serialized.str();
+		sscript << " >/dev/null 2>/dev/null &";
+		system(sscript.str().c_str());
+	} catch (...) {
+		std::cout << "Event can't be publish\n";
+	}
+}
+
+void public_data(Server* server) {
+	std::ostringstream ssend;
 	std::ostringstream sscript;
+	json jdata = {
+		{"games", json::array()}
+	};
+	int n_players = 0;
+	Game *g = server->games.first();
+	try {
+		while (g) {
+			json jg = get_game_json(g);
+			jg["birth_time"] = server->get_time_string(g->birth_time);
+
+			Player *p = g->players.first();
+			while (p) {
+				json jp = get_player_json(p);
+				jp["birth_time"] = server->get_time_string(p->birth_time);
+				jg["players"].push_back(jp);
+				p = p->next;
+			}
+
+			jdata["games"].push_back(jg);
+			g = g->next;
+		}
+	} catch (...) {
+		std::cout << "Data can't be publish\n";		
+	}
+	
 	std::ostringstream serialized;
 	serialized << std::quoted(jdata.dump());
-	sscript << "bash script_events.sh " << serialized.str();
+	//std::cout << jdata.dump(4) << "\n";
+	//ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
+	//ssend << " >/dev/null 2>/dev/null &";
+	//system(ssend.str().c_str());
+	sscript << "bash script.sh " << serialized.str();
 	sscript << " >/dev/null 2>/dev/null &";
 	system(sscript.str().c_str());
+	//std::cout << serialized.str() << std::endl;
 }
 
 json get_player_json(Player *p) {
@@ -2220,7 +2233,9 @@ json get_player_json(Player *p) {
 			jp["y"] = p->y;
 		}
 		try {
-			jp["name"] = convert_866toutf8(p->name);
+			if (p->name) {
+				jp["name"] = convert_866toutf8(p->name);
+			}
 		} catch (...) {
 			jp["name"] = "Wrong name";
 		}
@@ -2263,7 +2278,7 @@ json get_player_json(Player *p) {
 		}
 		jp["statistics"] = js;
 	} catch (...) {
-
+		std::cout << "Player json error\n";
 	}
 	return jp;
 }
@@ -2272,7 +2287,9 @@ json get_game_json(Game *g) {
 	json jg = json::object();
 	try {
 		try {
-			jg["name"] = convert_866toutf8(g->name);
+			if (g->name) {
+				jg["name"] = convert_866toutf8(g->name);
+			}
 		} catch (...) {
 			jg["name"] = "Wrong name";
 		}
@@ -2349,7 +2366,7 @@ json get_game_json(Game *g) {
 		jg["uuid"] = g->uuid;
 		jg["ID"] = g->ID;
 	} catch (...) {
-
+		std::cout << "Game json error\n";
 	}
 
 	return jg;
