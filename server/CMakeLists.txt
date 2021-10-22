@@ -21,10 +21,14 @@ IF(WIN32)
 	)
 ENDIF(WIN32)
 
+IF(NOT LINUX)
+	SET(ICONV_LINK "-liconv")
+ENDIF()
+
 TARGET_LINK_LIBRARIES(vangers_server
 	${SDL2_LIBRARY}
 	${SDL2_NET_LIBRARY}
 	${WIN_LIB}
-	-liconv
+	${ICONV_LINK}
 	xtool
 )
