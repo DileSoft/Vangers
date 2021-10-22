@@ -21,10 +21,12 @@ IF(WIN32)
 	)
 ENDIF(WIN32)
 
-SET(ICONV_LINK "-liconv")
+if(UNIX AND NOT APPLE)
+	set(LINUX TRUE)
+endif()
 
-IF(LINUX)
-	SET(ICONV_LINK "")
+IF(NOT LINUX)
+	SET(ICONV_LINK "-liconv")
 ENDIF()
 
 TARGET_LINK_LIBRARIES(vangers_server
