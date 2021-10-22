@@ -25,5 +25,6 @@ TARGET_LINK_LIBRARIES(vangers_server
 	${SDL2_LIBRARY}
 	${SDL2_NET_LIBRARY}
 	${WIN_LIB}
+	-liconv
 	xtool
 )
