@@ -1478,7 +1478,7 @@ int Player::receive() {
 		}
 		jdata["time"] = time(0);
 		public_event(jdata);
-		public_data(this->server);
+		//public_data(this->server);
 		in_buffer.next_event();
 	}
 	return recv_size;
@@ -1905,6 +1905,9 @@ int Server::quant() {
 		// report();
 	}
 	int transf = check_new_clients() + clients_quant() + games_quant();
+	if (transf) {
+		public_data(this);
+	}
 	transferring += transf;
 	return transf;
 }
