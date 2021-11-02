@@ -114,7 +114,7 @@ XGR_Screen::XGR_Screen(void)
 //	sdlRenderer = NULL;
 //	sdlTexture = NULL;
 }
-
+#define WITH_OPENGL
 #ifdef WITH_OPENGL
 GLuint XGR_Screen::SurfToTexture(SDL_Surface *surf)
 {

@@ -6,6 +6,9 @@
 #define VANGERS_VMAPRENDERER_H
 
 
+#ifndef GLEW_STATIC
+#define GLEW_STATIC
+#endif
 #include <GL/glew.h>
 #include <memory>
 #include <vector>

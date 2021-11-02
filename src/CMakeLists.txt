@@ -125,4 +125,5 @@ TARGET_LINK_LIBRARIES(vangers
 	xgraph
 	xsound
 	vgl
+	glew32
 )

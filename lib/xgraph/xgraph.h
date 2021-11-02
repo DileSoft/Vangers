@@ -11,6 +11,9 @@
 #ifndef __XGRAPH_H__
 #define __XGRAPH_H__
 
+#ifndef GLEW_STATIC
+#define GLEW_STATIC
+#endif
 #include <GL/glew.h>
 
 #include "xglobal.h"
@@ -153,7 +156,7 @@ struct XGR_Screen
 
 	int yStrOffs;
 	int* yOffsTable;
-
+#define WITH_OPENGL
 #ifdef WITH_OPENGL
 	SDL_Surface *XGR_ScreenSurface_Real;
 	GLuint SurfToTexture(SDL_Surface *surf);

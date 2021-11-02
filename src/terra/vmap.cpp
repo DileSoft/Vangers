@@ -1790,7 +1790,7 @@ void LoadVPR(int ind)
 	ff.close();
 }
 #endif
-
+#define WITH_OPENGL
 #ifdef WITH_OPENGL
 void vrtMap::scaling(int XSrcSize,int cx,int cy,int xc,int yc,int xside,int yside)
 {
