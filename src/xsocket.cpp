@@ -171,9 +171,13 @@ XSocket XSocket::accept() {
 	if (!newSock) // TODO: Should emit error here
 		return xsock;
 
+	IPaddress *remote_ip;
+	remote_ip = SDLNet_TCP_GetPeerAddress(newSock);
+
 	xsock.tcpSock = newSock;
 	xsock.ErrHUsed = ErrHUsed;
-	xsock.addr.port = addr.port;
+	xsock.addr.host = addr.host = remote_ip->host;
+	xsock.addr.port = addr.port = remote_ip->port;
 	xsock.socketSet = SDLNet_AllocSocketSet(16);
 	SDLNet_TCP_AddSocket(xsock.socketSet, newSock);
 

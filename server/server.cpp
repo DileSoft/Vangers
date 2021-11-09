@@ -1325,6 +1325,11 @@ int Player::receive() {
 
 			game->put_event_for_all(PLAYERS_NAME, this);
 
+			int IP = socket.addr.host;
+			if (IP)
+				std::clog << "IP: " << (IP & 0xff) << "." << ((IP >> 8) & 0xff) << "." <<
+					((IP >> 16) & 0xff) << "." << ((IP >> 24) & 0xff) << " " << name << "\n";
+
 			IN_EVENTS_LOG(REGISTER_NAME);
 			break;
 		}
@@ -1477,7 +1482,7 @@ int Player::receive() {
 			jdata["game"] = get_game_json(game);
 		}
 		jdata["time"] = time(0);
-		public_event(jdata);
+		//public_event(jdata);
 		//public_data(this->server);
 		in_buffer.next_event();
 	}
@@ -1903,7 +1908,7 @@ int Server::quant() {
 	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
 	if (next_broadcast < SDL_GetTicks()) {
 		//std::cout << time(0) << "Quant\n";
-		public_data(this);
+		//public_data(this);
 		next_broadcast = SDL_GetTicks() + 1000;
 		int n_players = 0;
 		Game *g = games.first();

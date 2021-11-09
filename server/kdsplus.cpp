@@ -20,7 +20,7 @@ int ErrHExcept = 1;
 int GlobalExit = 0;
 int terminal_log = 0;
 char *result_name = 0;
-int StatLogging = 0;
+int StatLogging = 1;
 int leave_empty_games = 0;
 Server *server;
 
