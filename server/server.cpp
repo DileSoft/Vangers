@@ -967,6 +967,18 @@ void World::process_update_inventory(Player *player, Object *obj) {
 	}
 }
 
+Admin::Admin(XSocket &sock) {
+	socket = sock;
+}
+
+void Admin::quant() {
+	char string[256] = {0};
+	unsigned int len;
+	if ((len = socket.receive(string, sizeof(string) - 1)) != 0) {
+		socket.send("hi", strlen("hi"));
+	}
+}
+
 /******************************************************************
 				Player
 ******************************************************************/
@@ -1788,6 +1800,7 @@ Server::Server(int main_port, int broadcast_port, int time_to_live) {
 		ErrH.Abort(err.GetBuf());
 		// SERVER_ERROR("Unable to create Server",main_port);
 	}
+	admin_socket.listen(2190);
 	std::cout << "Main TCP/IP port: " << main_port << std::endl;
 
 	load_rating_list("Rating.lst");
@@ -1859,6 +1872,21 @@ int Server::check_new_clients() {
 	return 1;
 }
 
+int Server::check_new_admins() {
+	XSocket &&sock = admin_socket.accept();
+	if (!sock)
+		return 0;
+	if (sock.addr.host != 16777343) {
+		sock.close();
+		return 0;
+	}
+	Admin *admin = new Admin(sock);
+	admins.append(admin);
+	DOUT("Admin attached");
+
+	return 1;
+}
+
 int Server::clients_quant() {
 	int work_log = 0;
 	Player *p = clients.first();
@@ -1879,6 +1907,14 @@ int Server::clients_quant() {
 			p = p->next;
 	}
 	return work_log;
+}
+
+int Server::admins_quant() {
+	Admin *a = admins.first();
+	while (a) {
+		a->quant();
+	}
+	return 0;
 }
 
 void Server::consoleReport(int players) {
@@ -1928,6 +1964,8 @@ int Server::quant() {
 		// report();
 	}
 	int transf = check_new_clients() + clients_quant() + games_quant();
+	check_new_admins();
+	admins_quant();
 	if (transf) {
 		public_data(this);
 	}

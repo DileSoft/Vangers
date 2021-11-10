@@ -197,6 +197,9 @@ int XSocket::send(const char *buffer, int size) {
 }
 
 int XSocket::receive(char *buffer, int size_of_buffer, int ms_time) {
+	if (!tcpSock)
+		return 0;
+		
 	if (ms_time == 0) {
 		int n;
 

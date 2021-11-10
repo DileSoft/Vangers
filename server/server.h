@@ -228,6 +228,15 @@ struct Player {
 	void clear_object_queue(int keep_globals);
 };
 
+struct Admin {
+	void quant();
+	Admin(XSocket &sock);
+	XSocket socket;
+	Admin *next;
+	Admin *prev;
+	XTList<Admin> *list;
+};
+
 struct Game {
 	int ID;
 	int client_version;
@@ -290,10 +299,12 @@ struct Server {
 	int games_IDs_counter;
 	XTList<Game> games;
 	XTList<Player> clients;
+	XTList<Admin> admins;
 	float rating_threshoulds[NUMBER_MP_GAMES];
 	XTList<RatingData> rating_list;
 
 	XSocket main_socket;
+	XSocket admin_socket;
 
 	int transferring;
 	unsigned int time_to_live;
@@ -312,7 +323,9 @@ struct Server {
 	Game *create_game();
 	int quant();
 	int check_new_clients();
+	int check_new_admins();
 	int clients_quant();
+	int admins_quant();
 	int games_quant();
 	void get_games_list(OutputEventBuffer &out_buffer, int client_version);
 	void analyse_statistics(Game *g);
