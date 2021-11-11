@@ -998,10 +998,10 @@ void Admin::quant() {
 			socket.send("\n", 1);
 		}
 
-		if (tokens.size() == 2 && !tokens[0].compare("kick")) {
-			Game *g = server->games.first();
+		if (tokens.size() == 3 && !tokens[0].compare("kick")) {
+			Game *g = server->games.search(atoi(tokens[1].c_str()));
 			while (g) {
-				Player *p = g->players.search(atoi(tokens[1].c_str()));
+				Player *p = g->players.search(atoi(tokens[2].c_str()));
 				if (p) {
 					socket.send("FOUND", strlen("FOUND"));
 					if (p->name) {
