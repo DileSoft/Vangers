@@ -1919,10 +1919,29 @@ int Server::check_new_clients() {
 	if (!sock)
 		return 0;
 
-	int IP = sock.addr.host;
+	uint IP = sock.addr.host;
 	if (IP)
 		std::clog << "IP: " << (IP & 0xff) << "." << ((IP >> 8) & 0xff) << "." <<
 			((IP >> 16) & 0xff) << "." << ((IP >> 24) & 0xff) << "\n";
+
+	int ip_count = 0;
+	Game *g = games.first();
+	while (g) {
+		Player *p = g->players.first();
+		while (p) {
+			if (p->socket.addr.host == IP) {
+				ip_count++;
+			}
+			p = p->next;
+		}
+		g = g->next;
+	}
+
+	if (ip_count >= 4) {
+		std::clog << "TOO MANY IP" << IP << "\n";
+		sock.close();
+		return 0;
+	}
 
 	Player *player = new Player(this, sock);
 	clients.append(player);
