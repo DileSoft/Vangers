@@ -12,7 +12,7 @@ using json = nlohmann::json;
 
 #include <random>
 
-void public_event(json jdata);
+void public_event(Server* server, json jdata);
 void public_data(Server* server);
 json get_player_json(Player *p);
 json get_game_json(Game *g);
@@ -977,6 +977,8 @@ Admin::Admin(Server *serv, XSocket &sock) {
 	next = prev = 0;
 	list = 0;
 	ID = 0;
+	monitoring = 0;
+	events = 0;
 }
 
 void Admin::quant() {
@@ -994,7 +996,9 @@ void Admin::quant() {
 
 		while(std::getline(ss, token, '|')) {
 			tokens.push_back(token);
+			socket.send("|", 1);
 			socket.send(token.c_str(), strlen(token.c_str()));
+			socket.send("|", 1);
 			socket.send("\n", 1);
 		}
 
@@ -1012,6 +1016,14 @@ void Admin::quant() {
 				}
 				g = g->next;
 			}
+		}
+		if (tokens.size() == 1 && !tokens[0].compare("monitoring")) {
+			monitoring = monitoring ? 0 : 1;
+			socket.send("MONITORING", strlen("MONITORING"));
+		}
+		if (tokens.size() == 1 && !tokens[0].compare("events")) {
+			events = events ? 0 : 1;
+			socket.send("EVENTS", strlen("EVENTS"));
 		}
 	}
 }
@@ -1538,7 +1550,7 @@ int Player::receive() {
 				jdata["game"] = get_game_json(game);
 			}
 			jdata["time"] = time(0);
-			public_event(jdata);
+			public_event(this->server, jdata);
 		}
 		//public_data(this->server);
 		in_buffer.next_event();
@@ -1997,7 +2009,7 @@ int Server::quant() {
 	//system("echo {\"username\":\"xyz\", \"password\":\"xyz\"}");
 	if (next_broadcast < SDL_GetTicks()) {
 		//std::cout << time(0) << "Quant\n";
-		//public_data(this);
+		public_data(this);
 		next_broadcast = SDL_GetTicks() + 1000;
 		int n_players = 0;
 		Game *g = games.first();
@@ -2289,14 +2301,24 @@ void Server::get_top_list(OutputEventBuffer &out_buffer, int MP_game) {
 	out_buffer.end_event();
 }
 
-void public_event(json jdata) {
+void public_event(Server* server, json jdata) {
 	try {
-		std::ostringstream sscript;
-		std::ostringstream serialized;
-		serialized << std::quoted(jdata.dump());
-		sscript << "bash script_events.sh " << serialized.str();
-		sscript << " >/dev/null 2>/dev/null &";
-		system(sscript.str().c_str());
+		std::string dump = jdata.dump();
+		// std::ostringstream sscript;
+		// std::ostringstream serialized;
+		// serialized << std::quoted(dump);
+		// sscript << "bash script_events.sh " << serialized.str();
+		// sscript << " >/dev/null 2>/dev/null &";
+		// system(sscript.str().c_str());
+
+		Admin *a = server->admins.first();
+		while (a) {
+			a->quant();
+			if (a->events == 1 && a->socket()) {
+				a->socket.send(dump.c_str(), dump.length());
+			}
+			a = a->next;
+		}
 	} catch (...) {
 		std::cout << "Event can't be publish\n";
 	}
@@ -2330,16 +2352,26 @@ void public_data(Server* server) {
 		std::cout << "Data can't be publish\n";		
 	}
 	
-	std::ostringstream serialized;
-	serialized << std::quoted(jdata.dump());
+	// std::ostringstream serialized;
+	std::string dump = jdata.dump();
+	// serialized << std::quoted(dump);
 	//std::cout << jdata.dump(4) << "\n";
 	//ssend << "curl -v --header 'Content-Type: application/json' --data " << serialized.str() << " http://vangers.dilesoft.ru/server/test.php";
 	//ssend << " >/dev/null 2>/dev/null &";
 	//system(ssend.str().c_str());
-	sscript << "bash script.sh " << serialized.str();
-	sscript << " >/dev/null 2>/dev/null &";
-	system(sscript.str().c_str());
+	// sscript << "bash script.sh " << serialized.str();
+	// sscript << " >/dev/null 2>/dev/null &";
+	// system(sscript.str().c_str());
 	//std::cout << serialized.str() << std::endl;
+
+	Admin *a = server->admins.first();
+	while (a) {
+		a->quant();
+		if (a->monitoring == 1 && a->socket()) {
+			a->socket.send(dump.c_str(), dump.length());
+		}
+		a = a->next;
+	}
 }
 
 json get_player_json(Player *p) {

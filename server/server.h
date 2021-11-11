@@ -230,6 +230,8 @@ struct Player {
 
 struct Admin {
 	int ID;
+	short monitoring;
+	short events;
 	void quant();
 	Admin(Server *serv, XSocket &sock);
 	XSocket socket;
