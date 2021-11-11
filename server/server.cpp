@@ -1,6 +1,9 @@
 #include "kdsplus.h"
 #include "xerrhand.h"
 #include <sstream>
+#include <iostream>
+#include <string>
+#include <vector>
 #include <ctime>
 #include <iomanip>
 #include "json.hpp"
@@ -967,15 +970,49 @@ void World::process_update_inventory(Player *player, Object *obj) {
 	}
 }
 
-Admin::Admin(XSocket &sock) {
+Admin::Admin(Server *serv, XSocket &sock) {
 	socket = sock;
+	server = serv;
+	
+	next = prev = 0;
+	list = 0;
+	ID = 0;
 }
 
 void Admin::quant() {
-	char string[256] = {0};
+	char input[256] = {0};
 	unsigned int len;
-	if ((len = socket.receive(string, sizeof(string) - 1)) != 0) {
-		socket.send("hi", strlen("hi"));
+	if (!socket) {
+		return;
+	}
+	if ((len = socket.receive(input, sizeof(input) - 1)) != 0) {
+		std::cout << "RECEIVED\n";
+		std::string input_string(input);
+		std::istringstream ss(input_string);
+		std::string token;
+		std::vector <std::string> tokens;
+
+		while(std::getline(ss, token, '|')) {
+			tokens.push_back(token);
+			socket.send(token.c_str(), strlen(token.c_str()));
+			socket.send("\n", 1);
+		}
+
+		if (tokens.size() == 2 && !tokens[0].compare("kick")) {
+			Game *g = server->games.first();
+			while (g) {
+				Player *p = g->players.search(atoi(tokens[1].c_str()));
+				if (p) {
+					socket.send("FOUND", strlen("FOUND"));
+					if (p->name) {
+						socket.send(p->name, strlen(p->name));
+						p->socket.close();
+						p->time_to_remove = SDL_GetTicks();
+					}
+				}
+				g = g->next;
+			}
+		}
 	}
 }
 
@@ -1090,13 +1127,12 @@ int Player::receive() {
 	}
 	int code;
 	//std::cout << time(0) << "Recieve\n";
-	json jdata = json::object();
+	json jdata;
 	while ((code = in_buffer.current_event()) != 0) {
 		if (!(code & AUXILIARY_EVENT))
 			code &= ~ECHO_EVENT;
 		switch (code) {
 		case CREATE_PERMANENT_OBJECT: {
-			jdata["name"] = "CREATE_PERMANENT_OBJECT";
 			int obj_ID = in_buffer.get_dword();
 			Object *obj = 0;
 			if (NON_GLOBAL_OBJECT(obj_ID)) {
@@ -1160,7 +1196,6 @@ int Player::receive() {
 		} break;
 
 		case DELETE_OBJECT: {
-			jdata["name"] = "DELETE_OBJECT";
 			int obj_ID = in_buffer.get_dword();
 			Object *obj = 0;
 			if (NON_GLOBAL_OBJECT(obj_ID)) {
@@ -1194,7 +1229,6 @@ int Player::receive() {
 		} break;
 
 		case UPDATE_OBJECT: {
-			jdata["name"] = "UPDATE_OBJECT";
 			int obj_ID = in_buffer.get_dword();
 			Object *obj = 0;
 			if (NON_GLOBAL_OBJECT(obj_ID)) {
@@ -1245,7 +1279,6 @@ int Player::receive() {
 		} break;
 
 		case SET_POSITION:
-			jdata["name"] = "SET_POSITION";
 			if (!world) {
 				SERVER_ERROR_NO_EXIT("Set position before set world", 0);
 				in_buffer.ignore_event();
@@ -1260,17 +1293,20 @@ int Player::receive() {
 			break;
 
 		case TOP_LIST_QUERY:
+			jdata = json::object();
 			jdata["name"] = "TOP_LIST_QUERY";
 			server->get_top_list(out_buffer, in_buffer.get_byte());
 			IN_EVENTS_LOG(TOP_LIST_QUERY);
 			break;
 		case GAMES_LIST_QUERY:
+			jdata = json::object();
 			jdata["name"] = "GAMES_LIST_QUERY";
 			code_queue.put(GAMES_LIST_RESPONSE);
 			IN_EVENTS_LOG(GAMES_LIST_QUERY);
 			break;
 
 		case ATTACH_TO_GAME:
+			jdata = json::object();
 			jdata["name"] = "ATTACH_TO_GAME";
 			if (game || ID)
 				SERVER_ERROR_NO_EXIT("Player have already been attached to game", game->ID);
@@ -1291,6 +1327,7 @@ int Player::receive() {
 			break;
 
 		case RESTORE_CONNECTION: {
+			jdata = json::object();
 			jdata["name"] = "RESTORE_CONNECTION";
 			Player *p;
 			Game *game;
@@ -1314,6 +1351,7 @@ int Player::receive() {
 		} break;
 
 		case REGISTER_NAME: {
+			jdata = json::object();
 			jdata["name"] = "REGISTER_NAME";
 			if (name)
 				delete name;
@@ -1347,6 +1385,7 @@ int Player::receive() {
 		}
 
 		case SET_WORLD: {
+			jdata = json::object();
 			jdata["name"] = "SET_WORLD";
 			if (world) {
 				SERVER_ERROR_NO_EXIT("Duplicated set world", ID);
@@ -1375,6 +1414,7 @@ int Player::receive() {
 		} break;
 
 		case LEAVE_WORLD:
+			jdata = json::object();
 			jdata["name"] = "LEAVE_WORLD";
 			if (!world) {
 				SERVER_ERROR_NO_EXIT("Leave world before set", 0);
@@ -1386,7 +1426,6 @@ int Player::receive() {
 			break;
 
 		case SERVER_TIME_QUERY:
-			jdata["name"] = "SERVER_TIME_QUERY";
 			out_buffer.begin_event(SERVER_TIME);
 			out_buffer < (unsigned int)GLOBAL_CLOCK();
 			out_buffer.end_event();
@@ -1395,6 +1434,7 @@ int Player::receive() {
 			break;
 
 		case SET_GAME_DATA: {
+			jdata = json::object();
 			jdata["name"] = "SET_GAME_DATA";
 			if (game->data.GameType != UNCONFIGURED) {
 				DOUT1("Attempt to reassign game data", game->ID);
@@ -1409,13 +1449,13 @@ int Player::receive() {
 		} break;
 
 		case GET_GAME_DATA:
+			jdata = json::object();
 			jdata["name"] = "GET_GAME_DATA";
 			code_queue.put(GAME_DATA_RESPONSE);
 			IN_EVENTS_LOG(GET_GAME_DATA);
 			break;
 
 		case SET_PLAYER_DATA: {
-			jdata["name"] = "SET_PLAYER_DATA";
 			int size = in_buffer.event_size() - 1;
 			if (size != sizeof(PlayerBody))
 				SERVER_ERROR_NO_EXIT("Incorrect Player Body", size);
@@ -1451,12 +1491,14 @@ int Player::receive() {
 		} break;
 
 		case TOTAL_PLAYERS_DATA_QUERY:
+			jdata = json::object();
 			jdata["name"] = "TOTAL_PLAYERS_DATA_QUERY";
 			code_queue.put(TOTAL_LIST_OF_PLAYERS_DATA);
 			IN_EVENTS_LOG(TOTAL_PLAYERS_DATA_QUERY);
 			break;
 
 		case DIRECT_SENDING: {
+			jdata = json::object();
 			jdata["name"] = "DIRECT_SENDING";
 			unsigned int mask = in_buffer.get_dword();
 			try {
@@ -1481,6 +1523,7 @@ int Player::receive() {
 		} break;
 
 		case CLOSE_SOCKET:
+			jdata = json::object();
 			jdata["name"] = "CLOSE_SOCKET";
 			socket.close();
 			time_to_remove = SDL_GetTicks();
@@ -1489,12 +1532,14 @@ int Player::receive() {
 		default:
 			SERVER_ERROR_NO_EXIT("Incorrect event ID", in_buffer.current_event());
 		}
-		jdata["player"] = get_player_json(this);
-		if (game) {
-			jdata["game"] = get_game_json(game);
+		if (jdata != nullptr) {
+			jdata["player"] = get_player_json(this);
+			if (game) {
+				jdata["game"] = get_game_json(game);
+			}
+			jdata["time"] = time(0);
+			public_event(jdata);
 		}
-		jdata["time"] = time(0);
-		//public_event(jdata);
 		//public_data(this->server);
 		in_buffer.next_event();
 	}
@@ -1862,6 +1907,11 @@ int Server::check_new_clients() {
 	if (!sock)
 		return 0;
 
+	int IP = sock.addr.host;
+	if (IP)
+		std::clog << "IP: " << (IP & 0xff) << "." << ((IP >> 8) & 0xff) << "." <<
+			((IP >> 16) & 0xff) << "." << ((IP >> 24) & 0xff) << "\n";
+
 	Player *player = new Player(this, sock);
 	clients.append(player);
 	if (clients.size() == 256) {
@@ -1873,6 +1923,8 @@ int Server::check_new_clients() {
 }
 
 int Server::check_new_admins() {
+	if (!admin_socket)
+		return 0;
 	XSocket &&sock = admin_socket.accept();
 	if (!sock)
 		return 0;
@@ -1880,9 +1932,9 @@ int Server::check_new_admins() {
 		sock.close();
 		return 0;
 	}
-	Admin *admin = new Admin(sock);
+	Admin *admin = new Admin(this, sock);
 	admins.append(admin);
-	DOUT("Admin attached");
+	std::cout << "Admin attached\n";
 
 	return 1;
 }
@@ -1913,6 +1965,7 @@ int Server::admins_quant() {
 	Admin *a = admins.first();
 	while (a) {
 		a->quant();
+		a = a->next;
 	}
 	return 0;
 }

@@ -229,9 +229,11 @@ struct Player {
 };
 
 struct Admin {
+	int ID;
 	void quant();
-	Admin(XSocket &sock);
+	Admin(Server *serv, XSocket &sock);
 	XSocket socket;
+	Server *server;
 	Admin *next;
 	Admin *prev;
 	XTList<Admin> *list;
