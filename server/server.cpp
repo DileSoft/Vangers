@@ -1937,11 +1937,11 @@ int Server::check_new_clients() {
 		g = g->next;
 	}
 
-	if (ip_count >= 4) {
-		std::clog << "TOO MANY IP" << IP << "\n";
-		sock.close();
-		return 0;
-	}
+	// if (ip_count >= 4) {
+	// 	std::clog << "TOO MANY IP" << IP << "\n";
+	// 	sock.close();
+	// 	return 0;
+	// }
 
 	Player *player = new Player(this, sock);
 	clients.append(player);
