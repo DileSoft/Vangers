@@ -1919,7 +1919,7 @@ int Server::check_new_clients() {
 	if (!sock)
 		return 0;
 
-	uint IP = sock.addr.host;
+	uint32_t IP = sock.addr.host;
 	if (IP)
 		std::clog << "IP: " << (IP & 0xff) << "." << ((IP >> 8) & 0xff) << "." <<
 			((IP >> 16) & 0xff) << "." << ((IP >> 24) & 0xff) << "\n";
