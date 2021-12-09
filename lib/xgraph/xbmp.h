@@ -6,7 +6,8 @@
 #define VANGERS_XBMP_H
 
 #include <SDL.h>
+#include <renderer/core/AbstractCoreRenderer.h>
 
-SDL_Texture *BMP_CreateTexture(const char *file, SDL_Renderer *renderer);
+renderer::core::Texture BMP_CreateTexture(const char *file, renderer::core::AbstractCoreRenderer *renderer);
 
 #endif // VANGERS_XBMP_H

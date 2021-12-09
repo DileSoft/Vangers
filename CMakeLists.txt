@@ -83,6 +83,7 @@ endif()
 
 # subdirs
 ADD_SUBDIRECTORY("src")
+ADD_SUBDIRECTORY("lib/renderer")
 ADD_SUBDIRECTORY("lib/xgraph")
 ADD_SUBDIRECTORY("lib/xsound")
 ADD_SUBDIRECTORY("lib/xtool")

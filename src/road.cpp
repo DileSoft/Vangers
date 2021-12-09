@@ -1,3 +1,5 @@
+#include <cstring>
+
 #define _ROAD_
 #include "zmod_client.h"
 
@@ -99,6 +101,8 @@
 #ifdef _DEBUG
 XStream fmemory("memstats.dmp", XS_OUT);
 #endif
+
+#include <renderer/scene/sokol/SokolRenderer.h>
 
 /* ----------------------------- EXTERN SECTION ---------------------------- */
 extern XStream fout;
@@ -328,6 +332,8 @@ const char* nVER = "Patch 4.20";
 
 
 #include "video/winvideo.h"
+#include <renderer/scene/RenderingContext.h>
+
 sWinVideo winVideo;
 
 void showModal(char* fname, float reelW, float reelH, float screenW, float screenH) {
@@ -970,6 +976,8 @@ void LoadingRTO2::Init(int id)
 	StandScreenPrepare();
 #endif
 _MEM_STATISTIC_("\nBEFORE VMAP  -> ");
+	renderer::scene::RenderingContext::create(std::make_unique<renderer::scene::SokolRenderer>());
+
 	vMapPrepare(mapFName,CurrentWorld);
 	vMapInit();
 _MEM_STATISTIC_("AFTER VMAP  -> ");
@@ -1139,6 +1147,10 @@ int GameQuantRTO::Quant(void)
 	if(Pause <= 1 || NetworkON){
 		if(Pause) Pause++;
 
+		std::cout << "GameQuantRTO::Quant"
+			<< " frame: " << frame
+			<< std::endl;
+		
 		gameQuant();
 //		DBGCHECK
 		frame++;
@@ -1972,6 +1984,8 @@ void iGameMap::draw(int self)
 		uvsQuantFrame = 0;
 	}
 
+	uint8_t* screen = XGR_Obj.get_default_render_buffer();
+	std::memset(screen, 0, sizeof(uint8_t) * xgrScreenSizeX * xgrScreenSizeY);
 	if(GeneralSystemSkip && !ChangeWorldSkipQuant){
 		if(curGMap) {
 			BackD.restore();
@@ -1988,17 +2002,22 @@ void iGameMap::draw(int self)
 			
 		}
 
+
+		auto& renderer = renderer::scene::RenderingContext::renderer();
+		vMap->map_updater->map_update(*renderer);
+		renderer->render(XGR_Obj.RealX, XGR_Obj.RealY, ViewX, ViewY, ViewZ);
+		// TODO: this calls are needed only for level loading
 		if(DepthShow) {
 			if(SkipShow) {
 				//Наклон изображения
-				vMap -> SlopTurnSkip(TurnAngle,SlopeAngle,ViewZ,focus,ViewX,ViewY,xc,yc,xsize/2,ysize/2);
+//				vMap -> SlopTurnSkip(TurnAngle,SlopeAngle,ViewZ,focus,ViewX,ViewY,xc,yc,xsize/2,ysize/2);
 			} else {
-				vMap -> scaling_3D(A_g2s,ViewZ,focus,ViewX,ViewY,xc,yc,xside,yside,TurnAngle);
+//				vMap -> scaling_3D(A_g2s,ViewZ,focus,ViewX,ViewY,xc,yc,xside,yside,TurnAngle);
 			}
 		} else {
 			if(TurnAngle) {
 				//Вращение
-				vMap -> turning(TurnSecX,-TurnAngle,ViewX,ViewY,xc,yc,xside,yside);
+//				vMap -> turning(TurnSecX,-TurnAngle,ViewX,ViewY,xc,yc,xside,yside);
 			} else {
 				vMap -> scaling(TurnSecX,ViewX,ViewY,xc,yc,xside,yside);
 			}

@@ -1,6 +1,10 @@
 #ifndef __TERRA__VMAP_H__
 #define __TERRA__VMAP_H__
 
+#include <renderer/scene/AbstractRenderer.h>
+#include <renderer/scene/util/MapUpdater.h>
+#include <memory>
+
 const uint H_POWER = MAP_POWER_X;
 const uint H_SIZE = 1 << H_POWER;
 const uint H2_SIZE = 2*H_SIZE;
@@ -25,6 +29,8 @@ struct vrtNode { vrtNode* next; };
 
 struct PrmFile;
 struct vrtMap {
+	renderer::scene::HeightMap map_rid;
+	std::unique_ptr<renderer::scene::util::MapUpdater> map_updater;
 	uchar** lineT; //Масив с вокселями.
 	uchar** lineTcolor; //Масив цветов(картинка) поверхности.
 

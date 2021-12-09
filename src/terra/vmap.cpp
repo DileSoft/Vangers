@@ -26,6 +26,7 @@
 
 #include <iostream>
 
+#include <renderer/scene/RenderingContext.h>
 
 #ifdef _ROAD_
 //#define FILEMAPPING
@@ -315,7 +316,7 @@ vrtMap::~vrtMap(void)
 }
 
 vrtMap::vrtMap(void)
-: fmap(0), kmap(0)
+	: fmap(0), kmap(0), map_rid({renderer::scene::HeightMap::Invalid})
 {
 	pFile = new PrmFile;
 	cWorld = 0;
@@ -434,6 +435,16 @@ void vrtMap::init(void)
 		}
 #endif
 	upLine = downLine = 0;
+
+	auto& r = renderer::scene::RenderingContext::renderer();
+	map_rid = r->map_create({
+		.width = H_SIZE,
+		.height = (int32_t)V_SIZE,
+		.material_begin_offsets = BEGCOLOR,
+		.material_end_offsets = ENDCOLOR,
+		.material_count = TERRAIN_MAX,
+	});
+	map_updater = std::make_unique<renderer::scene::util::MapUpdater>(map_rid, lineT);
 }
 
 #ifdef _SURMAP_
@@ -746,6 +757,11 @@ void vrtMap::fileLoad(void)
 //Удалил не используемый код - смотреть старые версии
 void vrtMap::load(const char* name,int nWorld)
 {
+	std::cout << "vrtMap::load"
+				 << " name: " << name
+				 << ", nWorld: "<< nWorld
+				 <<std::endl;
+
 	on = true;
 	pFile -> init(name);
 	maxWorld = atoi(pFile -> getAtom());
@@ -839,6 +855,10 @@ void vrtMap::load(const char* name,int nWorld)
 
 void vrtMap::reload(int nWorld)
 {
+	std::cout << "vrtMap::reload"
+		<< " nWorld: " << nWorld
+		<< std::endl;
+
 	on  = true;
 	if(nWorld >= maxWorld || nWorld < 0) ErrH.Abort("World Index out of range");
 #ifdef _SURMAP_
@@ -988,6 +1008,20 @@ void vrtMap::reload(int nWorld)
 	LoadVPR();
 	RenderPrepare();
 
+	auto& r = renderer::scene::RenderingContext::renderer();
+	if(map_rid.is_valid()) {
+		r->map_destroy(map_rid);
+		map_updater.reset();
+	}
+	map_rid = r->map_create({
+		.width = H_SIZE,
+		.height = (int32_t)V_SIZE,
+		.material_begin_offsets = BEGCOLOR,
+		.material_end_offsets = ENDCOLOR,
+		.material_count = TERRAIN_MAX,
+	});
+	map_updater = std::make_unique<renderer::scene::util::MapUpdater>(map_rid, lineT);
+
 	if(MAP_POWER_Y <= MAX_MAP_IN_MEMORY_POWER) {
 		accept(0, V_SIZE - 1);
 	} else {
@@ -1095,6 +1129,8 @@ void vrtMap::accept(int up,int down)
 	uchar* p;
 	int off;
 
+	auto& r = renderer::scene::RenderingContext::renderer();
+
 	if(!isCompressed)
 		do {
 			freeMax--;
@@ -1116,6 +1152,7 @@ void vrtMap::accept(int up,int down)
 			lineT[i] = p; //znfo lineT plain //загрузка
 			lineTcolor[i] = use_c();
 			LINE_render(i);
+			map_updater->request_region_update({0, i, H_SIZE, 1});
 			i = YCYCL(i + 1);
 		} while(i != max);
 	else
@@ -1140,6 +1177,7 @@ void vrtMap::accept(int up,int down)
 			lineTcolor[i] = use_c();
 #endif
 			LINE_render(i);
+			map_updater->request_region_update({0, i, H_SIZE, 1});
 			i = YCYCL(i + 1);
 		} while(i != max);
 
@@ -1489,6 +1527,7 @@ void vrtMap::linkC(int up,int down,int d)
 	int i = up;
 	do {
 		if(!lineTcolor[i]) {
+			map_updater->request_region_update({0, i, H_SIZE, 1});
 			if(freeMax <= 1) {
 				std::cout<<"We have no more free space in terrain buffer"<<std::endl;
 				return;
@@ -1842,6 +1881,8 @@ void vrtMap::scaling(int XSrcSize,int cx,int cy,int xc,int yc,int xside,int ysid
 	int y1 = y0 + YSrcSize;
 
 	request(MIN(y0,y1) - MAX_RADIUS/2,MAX(y0,y1) + MAX_RADIUS/2,MIN(x0,x1) - 4,MAX(x0,x1) + 4);
+
+	return;
 
 #if defined(_ROAD_) && defined(_DEBUG)
 	if(!TotalDrawFlag) return;

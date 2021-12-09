@@ -4,12 +4,15 @@
 
 #include <fstream>
 
+#include <renderer/core/sdl_ext/SDL_extensions.h>
+
 #include "xbmp.h"
 
-SDL_Texture *BMP_CreateTexture(const char *file, SDL_Renderer *renderer) {
-	SDL_Surface *surface = SDL_LoadBMP(file);
-	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-	SDL_FreeSurface(surface);
-	return texture;
+renderer::core::Texture BMP_CreateTexture(const char *file, renderer::core::AbstractCoreRenderer *renderer) {
+	return renderer::core::sdl_ext::texture_load_bmp(
+		*renderer, 
+		file, 
+		renderer::core::TextureType::RGBA32, 
+		renderer::core::BlendMode::Alpha
+	);
 }
