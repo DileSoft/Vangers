@@ -28,14 +28,9 @@ namespace renderer::scene::sokol {
 		void destroy();
 	private:
 		static std::unique_ptr<RenderContext> create_context(const MapDescription &map_description);
-		const int update_frequency = 10;
-		void update_height_meta_textures();
 		void update_palette_texture();
 		MapDescription map_desc;
-		uint8_t* height_map;
-		uint8_t* meta;
 		uint32_t* palette;
-		int32_t last_update;
 		std::unique_ptr<RenderContext> render_context;
 	};
 }

@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cassert>
 #include "../../lib/sokol_gfx.h"
+#include "../../lib/sokol_gfx_ext.h"
 #include "../../lib/HandmadeMath.h"
 
 #include "HeightMap.h"
@@ -39,25 +40,9 @@ namespace renderer::scene::sokol {
 
 HeightMap::HeightMap(const MapDescription &map_description)
 	: map_desc(map_description)
-	, height_map(new uint8_t[map_desc.width * map_desc.height])
-	, meta(new uint8_t[map_desc.width * map_desc.height])
 	, palette(new uint32_t[256])
-	, last_update(0)
 	, render_context(create_context(map_description))
 {
-	int width = map_desc.width;
-	int height = map_desc.height;
-	std::memset(height_map, 0, width * height);
-	std::memset(meta, 0, width * height);
-	for(int iy = 0; iy < height; iy++){
-		uint8_t* line = height_map + iy * width;
-		for(int ix = 0; ix < width; ix++){
-			uint8_t filled = ((ix / 64) % 2) != ((iy / 64) % 2) ? 255 : 0;
-			filled *= (float)iy/(float)height;
-			*line = filled;
-			line ++;
-		}
-	}
 }
 
 sg_shader make_shader(){
@@ -145,7 +130,7 @@ sg_image make_height_texture(int32_t width, int32_t height){
 	return sg_make_image({
 		 .width = width,
 		 .height = height,
-		 .usage = SG_USAGE_DYNAMIC,
+		 .usage = SG_USAGE_STREAM,
 		 .pixel_format = SG_PIXELFORMAT_R8UI,
 		 .min_filter = SG_FILTER_NEAREST,
 		 .mag_filter = SG_FILTER_NEAREST,
@@ -164,6 +149,7 @@ sg_image make_palette_texture(int32_t num_colors){
 }
 
 std::unique_ptr<RenderContext> HeightMap::create_context(const MapDescription& map_description) {
+	std::cout << "HeightMap::create_contex"<<std::endl;
 	float vertices[] = {
 		-1.0f,  2.0f, 0.0f, 0.0f,
 		2.0f,  2.0f, 3.0f, 0.0f,
@@ -237,37 +223,13 @@ std::unique_ptr<RenderContext> HeightMap::create_context(const MapDescription& m
 	return render_context;
 }
 
-void HeightMap::update_height_meta_textures()
-{
-	int32_t map_width = map_desc.width;
-	int32_t map_height = map_desc.height;
-
-	// TODO: highly uneffecient code!
-	// sokol_gfx doesn't have procedures for modifying onle part of the texture
-	sg_update_image(render_context->height_texture, {
-		.subimage = {
-			/* [0] =*/ {
-					/* [0] =*/ {
-					.ptr = height_map,
-					.size = sizeof(uint8_t) * map_width * map_height
-			}
-		}}
-	});
-
-	sg_update_image(render_context->meta_texture, {
-		.subimage = {
-			/* [0] =*/ {
-					/* [0] =*/ {
-					.ptr = meta,
-					.size = sizeof(uint8_t) * map_width * map_height
-			}
-		}}
-	});
-}
-
 void HeightMap::update_region(const Rect& region, uint8_t* region_height_map, uint8_t* region_meta)
 {
-	std::cout << "HeightMap::update_height_and_meta_textures()" << std::endl;
+	std::cout << "HeightMap::update_region()"
+				<< " region: " << region
+				<< " height_texture: " << render_context->height_texture.id
+				<< " meta_texture: " << render_context->meta_texture.id
+				<< std::endl;
 
 	int32_t map_width = map_desc.width;
 	int32_t map_height = map_desc.height;
@@ -275,22 +237,41 @@ void HeightMap::update_region(const Rect& region, uint8_t* region_height_map, ui
 	assert(region.x + region.width <= map_width);
 	assert(region.y + region.height <= map_height);
 
+	sg_ext_update_subimage(render_context->height_texture, {
+	   .x = region.x,
+	   .y = region.y,
+	   .z = 0,
+	   .width = region.width,
+	   .height = region.height,
+	   .num_slices = 1,
+	   .data = {
+		   .subimage = {
+			   /* [0] =*/ {
+					   /* [0] =*/ {
+					   .ptr = region_height_map,
+					   .size = sizeof(uint8_t) * region.width * region.height
+			   }
+		   }}
+	   }
+   });
 
-	for(int iy = 0; iy < region.height; iy++){
-		std::memcpy(
-			height_map + (iy + region.y) * map_width + region.x,
-			region_height_map + iy * region.width,
-			region.width * sizeof(uint8_t)
-		);
-
-		std::memcpy(
-			meta + (iy + region.y) * map_width + region.x,
-			region_meta + iy * region.width,
-			region.width * sizeof(uint8_t)
-		);
-	}
-
-
+	sg_ext_update_subimage(render_context->meta_texture, {
+		.x = region.x,
+		.y = region.y,
+		.z = 0,
+		.width = region.width,
+		.height = region.height,
+		.num_slices = 1,
+		.data = {
+			.subimage = {
+				/* [0] =*/ {
+						/* [0] =*/ {
+						.ptr = region_meta,
+						.size = sizeof(uint8_t) * region.width * region.height
+				}
+			}}
+		}
+	});
 
 
 }
@@ -334,10 +315,8 @@ void HeightMap::destroy()
 	sg_destroy_pipeline(render_context->pip);
 }
 
+
 void HeightMap::render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z) {
-	if(last_update++ % update_frequency == 0){
-		update_height_meta_textures();
-	}
 	update_palette_texture();
 
 //	hmm_mat4 view = HMM_Translate({-(float)camera_pos_x, -(float)camera_pos_y, -(float)camera_pos_z});
@@ -384,6 +363,4 @@ void HeightMap::render(int32_t viewport_width, int32_t viewport_height, int32_t 
 	sg_commit();
 }
 
-HeightMap::~HeightMap() {
-	delete[] height_map;
-};
+HeightMap::~HeightMap() = default;
