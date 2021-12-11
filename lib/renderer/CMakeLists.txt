@@ -7,7 +7,9 @@ SET(renderer_SRCS
 	src/renderer/lib/HandmadeMath.h
 	src/renderer/lib/HandmadeMath_impl.c
 	src/renderer/lib/sokol_gfx.h
-	src/renderer/lib/sokol_gfx_impl.c
+	src/renderer/lib/sokol_gfx_impl.cpp
+	src/renderer/lib/sokol_gfx_settings.h
+	src/renderer/lib/sokol_gfx_ext.h
 	src/renderer/ResourceStorage.h
 	src/renderer/ResourceId.h
 	src/renderer/common.h
