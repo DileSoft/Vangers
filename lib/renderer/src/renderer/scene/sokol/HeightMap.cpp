@@ -165,10 +165,10 @@ sg_image make_palette_texture(int32_t num_colors){
 
 std::unique_ptr<RenderContext> HeightMap::create_context(const MapDescription& map_description) {
 	float vertices[] = {
-		0.0f,  1.0f, 0.0f, 0.0f,
-		1.0f,  1.0f, 1.0f, 0.0f,
-		1.0f,  0.0f, 1.0f, 1.0f,
-		0.0f,  0.0f, 0.0f, 1.0f,
+		-1.0f,  2.0f, 0.0f, 0.0f,
+		2.0f,  2.0f, 3.0f, 0.0f,
+		2.0f,  -1.0f, 3.0f, 3.0f,
+		-1.0f,  -1.0f, 0.0f, 3.0f,
 	};
 
 	std::unique_ptr<RenderContext> render_context = std::make_unique<RenderContext>();
