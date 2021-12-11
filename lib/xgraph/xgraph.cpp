@@ -920,10 +920,11 @@ void XGR_Screen::flip()
 
 		// std::cout<<"Flip"<<std::endl;
 		// TODO: pixels size should be renderer-specific
-		void *pixels = new uint32_t [xgrScreenSizeX * xgrScreenSizeY];
+		uint32_t *pixels = new uint32_t [xgrScreenSizeX * xgrScreenSizeY];
 		int pitch;
-		blitRgba((uint32_t*)pixels, XGR_ScreenSurface, XGR_ScreenSurface2DRgba, XGR_ScreenSurface2D);
+		blitRgba(pixels, XGR_ScreenSurface, XGR_ScreenSurface2DRgba, XGR_ScreenSurface2D);
 		renderer->texture_set_data(texture, (uint8_t*)pixels);
+		delete[] pixels;
 		if (XGR_FULL_SCREEN) {
 			SDL_GetWindowSize(sdlWindow, &RealX, &RealY);
 			// TODO:
