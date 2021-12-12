@@ -35,6 +35,11 @@ void MapUpdater::map_update(AbstractRenderer& renderer)
 	int32_t map_height;
 	renderer.map_query(_map_rid, &map_width, &map_height);
 
+	// TODO: forcing region to the full level width...
+	_requested_region.x = 0;
+	_requested_region.width = map_width;
+
+
 	if(map_width < _requested_region.width + _requested_region.x){
 		_requested_region.width = map_width - _requested_region.x;
 	}
