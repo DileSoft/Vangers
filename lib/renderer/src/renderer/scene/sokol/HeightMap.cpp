@@ -32,6 +32,7 @@ namespace renderer::scene::sokol {
 		sg_image height_texture;
 		sg_image meta_texture;
 		sg_image palette_texture;
+		sg_image offsets_texture;
 		sg_pipeline pip;
 		sg_bindings bind;
 		sg_shader shader;
@@ -74,34 +75,83 @@ sg_shader make_shader(){
 		},
 		.fs = {
 			.source = "#version 330\n" CODE(
+				const float c_HorFactor = 0.5f; //H_CORRECTION
+				const float c_DiffuseScale = 8.0;
+				const float c_ShadowDepthScale = 2.0 / 3.0;
+
 				uniform usampler2D t_Height;
 				uniform usampler2D t_Meta;
 				uniform sampler2D t_Palette;
+				uniform usampler2D t_Offsets;
 
 				uniform vec4 u_MapData;
 
 				in vec2 uv;
 				out vec4 frag_color;
 
+				struct TexelInfo {
+					uint height;
+					uint terrain;
+					uint double_level;
+					ivec2 world_pos;
+				};
 
-				void main(){
-					uint height = texture(t_Height, uv).x;
-					uint meta = texture(t_Meta, uv).x;
+				TexelInfo get_texel_info(ivec2 world_pos){
+//					world_pos = mod(world_pos, u_MapData.x);
+					uint meta = texelFetch(t_Meta, world_pos, 0).x;
 
-					ivec2 world_pos = ivec2(uv * u_MapData.xy);
+					uint double_level = (meta >> uint(6)) & uint(1);
+					uint height;
 
-//					uint delta = meta & 3;
-//					uint objShadowFlag = (meta >> 2) & 1;
-					uint terrain = (meta >> uint(3)) & uint(7);
-					uint doubleLevel = (meta >> uint(6)) & uint(1);
-					if(doubleLevel == uint(1)){
+					if(double_level == uint(1)){
 						if(world_pos.x % 2 == 0){
-							height = textureOffset(t_Height, uv, ivec2(1, 0)).x;
+							height = texelFetch(t_Height, world_pos + ivec2(1, 0), 0).x;
+							meta = texelFetch(t_Meta, world_pos + ivec2(1, 0), 0).x;
+						} else {
+							height = texelFetch(t_Height, world_pos, 0).x;
 						}
-
+					} else {
+						height = texelFetch(t_Height, world_pos, 0).x;
 					}
 
-					frag_color = vec4(float(height) / 255.0);
+					uint terrain = (meta >> uint(3)) & uint(7);
+					return TexelInfo(height, terrain, double_level, world_pos);
+				}
+
+			vec4 get_color(TexelInfo texel_info){
+				float height_normalized = float(texel_info.height) / 255.0f;
+				TexelInfo t_left = get_texel_info(texel_info.world_pos + ivec2(-1, 0));
+				TexelInfo t_right= get_texel_info(texel_info.world_pos + ivec2(1, 0));
+
+				float height_diff = (float(t_right.height) - float(t_left.height)) / 255.0f;
+
+
+				vec3 mat = texel_info.terrain == uint(0) ? vec3(5.0, 1.25, 0.5) : vec3(1.0);
+				float dx = mat.x * c_DiffuseScale;
+				float sd = mat.y * c_ShadowDepthScale;
+				float jj = mat.z * height_diff * 256.0;
+
+				float light_clr = (dx * sd - jj) / sqrt((1.0 + sd * sd) * (dx * dx + jj * jj));
+
+
+				float lit_factor = light_clr - c_HorFactor * (1.0 - height_normalized);
+				lit_factor = clamp(lit_factor, 0.0f, 1.0f);
+
+
+				uvec4 offsets = texelFetch(t_Offsets, ivec2(texel_info.terrain, 0), 0);
+				uint offset_begin = offsets.x;
+				uint offset_end = offsets.y;
+				vec4 color_begin = texelFetch(t_Palette, ivec2(offset_begin, 0), 0);
+				vec4 color_end = texelFetch(t_Palette, ivec2(offset_end, 0), 0);
+
+				vec4 color =  mix(color_begin, color_end, lit_factor);
+				return color;
+			}
+				void main(){
+					TexelInfo info = get_texel_info(ivec2(mod(uv, 1.0f) * u_MapData.xy));
+
+					frag_color = get_color(info);
+
 				}
 			),
 			.uniform_blocks = {
@@ -119,11 +169,38 @@ sg_shader make_shader(){
 				/*[0] =*/ {.name = "t_Height", .image_type = SG_IMAGETYPE_2D},
 				/*[1] =*/ {.name = "t_Meta", .image_type = SG_IMAGETYPE_2D},
 				/*[2] =*/ {.name = "t_Palette", .image_type = SG_IMAGETYPE_2D},
+				/*[3] =*/ {.name = "t_Offsets", .image_type = SG_IMAGETYPE_2D},
 			},
 		}
 	};
 
 	return sg_make_shader(shd_desc);
+}
+
+sg_image make_offsets_texture(const renderer::scene::MapDescription& map_desc, uint8_t* buffer){
+	for(int i = 0; i < map_desc.material_count; i++){
+		buffer[i * 4 + 0] = map_desc.material_begin_offsets[i];
+		buffer[i * 4 + 1] = map_desc.material_end_offsets[i];
+	}
+
+	return sg_make_image({
+		 .width = map_desc.material_count,
+		 .height = 1,
+		 .usage = SG_USAGE_IMMUTABLE,
+		 .pixel_format = SG_PIXELFORMAT_RGBA8UI,
+		 .min_filter = SG_FILTER_NEAREST,
+		 .mag_filter = SG_FILTER_NEAREST,
+		 .data = sg_image_data {
+			 .subimage = {
+				 /*[0] =*/ {
+					 /* [0]=*/ sg_range {
+						 .ptr = buffer,
+						 .size = sizeof (uint32_t) * map_desc.material_count
+					 }
+				 }
+			 }
+		 }
+	});
 }
 
 sg_image make_height_texture(int32_t width, int32_t height){
@@ -203,14 +280,19 @@ std::unique_ptr<RenderContext> HeightMap::create_context(const MapDescription& m
 	sg_image height_texture = make_height_texture(width, height);
 	sg_image meta_texture = make_height_texture(width, height);
 	sg_image palette_texture = make_palette_texture(256);
+	uint8_t* offsets_buffer = new u_int8_t[sizeof(uint32_t) * map_description.material_count];
+	sg_image offsets_texture = make_offsets_texture(map_description, offsets_buffer);
+	delete[] offsets_buffer;
 
 	render_context->height_texture = height_texture;
 	render_context->meta_texture = meta_texture;
 	render_context->palette_texture = palette_texture;
+	render_context->offsets_texture = offsets_texture;
 
 	render_context->bind.fs_images[0] = height_texture;
 	render_context->bind.fs_images[1] = meta_texture;
 	render_context->bind.fs_images[2] = palette_texture;
+	render_context->bind.fs_images[3] = offsets_texture;
 
 	render_context->pass_action = {
 		.colors = {
@@ -309,6 +391,7 @@ void HeightMap::destroy()
 	sg_destroy_image(render_context->height_texture);
 	sg_destroy_image(render_context->meta_texture);
 	sg_destroy_image(render_context->palette_texture);
+	sg_destroy_image(render_context->offsets_texture);
 	sg_destroy_buffer(render_context->vertex_buffer);
 	sg_destroy_buffer(render_context->index_buffer);
 	sg_destroy_shader(render_context->shader);
