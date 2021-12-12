@@ -12,6 +12,10 @@ namespace renderer {
 		int32_t y;
 		int32_t width;
 		int32_t height;
+
+		void expand(const Rect& other);
+		bool contains(const Rect& other) const;
+		bool is_empty() const;
 	};
 
 

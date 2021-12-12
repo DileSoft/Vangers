@@ -16,38 +16,21 @@ MapUpdater::MapUpdater(HeightMap map_rid, uint8_t **lineT)
 
 void MapUpdater::request_region_update(const renderer::Rect &rect)
 {
-	if(_requested_region.width == 0 && _requested_region.height == 0){
-		_requested_region = rect;
-	} else {
-		if(rect.x < _requested_region.x) {
-			_requested_region.x = rect.x;
-		}
-
-		if(rect.y < _requested_region.y) {
-			_requested_region.y = rect.y;
-		}
-
-		if(rect.x + rect.width > _requested_region.x + _requested_region.width) {
-			int32_t new_width = rect.x + (uint32_t)rect.width - _requested_region.x;
-			assert(new_width >= 0);
-			_requested_region.width = new_width;
-		}
-
-		if(rect.y + rect.height > _requested_region.y + _requested_region.height) {
-			int32_t new_height = rect.y + (uint32_t)rect.height - _requested_region.y;
-			assert(new_height >= 0);
-			_requested_region.height = new_height;
-		}
-	}
+	_requested_region.expand(rect);
 
 	std::cout << "MapUpdater::request_region_update() "
-			<< "rect="<<rect
+			<< "map="<<_map_rid.id
+			<< ", rect="<<rect
 			<< " => _requested_region="<<_requested_region
 			<<std::endl;
 }
 
 void MapUpdater::map_update(AbstractRenderer& renderer)
 {
+	if(_requested_region.is_empty()){
+		return;
+	}
+
 	int32_t map_width;
 	int32_t map_height;
 	renderer.map_query(_map_rid, &map_width, &map_height);
