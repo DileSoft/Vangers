@@ -22,6 +22,8 @@ void SokolRenderer::map_destroy(HeightMap map_rid) {
 	std::cout << "SokolRenderer::map_destroy"
 			  << " map_rid: " << map_rid.id
 	          << std::endl;
+	auto& m = map_storage.getOrThrow(map_rid);
+	m->destroy();
 	map_storage.remove(map_rid);
 }
 

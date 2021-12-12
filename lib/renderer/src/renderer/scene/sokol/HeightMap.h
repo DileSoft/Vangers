@@ -25,6 +25,7 @@ namespace renderer::scene::sokol {
 		void render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z);
 		void update_palette(uint32_t* palette);
 		const MapDescription& map_decscription() const;
+		void destroy();
 	private:
 		static std::unique_ptr<RenderContext> create_context(const MapDescription &map_description);
 		const int update_frequency = 10;

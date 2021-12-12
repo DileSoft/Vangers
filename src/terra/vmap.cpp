@@ -437,6 +437,11 @@ void vrtMap::init(void)
 	upLine = downLine = 0;
 
 	auto& r = renderer::scene::RenderingContext::renderer();
+	if(map_rid.is_valid()){
+		r->map_destroy(map_rid);
+		map_updater.reset();
+	}
+
 	map_rid = r->map_create({
 		.width = H_SIZE,
 		.height = (int32_t)V_SIZE,

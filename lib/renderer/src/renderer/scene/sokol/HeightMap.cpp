@@ -320,6 +320,19 @@ const renderer::scene::MapDescription &HeightMap::map_decscription() const
 	return this->map_desc;
 }
 
+void HeightMap::destroy()
+{
+	std::cout << "HeightMap::destroy" << std::endl;
+	assert(render_context);
+
+	sg_destroy_image(render_context->height_texture);
+	sg_destroy_image(render_context->meta_texture);
+	sg_destroy_image(render_context->palette_texture);
+	sg_destroy_buffer(render_context->vertex_buffer);
+	sg_destroy_buffer(render_context->index_buffer);
+	sg_destroy_shader(render_context->shader);
+	sg_destroy_pipeline(render_context->pip);
+}
 
 void HeightMap::render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z) {
 	if(last_update++ % update_frequency == 0){

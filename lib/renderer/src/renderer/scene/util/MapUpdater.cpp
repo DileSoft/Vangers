@@ -68,8 +68,8 @@ void MapUpdater::map_update(AbstractRenderer& renderer)
 
 		uint8_t* _lineT_r = _lineT[iy + y_start];
 		if(_lineT_r != nullptr){
-			std::memcpy(height_map_r, _lineT_r + x_start, width * sizeof(uint8_t));
-			std::memcpy(meta_r, _lineT_r + x_start + map_width, width * sizeof(uint8_t));
+			std::memcpy(height_map_r, _lineT_r + x_start, sizeof(uint8_t) * width);
+			std::memcpy(meta_r, _lineT_r + x_start + map_width, sizeof(uint8_t) * width);
 		}
 	}
 
