@@ -119,6 +119,8 @@ struct XGR_Screen
 	int yStrOffs;
 	int* yOffsTable;
 
+	uint32_t XGR32_PaletteCache[256] {0};
+
 	void set_pitch(int p);
 	void set_clip(int left,int top,int right,int bottom);
 	void get_clip(int& left,int& top,int& right,int& bottom);
@@ -188,7 +190,6 @@ struct XGR_Screen
 	SDL_Surface* get_screenshot();
 
 	XGR_Screen(void);
-
 private:
 	void create_surfaces(int width, int height);
 	void destroy_surfaces();
@@ -209,7 +210,7 @@ private:
 	renderer::core::AbstractCoreRenderer * renderer;
 
 	SDL_Color XGR_Palette[256] {{0, 0, 0, 0}};
-	uint32_t XGR32_PaletteCache[256] {0};
+
 	SDL_Color averageColorPalette = {255,255,255,0};
 
 	float screen_scale_x = 1.f;

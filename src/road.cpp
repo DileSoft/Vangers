@@ -2005,6 +2005,7 @@ void iGameMap::draw(int self)
 
 		auto& renderer = renderer::scene::RenderingContext::renderer();
 		vMap->map_updater->map_update(*renderer);
+		renderer->map_update_palette(vMap->map_rid, XGR_Obj.XGR32_PaletteCache, 256);
 		renderer->render(XGR_Obj.RealX, XGR_Obj.RealY, ViewX, ViewY, ViewZ);
 		// TODO: this calls are needed only for level loading
 		if(DepthShow) {
