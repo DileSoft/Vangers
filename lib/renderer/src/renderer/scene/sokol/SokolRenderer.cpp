@@ -36,16 +36,18 @@ void SokolRenderer::map_update_data(HeightMap map_rid, const Rect& rect, uint8_t
 	m->update_region(rect, height, meta);
 }
 
-void SokolRenderer::render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z) {
+void SokolRenderer::render(const Rect &viewport, Camera camera_rid) {
 	std::cout << "SokolRenderer::SokolRenderer"
-	<< " viewport_width: " << viewport_width
-	<< " , viewport_height: " << viewport_height
-	<< ", camera.x: " << camera_pos_x
-	<< ", camera.y: " << camera_pos_y
-	<< ", camera.z: " << camera_pos_z
+	<< " viewport: " << viewport
+	<< ", camera: " << camera_rid.id
 	<< std::endl;
+
+	auto& camera = camera_storage.getOrThrow(camera_rid);
+
 	for(auto& [rid, map]: map_storage){
-		map->render(viewport_width, viewport_height, camera_pos_x, camera_pos_y, camera_pos_z);
+		const MapDescription& desc = map->map_decscription();
+		hmm_mat4 transform = camera->transform_mat(desc);
+		map->render(viewport, transform);
 	}
 }
 
@@ -72,6 +74,22 @@ void SokolRenderer::map_query(HeightMap map_rid, int32_t *width, int32_t *height
 SokolRenderer::SokolRenderer()
 	: map_storage(){
 	std::cout << "SokolRenderer::SokolRenderer" << std::endl;
+}
+
+Camera SokolRenderer::camera_create(const CameraDescription &desc)
+{
+	return camera_storage.create(std::make_unique<sokol::SokolCamera>(desc));
+}
+
+void SokolRenderer::camera_destroy(Camera camera)
+{
+	camera_storage.remove(camera);
+}
+
+void SokolRenderer::camera_set_transform(Camera camera, const Transform &transform)
+{
+	auto& cam = camera_storage.getOrThrow(camera);
+	cam->set_transform(transform);
 }
 
 SokolRenderer::~SokolRenderer() = default;

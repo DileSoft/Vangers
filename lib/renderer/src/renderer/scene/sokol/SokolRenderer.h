@@ -10,6 +10,7 @@
 #include "../AbstractRenderer.h"
 #include "../../ResourceStorage.h"
 #include "HeightMap.h"
+#include "SokolCamera.h"
 
 namespace renderer::scene {
 	class SokolRenderer: public AbstractRenderer{
@@ -17,19 +18,24 @@ namespace renderer::scene {
 		SokolRenderer();
 		~SokolRenderer() override;
 
+		Camera camera_create(const CameraDescription& desc) override;
+		void camera_destroy(Camera camera) override;
+		void camera_set_transform(Camera camera, const Transform& transform) override;
+
 		HeightMap map_create(const MapDescription& map_description) override;
 
 		void map_destroy(HeightMap map_rid) override;
 
 		void map_update_data(HeightMap map_rid, const Rect& rect, uint8_t* height, uint8_t* meta) override;
 
-		void render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z) override;
+		void render(const Rect& viewport, Camera camera) override;
 
 		void map_update_palette(HeightMap map_rid, uint32_t *palette, int32_t palette_size) override;
 
 		void map_query(HeightMap map_rid, int32_t* width, int32_t* height) override;
 	private:
 		ResourceStorage<HeightMap, sokol::HeightMap> map_storage;
+		ResourceStorage<Camera, sokol::SokolCamera> camera_storage;
 	};
 
 }

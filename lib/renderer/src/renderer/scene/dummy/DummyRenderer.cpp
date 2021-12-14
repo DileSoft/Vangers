@@ -12,7 +12,7 @@ HeightMap DummyRenderer::map_create(const MapDescription& map_description) {
 	std::cout << "DummyRenderer::map_create"
 	          << " => " << 0
 	          << std::endl;
-	return {0};
+	return HeightMap{0};
 }
 
 void DummyRenderer::map_destroy(HeightMap map_rid) {
@@ -27,12 +27,36 @@ void DummyRenderer::map_update_data(HeightMap map_rid, const Rect& rect, uint8_t
 	          << ", rect: " << rect
 			  << ", height: " << height
 			  << ", meta: " << meta
-	          << std::endl;
+			  << std::endl;
 }
 
-void DummyRenderer::render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z) {
-	std::cout << "DummyRenderer::SokolRenderer"
-	          << " viewport_width: " << viewport_width
-	          << ", viewport_height: " << viewport_height
-	          << std::endl;
+void DummyRenderer::render(const renderer::Rect &viewport, Camera camera)
+{
+
 }
+
+Camera DummyRenderer::camera_create(const CameraDescription &camera_description)
+{
+	return Camera{0};
+}
+
+void DummyRenderer::camera_destroy(Camera camera)
+{
+
+}
+
+void DummyRenderer::camera_set_transform(Camera camera, const Transform &transform)
+{
+
+}
+
+void DummyRenderer::map_query(HeightMap map, int32_t *width, int32_t *height)
+{
+
+}
+
+void DummyRenderer::map_update_palette(HeightMap map, uint32_t *palette, int32_t palette_size)
+{
+
+}
+

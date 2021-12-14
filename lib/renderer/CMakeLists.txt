@@ -30,6 +30,8 @@ SET(renderer_SRCS
 	src/renderer/scene/sokol/SokolRenderer.h
 	src/renderer/scene/sokol/HeightMap.cpp
 	src/renderer/scene/sokol/HeightMap.h
+	src/renderer/scene/sokol/SokolCamera.h
+	src/renderer/scene/sokol/SokolCamera.cpp
 	src/renderer/scene/dummy/DummyRenderer.cpp
 	src/renderer/scene/dummy/DummyRenderer.h
 	)

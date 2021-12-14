@@ -316,7 +316,8 @@ vrtMap::~vrtMap(void)
 }
 
 vrtMap::vrtMap(void)
-	: fmap(0), kmap(0), map_rid({renderer::scene::HeightMap::Invalid})
+	: fmap(0), kmap(0), map_rid({renderer::scene::HeightMap::Invalid}),
+	  camera_rid({renderer::scene::Camera::Invalid})
 {
 	pFile = new PrmFile;
 	cWorld = 0;
@@ -442,6 +443,10 @@ void vrtMap::init(void)
 		map_updater.reset();
 	}
 
+	if(camera_rid.is_valid()){
+		r->camera_destroy(camera_rid);
+	}
+
 	map_rid = r->map_create({
 		.width = H_SIZE,
 		.height = (int32_t)V_SIZE,
@@ -449,6 +454,15 @@ void vrtMap::init(void)
 		.material_end_offsets = ENDCOLOR,
 		.material_count = TERRAIN_MAX,
 	});
+
+	float FOV = atan((float)xgrScreenSizeX / 2.0 / (float)focus) * 2 / M_PI * 180.0;
+
+	camera_rid = r->camera_create({
+									  .fov = FOV,
+									  .aspect = (float)xgrScreenSizeX/(float)xgrScreenSizeY,
+									  .near = 0.01,
+									  .far = 10000,
+								  });
 	map_updater = std::make_unique<renderer::scene::util::MapUpdater>(map_rid, lineT);
 }
 

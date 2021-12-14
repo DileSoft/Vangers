@@ -399,7 +399,7 @@ void HeightMap::destroy()
 }
 
 
-void HeightMap::render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z) {
+void HeightMap::render(const Rect& viewport, const hmm_mat4& camera_transform) {
 	update_palette_texture();
 
 //	hmm_mat4 view = HMM_Translate({-(float)camera_pos_x, -(float)camera_pos_y, -(float)camera_pos_z});
@@ -407,35 +407,19 @@ void HeightMap::render(int32_t viewport_width, int32_t viewport_height, int32_t 
 	int32_t width = map_desc.width;
 	int32_t height = map_desc.height;
 
-	camera_pos_y = height - camera_pos_y;
-	hmm_vec3 camera = HMM_Vec3(camera_pos_x, camera_pos_y, camera_pos_z * 2);
-	hmm_vec3 look_at_center = HMM_Vec3(camera_pos_x, camera_pos_y, 0.0f);
-	hmm_vec3 look_at_up = HMM_Vec3(0.0f, 1.0f, 0.0f);
-
-	hmm_mat4 view = HMM_LookAt(camera, look_at_center, look_at_up);
-	hmm_mat4 model = HMM_MultiplyMat4(
-				HMM_Translate(HMM_Vec3(0, 0, 0.0f)),
-				HMM_Scale(HMM_Vec3(width, height, 1.0f))
-				);
-
-	hmm_mat4 projection = HMM_Perspective(60, (float)viewport_width/(float)viewport_height, 0.01f, 100000.0f);
-	hmm_mat4 transform = HMM_MultiplyMat4(
-				HMM_MultiplyMat4(projection, view),
-				model
-				);
 //	transform = HMM_Mat4d(1.0f);
 //	transform = model;
 //	transform = HMM_MultiplyMat4(view, model);
 
 	vs_params_t vs_params = {
-		.transform = transform,
+		.transform = camera_transform,
 	};
 
 	fs_params_t fs_params = {
 		.world_info = HMM_Vec4(width, height, 0.0f, 0.0f),
 	};
 
-	sg_begin_default_pass(&render_context->pass_action, viewport_width, viewport_height);
+	sg_begin_default_pass(&render_context->pass_action, viewport.width, viewport.height);
 	sg_apply_pipeline(render_context->pip);
 	sg_apply_bindings(render_context->bind);
 	sg_apply_uniforms(SG_SHADERSTAGE_VS, 0, SG_RANGE(vs_params));

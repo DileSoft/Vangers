@@ -19,9 +19,43 @@ namespace renderer::scene {
 	typedef ResourceId<_HeightMapT> HeightMap;
 	static_assert (sizeof (HeightMap) == sizeof (int32_t), "invalid HeightMap RID size");
 
+	enum class _CameraT;
+	typedef ResourceId<_CameraT> Camera;
+	static_assert (sizeof (Camera) == sizeof (int32_t), "invalid Camera RID size");
+
+
+	struct CameraDescription {
+		float fov;
+		float aspect;
+		float near;
+		float far;
+	};
+
+	struct Vector3 {
+		float x;
+		float y;
+		float z;
+	};
+
+	struct Quaternion {
+		float x;
+		float y;
+		float z;
+		float w;
+	};
+
+	struct Transform {
+		Vector3 position;
+		Quaternion rotation;
+	};
+
 	// TODO: Rename it to the AbstractSceneRenderer?
 	class AbstractRenderer {
 	public:
+		virtual Camera camera_create(const CameraDescription& camera_description) = 0;
+		virtual void camera_destroy(Camera camera) = 0;
+		virtual void camera_set_transform(Camera camera, const Transform& transform) = 0;
+
 		// Creates HeightMap from description
 		virtual HeightMap map_create(const MapDescription& map_description) = 0;
 		
@@ -44,7 +78,7 @@ namespace renderer::scene {
 		
 		// Renders the scene into the viewport with size viewport_width*viewport_height and with camera position *camera_pos_XXX*
 		// TODO: need to discuss and refactor this function signature
-		virtual void render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z) = 0;
+		virtual void render(const Rect& viewport, Camera camera) = 0;
 		
 		virtual ~AbstractRenderer() = default;
 	};

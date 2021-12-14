@@ -11,6 +11,7 @@
 
 #include "../../common.h"
 #include "../AbstractRenderer.h"
+#include "../../lib/HandmadeMath.h"
 
 namespace renderer::scene::sokol {
 	struct RenderContext;
@@ -22,7 +23,7 @@ namespace renderer::scene::sokol {
 		~HeightMap();
 
 		void update_region(const Rect& region, uint8_t* region_height_map, uint8_t* region_meta);
-		void render(int32_t viewport_width, int32_t viewport_height, int32_t camera_pos_x, int32_t camera_pos_y, int32_t camera_pos_z);
+		void render(const Rect& viewport, const hmm_mat4& camera_transform);
 		void update_palette(uint32_t* palette);
 		const MapDescription& map_decscription() const;
 		void destroy();

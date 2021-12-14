@@ -2005,24 +2005,84 @@ void iGameMap::draw(int self)
 
 		auto& renderer = renderer::scene::RenderingContext::renderer();
 		vMap->map_updater->map_update(*renderer);
+
+		// TODO: put the camera related stuff to the camera controller
+		float turn = GTOR(TurnAngle);
+		float slope = GTOR(SlopeAngle);
+
+		Quaternion slopeQ(slope, DBV(1, 0, 0));
+		Quaternion turnQ(-turn, DBV(0, 0, 1));
+		Quaternion rotationQuaternion = Quaternion::multiply(
+			slopeQ,
+			turnQ
+		);
+
+		DBV pos0(ViewX, ViewY, 0);
+		DBV camera_pos = Quaternion::multiply(turnQ, slopeQ) * DBV(0, 0, ViewZ);
+		std::cout << "camera_pos: "
+					<< camera_pos.x << " "
+					<< camera_pos.y << " "
+					<< camera_pos.z << std::endl;
+		camera_pos += pos0;
+
+
+		renderer::scene::Quaternion rotation = {
+			.x = (float)rotationQuaternion.x,
+			.y = (float)rotationQuaternion.y,
+			.z = (float)rotationQuaternion.z,
+			.w = (float)rotationQuaternion.w,
+		};
+
+		renderer::scene::Vector3 position = {
+			.x = (float) camera_pos.x,
+			.y = (float) camera_pos.y,
+			.z = (float) camera_pos.z,
+		};
+
+		std::cout << "TurnAngle: " << TurnAngle				  
+				  << ", TurnSecX: " << TurnSecX
+				  << ", SlopeAngle" << SlopeAngle
+				  << ", turn: " << turn
+				  << ", slope: " << slope
+				  << ", ViewX: " << ViewX
+				  << ", ViewY: " << ViewY
+				  << ", ViewZ: " << ViewZ
+				  << ", focus: " << focus
+				  << std::endl;
+
+		renderer->camera_set_transform(vMap->camera_rid, {
+		   .position = position,
+		   .rotation = rotation,
+		});
+
 		renderer->map_update_palette(vMap->map_rid, XGR_Obj.XGR32_PaletteCache, 256);
-		renderer->render(XGR_Obj.RealX, XGR_Obj.RealY, ViewX, ViewY, ViewZ);
+		renderer::Rect view_rect = {
+			.x = 0,
+			.y = 0,
+			.width = XGR_Obj.RealX,
+			.height = XGR_Obj.RealY,
+		};
+		renderer->render(view_rect, vMap->camera_rid);
+
+
 		// TODO: this calls are needed only for level loading
-		if(DepthShow) {
-			if(SkipShow) {
-				//Наклон изображения
+		// TODO: Dummy rederer should do the software rendering here
+		vMap -> scaling_3D(A_g2s,ViewZ,focus,ViewX,ViewY,xc,yc,xside,yside,TurnAngle);
+//		if(DepthShow) {
+//			if(SkipShow) {
+//				//Наклон изображения
 //				vMap -> SlopTurnSkip(TurnAngle,SlopeAngle,ViewZ,focus,ViewX,ViewY,xc,yc,xsize/2,ysize/2);
-			} else {
+//			} else {
 //				vMap -> scaling_3D(A_g2s,ViewZ,focus,ViewX,ViewY,xc,yc,xside,yside,TurnAngle);
-			}
-		} else {
-			if(TurnAngle) {
-				//Вращение
+//			}
+//		} else {
+//			if(TurnAngle) {
+//				//Вращение
 //				vMap -> turning(TurnSecX,-TurnAngle,ViewX,ViewY,xc,yc,xside,yside);
-			} else {
-				vMap -> scaling(TurnSecX,ViewX,ViewY,xc,yc,xside,yside);
-			}
-		}
+//			} else {
+//				vMap -> scaling(TurnSecX,ViewX,ViewY,xc,yc,xside,yside);
+//			}
+//		}
 		
 		
 		//Отрисовка 3д моделей
