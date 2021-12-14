@@ -111,6 +111,9 @@ void SlopTurnSkip(int Turn,int Slop,int H,int F,int cx,int cy,int xc,int yc,int 
 		0,
 		0
 	);
+	// TODO: allow to continue rendering for the DummyRenderer
+	return;
+
 	uchar** lt = vMap -> lineTcolor;
 
 	int z;
