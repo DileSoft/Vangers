@@ -21,12 +21,10 @@ void DummyRenderer::map_destroy(HeightMap map_rid) {
 	          << std::endl;
 }
 
-void DummyRenderer::map_update_data(HeightMap map_rid, const Rect& rect, uint8_t *height, uint8_t *meta) {
-	std::cout << "DummyRenderer::map_update"
+void DummyRenderer::map_request_update(HeightMap map_rid, const Rect& rect) {
+	std::cout << "DummyRenderer::map_request_update"
 			  << " map_rid: " << map_rid.id
 	          << ", rect: " << rect
-			  << ", height: " << height
-			  << ", meta: " << meta
 			  << std::endl;
 }
 

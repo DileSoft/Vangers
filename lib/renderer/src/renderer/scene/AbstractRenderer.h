@@ -8,9 +8,16 @@ namespace renderer::scene {
 	struct MapDescription {
 		int32_t width; // H_SIZE
 		int32_t height; // V_SIZE
-		uint8_t* material_begin_offsets; // Material offsets in the palette
+
+		// data layout: first `width` bytes are height, the rest `width` bytes are meta data
+		uint8_t** lineT;
+
+		// Material offsets in the palette
+		uint8_t* material_begin_offsets;
 		uint8_t* material_end_offsets;
-		int32_t material_count; // 8 for 
+
+		// 8 for world, 16 for escave
+		int32_t material_count;
 	};
 
 	// TODO: ugly definition
@@ -70,7 +77,7 @@ namespace renderer::scene {
 		// The renderer must not keep the height and meta pointers since they will be deleted after the call
 		// TODO: the *height* parameter name is confusing
 		// TODO: 
-		virtual void map_update_data(HeightMap map, const Rect& rect, uint8_t* height, uint8_t* meta) = 0;
+		virtual void map_request_update(HeightMap map, const Rect& region) = 0;
 		
 		// Updates a 256-color palette for the HeightMap. 
 		// The renderer must not keep the palette pointer since if will be deleted after the call

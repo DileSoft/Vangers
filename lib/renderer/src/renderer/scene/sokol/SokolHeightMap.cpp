@@ -9,8 +9,8 @@
 #include "../../lib/sokol_gfx_ext.h"
 #include "../../lib/HandmadeMath.h"
 
-#include "HeightMap.h"
-
+#include "SokolHeightMap.h"
+#include "MapUpdater.h"
 
 #define CODE(...) #__VA_ARGS__
 
@@ -39,11 +39,17 @@ namespace renderer::scene::sokol {
 	};
 }
 
-HeightMap::HeightMap(const MapDescription &map_description)
+SokolHeightMap::SokolHeightMap(const MapDescription &map_description)
 	: map_desc(map_description)
+	, map_updater(std::make_unique<MapUpdater>())
 	, palette(new uint32_t[256])
 	, render_context(create_context(map_description))
 {
+}
+
+void SokolHeightMap::request_update_region(const renderer::Rect &region)
+{
+	map_updater->request_region_update(region);
 }
 
 sg_shader make_shader(){
@@ -225,7 +231,7 @@ sg_image make_palette_texture(int32_t num_colors){
 	});
 }
 
-std::unique_ptr<RenderContext> HeightMap::create_context(const MapDescription& map_description) {
+std::unique_ptr<RenderContext> SokolHeightMap::create_context(const MapDescription& map_description) {
 	std::cout << "HeightMap::create_contex"<<std::endl;
 	float vertices[] = {
 		-1.0f,  2.0f, 0.0f, 0.0f,
@@ -305,7 +311,7 @@ std::unique_ptr<RenderContext> HeightMap::create_context(const MapDescription& m
 	return render_context;
 }
 
-void HeightMap::update_region(const Rect& region, uint8_t* region_height_map, uint8_t* region_meta)
+void SokolHeightMap::update_region(const Rect& region, uint8_t* region_height_map, uint8_t* region_meta)
 {
 	std::cout << "HeightMap::update_region()"
 				<< " region: " << region
@@ -358,7 +364,7 @@ void HeightMap::update_region(const Rect& region, uint8_t* region_height_map, ui
 
 }
 
-void HeightMap::update_palette_texture()
+void SokolHeightMap::update_palette_texture()
 {
 	sg_image_data image_data = {
 			.subimage = {
@@ -373,17 +379,17 @@ void HeightMap::update_palette_texture()
 	sg_update_image(render_context->palette_texture, image_data);
 }
 
-void HeightMap::update_palette(uint32_t *palette)
+void SokolHeightMap::update_palette(uint32_t *palette)
 {
 	std::memcpy(this->palette, palette, sizeof(uint32_t) * 256);
 }
 
-const renderer::scene::MapDescription &HeightMap::map_decscription() const
+const renderer::scene::MapDescription &SokolHeightMap::map_decscription() const
 {
 	return this->map_desc;
 }
 
-void HeightMap::destroy()
+void SokolHeightMap::destroy()
 {
 	std::cout << "HeightMap::destroy" << std::endl;
 	assert(render_context);
@@ -399,17 +405,12 @@ void HeightMap::destroy()
 }
 
 
-void HeightMap::render(const Rect& viewport, const hmm_mat4& camera_transform) {
+void SokolHeightMap::render(const Rect& viewport, const hmm_mat4& camera_transform) {
+	map_updater->map_update(*this);
 	update_palette_texture();
-
-//	hmm_mat4 view = HMM_Translate({-(float)camera_pos_x, -(float)camera_pos_y, -(float)camera_pos_z});
 
 	int32_t width = map_desc.width;
 	int32_t height = map_desc.height;
-
-//	transform = HMM_Mat4d(1.0f);
-//	transform = model;
-//	transform = HMM_MultiplyMat4(view, model);
 
 	vs_params_t vs_params = {
 		.transform = camera_transform,
@@ -430,4 +431,4 @@ void HeightMap::render(const Rect& viewport, const hmm_mat4& camera_transform) {
 	sg_commit();
 }
 
-HeightMap::~HeightMap() = default;
+SokolHeightMap::~SokolHeightMap() = default;

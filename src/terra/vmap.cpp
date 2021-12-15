@@ -440,7 +440,6 @@ void vrtMap::init(void)
 	auto& r = renderer::scene::RenderingContext::renderer();
 	if(map_rid.is_valid()){
 		r->map_destroy(map_rid);
-		map_updater.reset();
 	}
 
 	if(camera_rid.is_valid()){
@@ -450,6 +449,7 @@ void vrtMap::init(void)
 	map_rid = r->map_create({
 		.width = H_SIZE,
 		.height = (int32_t)V_SIZE,
+		.lineT = lineT,
 		.material_begin_offsets = BEGCOLOR,
 		.material_end_offsets = ENDCOLOR,
 		.material_count = TERRAIN_MAX,
@@ -463,7 +463,6 @@ void vrtMap::init(void)
 									  .near = 0.01,
 									  .far = 10000,
 								  });
-	map_updater = std::make_unique<renderer::scene::util::MapUpdater>(map_rid, lineT);
 }
 
 #ifdef _SURMAP_
@@ -1030,16 +1029,15 @@ void vrtMap::reload(int nWorld)
 	auto& r = renderer::scene::RenderingContext::renderer();
 	if(map_rid.is_valid()) {
 		r->map_destroy(map_rid);
-		map_updater.reset();
 	}
 	map_rid = r->map_create({
 		.width = H_SIZE,
 		.height = (int32_t)V_SIZE,
+		.lineT = lineT,
 		.material_begin_offsets = BEGCOLOR,
 		.material_end_offsets = ENDCOLOR,
 		.material_count = TERRAIN_MAX,
 	});
-	map_updater = std::make_unique<renderer::scene::util::MapUpdater>(map_rid, lineT);
 
 	if(MAP_POWER_Y <= MAX_MAP_IN_MEMORY_POWER) {
 		accept(0, V_SIZE - 1);
@@ -1170,8 +1168,9 @@ void vrtMap::accept(int up,int down)
 				}
 			lineT[i] = p; //znfo lineT plain //загрузка
 			lineTcolor[i] = use_c();
+			//TODO: Move LINE_render to the SoftwareRenderer implementation
 			LINE_render(i);
-			map_updater->request_region_update({0, i, H_SIZE, 1});
+			request_region_update({0, i, H_SIZE, 1});
 			i = YCYCL(i + 1);
 		} while(i != max);
 	else
@@ -1195,8 +1194,9 @@ void vrtMap::accept(int up,int down)
 			lineT[i] = p; //znfo lineT compressed //загрузка
 			lineTcolor[i] = use_c();
 #endif
+			//TODO: Move LINE_render to the SoftwareRenderer implementation
 			LINE_render(i);
-			map_updater->request_region_update({0, i, H_SIZE, 1});
+			request_region_update({0, i, H_SIZE, 1});
 			i = YCYCL(i + 1);
 		} while(i != max);
 
@@ -1448,6 +1448,11 @@ void vrtMap::quant(void)
 	change(ytop,ybottom);
 }
 
+void vrtMap::request_region_update(const renderer::Rect &rect)
+{
+	renderer::scene::RenderingContext::renderer()->map_request_update(map_rid, rect);
+}
+
 inline uchar* vrtMap::use(void)
 {
 	uchar* p = dHeap + freeTail*H2_SIZE;
@@ -1546,7 +1551,8 @@ void vrtMap::linkC(int up,int down,int d)
 	int i = up;
 	do {
 		if(!lineTcolor[i]) {
-			map_updater->request_region_update({0, i, H_SIZE, 1});
+			//TODO: request_region_update once
+			request_region_update({0, i, H_SIZE, 1});
 			if(freeMax <= 1) {
 				std::cout<<"We have no more free space in terrain buffer"<<std::endl;
 				return;

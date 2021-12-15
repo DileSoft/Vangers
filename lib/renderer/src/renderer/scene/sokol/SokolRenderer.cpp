@@ -2,13 +2,13 @@
 #include <cassert>
 
 #include "SokolRenderer.h"
-#include "HeightMap.h"
+#include "SokolHeightMap.h"
 
 using namespace renderer;
 using namespace renderer::scene;
 
 HeightMap SokolRenderer::map_create(const MapDescription &map_description) {
-	HeightMap map_rid =  map_storage.create(std::make_unique<sokol::HeightMap>(map_description));
+	HeightMap map_rid =  map_storage.create(std::make_unique<sokol::SokolHeightMap>(map_description));
 	std::cout << "SokolRenderer::map_create() "
 			  << "width="<<map_description.width
 			  << ", height="<<map_description.height
@@ -27,13 +27,13 @@ void SokolRenderer::map_destroy(HeightMap map_rid) {
 	map_storage.remove(map_rid);
 }
 
-void SokolRenderer::map_update_data(HeightMap map_rid, const Rect& rect, uint8_t *height, uint8_t *meta) {
+void SokolRenderer::map_request_update(HeightMap map_rid, const Rect& region) {
 	std::cout << "SokolRenderer::map_update"
 			  << " map_rid: " << map_rid.id
-	          << " , rect: " << rect
+			  << " , rect: " << region
 	          << std::endl;
 	auto& m = map_storage.getOrThrow(map_rid);
-	m->update_region(rect, height, meta);
+	m->request_update_region(region);
 }
 
 void SokolRenderer::render(const Rect &viewport, Camera camera_rid) {

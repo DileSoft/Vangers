@@ -9,7 +9,7 @@
 
 #include "../AbstractRenderer.h"
 #include "../../ResourceStorage.h"
-#include "HeightMap.h"
+#include "SokolHeightMap.h"
 #include "SokolCamera.h"
 
 namespace renderer::scene {
@@ -26,7 +26,7 @@ namespace renderer::scene {
 
 		void map_destroy(HeightMap map_rid) override;
 
-		void map_update_data(HeightMap map_rid, const Rect& rect, uint8_t* height, uint8_t* meta) override;
+		void map_request_update(HeightMap map_rid, const Rect& region) override;
 
 		void render(const Rect& viewport, Camera camera) override;
 
@@ -34,7 +34,7 @@ namespace renderer::scene {
 
 		void map_query(HeightMap map_rid, int32_t* width, int32_t* height) override;
 	private:
-		ResourceStorage<HeightMap, sokol::HeightMap> map_storage;
+		ResourceStorage<HeightMap, sokol::SokolHeightMap> map_storage;
 		ResourceStorage<Camera, sokol::SokolCamera> camera_storage;
 	};
 

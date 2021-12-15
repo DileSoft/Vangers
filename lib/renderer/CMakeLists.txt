@@ -24,14 +24,14 @@ SET(renderer_SRCS
 	src/renderer/scene/AbstractRenderer.h
 	src/renderer/scene/RenderingContext.cpp
 	src/renderer/scene/RenderingContext.h
-	src/renderer/scene/util/MapUpdater.h
-	src/renderer/scene/util/MapUpdater.cpp
 	src/renderer/scene/sokol/SokolRenderer.cpp
 	src/renderer/scene/sokol/SokolRenderer.h
-	src/renderer/scene/sokol/HeightMap.cpp
-	src/renderer/scene/sokol/HeightMap.h
+	src/renderer/scene/sokol/SokolHeightMap.cpp
+	src/renderer/scene/sokol/SokolHeightMap.h
 	src/renderer/scene/sokol/SokolCamera.h
 	src/renderer/scene/sokol/SokolCamera.cpp
+	src/renderer/scene/sokol/MapUpdater.h
+	src/renderer/scene/sokol/MapUpdater.cpp
 	src/renderer/scene/dummy/DummyRenderer.cpp
 	src/renderer/scene/dummy/DummyRenderer.h
 	)

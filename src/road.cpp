@@ -2004,9 +2004,8 @@ void iGameMap::draw(int self)
 
 
 		auto& renderer = renderer::scene::RenderingContext::renderer();
-		vMap->map_updater->map_update(*renderer);
 
-		// TODO: put the camera related stuff to the camera controller
+		// TODO: put the camera related stuff to the Camera class
 		float turn = GTOR(TurnAngle);
 		float slope = GTOR(SlopeAngle);
 

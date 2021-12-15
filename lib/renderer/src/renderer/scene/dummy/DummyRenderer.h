@@ -14,7 +14,7 @@ namespace renderer::scene::dummy {
 
 		void map_destroy(HeightMap map_rid) override;
 
-		void map_update_data(HeightMap map_rid, const Rect& rect, uint8_t* height, uint8_t* meta) override;
+		void map_request_update(HeightMap map_rid, const Rect& rect) override;
 
 		void render(const Rect& viewport, Camera camera) override;
 

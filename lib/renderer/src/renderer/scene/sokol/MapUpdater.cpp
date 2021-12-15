@@ -3,13 +3,12 @@
 #include <cstring>
 
 #include "MapUpdater.h"
+#include "SokolHeightMap.h"
 
-using namespace renderer::scene::util;
+using namespace renderer::scene::sokol;
 
-MapUpdater::MapUpdater(HeightMap map_rid, uint8_t **lineT)
-	: _map_rid(map_rid)
-	, _lineT(lineT)
-	, _requested_region({})
+MapUpdater::MapUpdater()
+	: _requested_region({})
 {
 
 }
@@ -19,21 +18,22 @@ void MapUpdater::request_region_update(const renderer::Rect &rect)
 	_requested_region.expand(rect);
 
 	std::cout << "MapUpdater::request_region_update() "
-			<< "map="<<_map_rid.id
 			<< ", rect="<<rect
 			<< " => _requested_region="<<_requested_region
 			<<std::endl;
 }
 
-void MapUpdater::map_update(AbstractRenderer& renderer)
+void MapUpdater::map_update(renderer::scene::sokol::SokolHeightMap& map)
 {
 	if(_requested_region.is_empty()){
 		return;
 	}
 
-	int32_t map_width;
-	int32_t map_height;
-	renderer.map_query(_map_rid, &map_width, &map_height);
+	const MapDescription& desc = map.map_decscription();
+
+	int32_t map_width = desc.width;
+	int32_t map_height = desc.height;
+	uint8_t** lineT = desc.lineT;
 
 	// TODO: forcing region to the full level width...
 	_requested_region.x = 0;
@@ -66,14 +66,14 @@ void MapUpdater::map_update(AbstractRenderer& renderer)
 		uint8_t* height_map_r = height_map + iy * width;
 		uint8_t* meta_r = meta + iy * width;
 
-		uint8_t* _lineT_r = _lineT[iy + y_start];
+		uint8_t* _lineT_r = lineT[iy + y_start];
 		if(_lineT_r != nullptr){
 			std::memcpy(height_map_r, _lineT_r + x_start, sizeof(uint8_t) * width);
 			std::memcpy(meta_r, _lineT_r + x_start + map_width, sizeof(uint8_t) * width);
 		}
 	}
 
-	renderer.map_update_data(_map_rid, _requested_region, height_map, meta);
+	map.update_region(_requested_region, height_map, meta);
 
 	delete[] height_map;
 	delete[] meta;

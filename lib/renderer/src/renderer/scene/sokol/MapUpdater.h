@@ -4,16 +4,18 @@
 #include "../../common.h"
 #include "../AbstractRenderer.h"
 
-namespace renderer::scene::util {
+namespace renderer::scene::sokol {
+
+	// PIMPL
+	class SokolHeightMap;
+
 	class MapUpdater
 	{
 	public:
-		MapUpdater(HeightMap map, uint8_t** _lineT);
+		MapUpdater();
 		void request_region_update(const Rect& rect);
-		void map_update(AbstractRenderer& renderer);
+		void map_update(renderer::scene::sokol::SokolHeightMap& map);
 	private:
-		HeightMap _map_rid;
-		uint8_t** _lineT;
 		Rect _requested_region;
 	};
 

@@ -446,7 +446,8 @@ void regRender(int LowX,int LowY,int HiX,int HiY,int changed)
 	int SizeY = (LowY == HiY) ? V_SIZE : YCYCL(HiY - LowY);
 	int SizeX = (0 == XCYCL(HiX - LowX)) ? H_SIZE : XCYCL(HiX - LowX);
 
-	vMap->map_updater->request_region_update({
+
+	vMap->request_region_update({
 												 .x = LowX,
 												 .y = LowY,
 												 .width = SizeX,

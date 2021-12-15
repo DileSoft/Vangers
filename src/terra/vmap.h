@@ -2,7 +2,6 @@
 #define __TERRA__VMAP_H__
 
 #include <renderer/scene/AbstractRenderer.h>
-#include <renderer/scene/util/MapUpdater.h>
 #include <memory>
 
 const uint H_POWER = MAP_POWER_X;
@@ -31,7 +30,6 @@ struct PrmFile;
 struct vrtMap {
 	renderer::scene::HeightMap map_rid;
 	renderer::scene::Camera camera_rid;
-	std::unique_ptr<renderer::scene::util::MapUpdater> map_updater;
 	uchar** lineT; //Масив с вокселями.
 	uchar** lineTcolor; //Масив цветов(картинка) поверхности.
 
@@ -87,6 +85,9 @@ struct vrtMap {
 	void change(int up,int down);
 	void request(int up,int down,int left, int right);
 	void quant(void);
+
+	// TODO: merge with void request(int up,int down,int left, int right)
+	void request_region_update(const renderer::Rect& rect);
 	void link(int up,int down,int d);
 	void linkC(int up,int down,int d);
 	void delink(int up,int down);
