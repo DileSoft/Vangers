@@ -44,18 +44,6 @@ void SokolRenderer::map_update_palette(uint32_t *palette, int32_t palette_size)
 	map->update_palette(palette);
 }
 
-void SokolRenderer::map_query(int32_t *width, int32_t *height)
-{
-	const MapDescription& desc = map->map_decscription();
-	if(width != nullptr){
-		*width = desc.width;
-	}
-
-	if(height != nullptr){
-		*height = desc.height;
-	}
-}
-
 SokolRenderer::SokolRenderer(){
 	std::cout << "SokolRenderer::SokolRenderer" << std::endl;
 }

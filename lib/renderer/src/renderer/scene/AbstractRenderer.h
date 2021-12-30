@@ -57,11 +57,7 @@ namespace renderer::scene {
 		
 		// Destroys the HeightMap
 		virtual void map_destroy() = 0;
-		
-		// Gets width and height of the HeightMap
-		// nullptr-s are valid
-		virtual void map_query(int32_t* width, int32_t* height) = 0;
-		
+				
 		// Updates a rectangular area the selected HeightMap with height data from *height* and meta data from *meta*
 		// The renderer must not keep the height and meta pointers since they will be deleted after the call
 		// TODO: the *height* parameter name is confusing

@@ -45,11 +45,6 @@ void DummyRenderer::camera_set_transform(const Transform &transform)
 
 }
 
-void DummyRenderer::map_query(int32_t *width, int32_t *height)
-{
-
-}
-
 void DummyRenderer::map_update_palette(uint32_t *palette, int32_t palette_size)
 {
 

@@ -31,8 +31,6 @@ namespace renderer::scene {
 		void render(const Rect& viewport) override;
 
 		void map_update_palette(uint32_t *palette, int32_t palette_size) override;
-
-		void map_query(int32_t* width, int32_t* height) override;
 	private:
 		std::unique_ptr<sokol::SokolHeightMap> map;
 		std::unique_ptr<sokol::SokolCamera> camera;
