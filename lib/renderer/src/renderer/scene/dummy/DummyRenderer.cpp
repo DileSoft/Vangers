@@ -8,52 +8,49 @@
 using namespace renderer::scene;
 using namespace renderer::scene::dummy;
 
-HeightMap DummyRenderer::map_create(const MapDescription& map_description) {
+void DummyRenderer::map_create(const MapDescription& map_description) {
 	std::cout << "DummyRenderer::map_create"
 	          << " => " << 0
 	          << std::endl;
-	return HeightMap{0};
 }
 
-void DummyRenderer::map_destroy(HeightMap map_rid) {
+void DummyRenderer::map_destroy() {
 	std::cout << "DummyRenderer::map_destroy"
-			  << " map_rid: " << map_rid.id
 	          << std::endl;
 }
 
-void DummyRenderer::map_request_update(HeightMap map_rid, const Rect& rect) {
+void DummyRenderer::map_request_update(const Rect& rect) {
 	std::cout << "DummyRenderer::map_request_update"
-			  << " map_rid: " << map_rid.id
 	          << ", rect: " << rect
 			  << std::endl;
 }
 
-void DummyRenderer::render(const renderer::Rect &viewport, Camera camera)
+void DummyRenderer::render(const renderer::Rect &viewport)
 {
 
 }
 
-Camera DummyRenderer::camera_create(const CameraDescription &camera_description)
-{
-	return Camera{0};
-}
-
-void DummyRenderer::camera_destroy(Camera camera)
+void DummyRenderer::camera_create(const CameraDescription &camera_description)
 {
 
 }
 
-void DummyRenderer::camera_set_transform(Camera camera, const Transform &transform)
+void DummyRenderer::camera_destroy()
 {
 
 }
 
-void DummyRenderer::map_query(HeightMap map, int32_t *width, int32_t *height)
+void DummyRenderer::camera_set_transform(const Transform &transform)
 {
 
 }
 
-void DummyRenderer::map_update_palette(HeightMap map, uint32_t *palette, int32_t palette_size)
+void DummyRenderer::map_query(int32_t *width, int32_t *height)
+{
+
+}
+
+void DummyRenderer::map_update_palette(uint32_t *palette, int32_t palette_size)
 {
 
 }

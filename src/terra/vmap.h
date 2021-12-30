@@ -28,8 +28,6 @@ struct vrtNode { vrtNode* next; };
 
 struct PrmFile;
 struct vrtMap {
-	renderer::scene::HeightMap map_rid;
-	renderer::scene::Camera camera_rid;
 	uchar** lineT; //Масив с вокселями.
 	uchar** lineTcolor; //Масив цветов(картинка) поверхности.
 

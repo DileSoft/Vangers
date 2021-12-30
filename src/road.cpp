@@ -2049,19 +2049,19 @@ void iGameMap::draw(int self)
 				  << ", focus: " << focus
 				  << std::endl;
 
-		renderer->camera_set_transform(vMap->camera_rid, {
+		renderer->camera_set_transform({
 		   .position = position,
 		   .rotation = rotation,
 		});
 
-		renderer->map_update_palette(vMap->map_rid, XGR_Obj.XGR32_PaletteCache, 256);
+		renderer->map_update_palette(XGR_Obj.XGR32_PaletteCache, 256);
 		renderer::Rect view_rect = {
 			.x = 0,
 			.y = 0,
 			.width = XGR_Obj.RealX,
 			.height = XGR_Obj.RealY,
 		};
-		renderer->render(view_rect, vMap->camera_rid);
+		renderer->render(view_rect);
 
 
 		// TODO: this calls are needed only for level loading

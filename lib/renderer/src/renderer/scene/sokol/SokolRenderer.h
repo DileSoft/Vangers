@@ -18,24 +18,24 @@ namespace renderer::scene {
 		SokolRenderer();
 		~SokolRenderer() override;
 
-		Camera camera_create(const CameraDescription& desc) override;
-		void camera_destroy(Camera camera) override;
-		void camera_set_transform(Camera camera, const Transform& transform) override;
+		void camera_create(const CameraDescription& desc) override;
+		void camera_destroy() override;
+		void camera_set_transform(const Transform& transform) override;
 
-		HeightMap map_create(const MapDescription& map_description) override;
+		void map_create(const MapDescription& map_description) override;
 
-		void map_destroy(HeightMap map_rid) override;
+		void map_destroy() override;
 
-		void map_request_update(HeightMap map_rid, const Rect& region) override;
+		void map_request_update(const Rect& region) override;
 
-		void render(const Rect& viewport, Camera camera) override;
+		void render(const Rect& viewport) override;
 
-		void map_update_palette(HeightMap map_rid, uint32_t *palette, int32_t palette_size) override;
+		void map_update_palette(uint32_t *palette, int32_t palette_size) override;
 
-		void map_query(HeightMap map_rid, int32_t* width, int32_t* height) override;
+		void map_query(int32_t* width, int32_t* height) override;
 	private:
-		ResourceStorage<HeightMap, sokol::SokolHeightMap> map_storage;
-		ResourceStorage<Camera, sokol::SokolCamera> camera_storage;
+		std::unique_ptr<sokol::SokolHeightMap> map;
+		std::unique_ptr<sokol::SokolCamera> camera;
 	};
 
 }
