@@ -378,6 +378,8 @@ void showModal(char* fname, float reelW, float reelH, float screenW, float scree
 
 
 int xtInitApplication(void) {
+	renderer::scene::RenderingContext::create(std::make_unique<renderer::scene::SokolRenderer>());
+
     XGraphWndID = "VANGERS";
     char *tmp;
 
@@ -976,8 +978,6 @@ void LoadingRTO2::Init(int id)
 	StandScreenPrepare();
 #endif
 _MEM_STATISTIC_("\nBEFORE VMAP  -> ");
-	renderer::scene::RenderingContext::create(std::make_unique<renderer::scene::SokolRenderer>());
-
 	vMapPrepare(mapFName,CurrentWorld);
 	vMapInit();
 _MEM_STATISTIC_("AFTER VMAP  -> ");
