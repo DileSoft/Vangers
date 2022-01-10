@@ -8,7 +8,7 @@
 #include <SDL_pixels.h>
 #include <SDL_surface.h>
 #include <cstdint>
-//#include <renderer/compositor/sokol/SokolCompositor.h>
+#include <renderer/compositor/sokol/SokolCompositor.h>
 #include <renderer/compositor/gles3/GLES3Compositor.h>
 #include <GLES3/gl32.h>
 #include <assert.h>
@@ -253,7 +253,7 @@ int XGR_Screen::init(int x,int y,int flags_in)
 
 	glEnable(GL_DEBUG_OUTPUT);
 	// pass here any value to catch only every debug message
-	glDebugMessageCallback(&DebugCallbackARB, (GLvoid*)true);
+	glDebugMessageCallback(&DebugCallbackARB, nullptr);
 
 	std::cout<<"Load and set icon"<<std::endl;
 #ifdef __APPLE__
@@ -268,6 +268,7 @@ int XGR_Screen::init(int x,int y,int flags_in)
 		std::cout<<"Can't load icon vangers.bmp"<<std::endl;
 	}
 
+//	renderer = new renderer::compositor::sokol::SokolCompositor(x, y);
 	renderer = new renderer::compositor::gles3::GLES3Compositor(x, y);
 	renderer->initialize();
 	// TODO:
