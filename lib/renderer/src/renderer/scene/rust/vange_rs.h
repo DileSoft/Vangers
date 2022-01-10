@@ -15,13 +15,13 @@ struct rv_camera_description {
 	float far;
 };
 
-struct vange_rs_vector3 {
+struct rv_vector3 {
 	float x;
 	float y;
 	float z;
 };
 
-struct vange_rs_quaternion {
+struct rv_quaternion {
 	float x;
 	float y;
 	float z;
@@ -29,8 +29,8 @@ struct vange_rs_quaternion {
 };
 
 struct rv_transform {
-	vange_rs_vector3 position;
-	vange_rs_quaternion rotation;
+	rv_vector3 position;
+	rv_quaternion rotation;
 };
 
 typedef void* (*rv_gl_functor)(const char*) ;
@@ -71,6 +71,8 @@ typedef void* rv_context;
 #ifdef __cplusplus
 extern "C" {
 #endif
+	extern int32_t rv_api_1;
+
 	rv_context rv_init(rv_init_descriptor desc);
 
 	void rv_exit(rv_context context);
@@ -85,12 +87,11 @@ extern "C" {
 
 	void rv_map_exit(rv_context context);
 
-	void rv_map_request_update(rv_context context, rv_rect region);
+	void rv_map_update_data(rv_context context, rv_rect region);
+
+	void rv_map_update_palette(rv_context context, int32_t first_entry, int32_t entry_count, uint8_t* palette);
 
 	void rv_render(rv_context context, rv_rect viewport);
-
-	// TODO:
-	//void vange_rs_map_update_palette(uint32_t* palette, int32_t palette_size);
 
 #ifdef __cplusplus
 }

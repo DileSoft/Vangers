@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <SDL2/SDL.h>
+#include <algorithm>
 
 #include "RustRenderer.h"
 #include "vange_rs.h"
@@ -11,6 +12,7 @@ using namespace renderer::scene::rust;
 
 RustRenderer::RustRenderer(int32_t width, int32_t height)
 	: _map_created(false)
+	, _camera_created(false)
 {
 	std::cout << "RustRenderer::RustRenderer" << std::endl;
 
@@ -20,17 +22,29 @@ RustRenderer::RustRenderer(int32_t width, int32_t height)
 		.gl_functor = SDL_GL_GetProcAddress,
 	};
 
+	std::cout << "rv_init(context=" << _context << ", {" << std::endl
+				<< "\t.width="<<desc.width << std::endl
+				<< "\t.height="<<desc.height << std::endl
+				<< "\t.gl_functor="<< (void*)desc.gl_functor << std::endl
+				<< "}" << std::endl;
 	_context = rv_init(desc);
 }
 
 RustRenderer::~RustRenderer()
 {
-	rv_exit(_context);
+
 }
 
 void RustRenderer::camera_create(const CameraDescription& camera_description)
 {
 	std::cout << "RustRenderer::camera_create" << std::endl;
+	if(_camera_created){
+		std::cout << "RustRenderer::camera_create: camera has beed already created" << std::endl;
+		return;
+	}
+
+	_camera_created = true;
+
 	rv_camera_description v_desc {
 		.fov = camera_description.fov,
 		.aspect = camera_description.aspect,
@@ -38,38 +52,55 @@ void RustRenderer::camera_create(const CameraDescription& camera_description)
 		.far = camera_description.far,
 	};
 
+	std::cout << "rv_camera_init(context=" << _context << ", {" << std::endl
+				<< "\t.fov="<<v_desc.fov << std::endl
+				<< "\t.aspect="<<v_desc.aspect << std::endl
+				<< "\t.near="<<v_desc.near << std::endl
+				<< "\t.far="<<v_desc.far << std::endl
+				<< "})" << std::endl;
+
 	rv_camera_init(_context, v_desc);
 }
 
 void RustRenderer::camera_destroy()
 {
-	std::cout << "RustRenderer::camera_destroy" << std::endl;
+//	std::cout << "RustRenderer::camera_destroy [NOOP]" << std::endl;
 	// TODO:
 //	vange_rs_camera_destroy();
 }
 
 void RustRenderer::camera_set_transform(const Transform& transform)
 {
-	std::cout << "RustRenderer::camera_set_transform" << std::endl;
+//	std::cout << "RustRenderer::camera_set_transform" << std::endl;
 	rv_transform v_transform {
-		.position = vange_rs_vector3 {
+		.position = rv_vector3 {
 			.x = transform.position.x,
 			.y = transform.position.y,
-			.z = transform.position.z,
+			.z = transform.position.z + 64,
 		},
-		.rotation = vange_rs_quaternion {
+		.rotation = rv_quaternion {
 			.x = transform.rotation.x,
 			.y = transform.rotation.y,
 			.z = transform.rotation.z,
 			.w = transform.rotation.w,
 		}
 	};
+//	std::cout << "rv_camera_set_transform(context=" << _context << ", {" << std::endl
+//				<< "\t.position={" << v_transform.position.x << " " << v_transform.position.y << " " << v_transform.position.z << "}"<< std::endl
+//				<< "\t.rotation={" << v_transform.rotation.x << " " << v_transform.rotation.y << " " << v_transform.rotation.z << " " << v_transform.rotation.w << "}"<< std::endl
+//				<< "})" << std::endl;
 	rv_camera_set_transform(_context, v_transform);
 }
 
 void RustRenderer::map_create(const MapDescription& map_description)
 {
 	std::cout << "RustRenderer::map_create" << std::endl;
+
+	if(_map_created){
+		std::cout << "RustRenderer::map_create: map has been already created" << std::endl;
+		return;
+	}
+	_map_created = true;
 	rv_map_description v_desc {
 		.width = map_description.width,
 		.height = map_description.height,
@@ -78,24 +109,33 @@ void RustRenderer::map_create(const MapDescription& map_description)
 		.material_end_offsets = map_description.material_end_offsets,
 		.material_count = map_description.material_count,
 	};
+
+	std::cout << "rv_map_init(context=" << _context << ", {" << std::endl
+				<< "\t.width="<<v_desc.width << std::endl
+				<< "\t.height="<<v_desc.height << std::endl
+				<< "\t.lineT="<<(void*)v_desc.lineT << std::endl
+				<< "\t.material_begin_offsets="<< (void*)v_desc.material_begin_offsets << std::endl
+				<< "\t.material_end_offsets="<< (void*)v_desc.material_end_offsets << std::endl
+				<< "\t.material_count="<<v_desc.material_count << std::endl
+				<< "})" << std::endl;
 	rv_map_init(_context, v_desc);
-	_map_created = true;
 }
 
 void RustRenderer::map_destroy()
 {
-	std::cout << "RustRenderer::map_destroy" << std::endl;
-	if(_map_created) {
-		rv_map_exit(_context);
-	} else {
-		std::cerr << "map is already destroyed" <<std::endl;
+//	std::cout << "RustRenderer::map_destroy" << std::endl;
+	if(!_map_created){
+		std::cout << "RustRenderer::map_destroy: map has been already destroyed" <<std::endl;
+		return;
 	}
 	_map_created = false;
+//	std::cout << "rv_map_exit(context=" << _context << ", )" << std::endl;
+	rv_map_exit(_context);
 }
 
 void RustRenderer::map_request_update(const Rect& region)
 {
-	std::cout << "RustRenderer::map_request_update. region=" << region << std::endl;
+//	std::cout << "RustRenderer::map_request_update. region=" << region << std::endl;
 	rv_rect v_rect {
 		.x = region.x,
 		.y = region.y,
@@ -103,25 +143,50 @@ void RustRenderer::map_request_update(const Rect& region)
 		.height = region.height,
 	};
 
-	rv_map_request_update(_context, v_rect);
+	// TODO: alignment is neded for RustRenderer
+//	v_rect.width = std::floor(v_rect.width / 256.0) * 256;
+	v_rect.x = 0;
+	v_rect.width = 2048;
+//	v_rect.height = std::floor(v_rect.height / 4.0) * 4;
+
+	if(v_rect.width == 0 || v_rect.height == 0){
+		return;
+	}
+//	std::cout << "rv_map_update_data(context=" << _context << ", {" << std::endl
+//				<< "\t{" << v_rect.x << " " << v_rect.y << " " << v_rect.width << " " << v_rect.height << "}" << std::endl
+//				<< "})" << std::endl;
+	rv_map_update_data(_context, v_rect);
 }
 
 void RustRenderer::map_update_palette(uint32_t* palette, int32_t palette_size)
 {
-	std::cout << "RustRenderer::map_update_palette" << std::endl;
-	// TODO:
-//	vange_rs_map_update_palette(palette, palette_size);
+//	std::cout << "RustRenderer::map_update_palette" << std::endl;
+	uint8_t* rv_pal = new uint8_t[3 * palette_size];
+	double correction = 2.5;
+
+	for(int i = 0; i < palette_size; i++){
+		uint8_t* color = (uint8_t*)&palette[i];
+		rv_pal[i * 3 + 0] = std::clamp((double)color[0] * correction, 0.0, 255.0);
+		rv_pal[i * 3 + 1] = std::clamp((double)color[1] * correction, 0.0, 255.0);
+		rv_pal[i * 3 + 2] = std::clamp((double)color[2] * correction, 0.0, 255.0);
+	}
+	rv_map_update_palette(_context, 0, palette_size, rv_pal);
 }
 
 void RustRenderer::render(const Rect& viewport)
 {
-	std::cout << "RustRenderer::render" << std::endl;
+//	std::cout << "RustRenderer::render. viewport=" << viewport<< std::endl;
+
 	rv_rect v_rect {
 		.x = viewport.x,
 		.y = viewport.y,
 		.width = viewport.width,
 		.height = viewport.height,
 	};
+//	std::cout << "rv_render(context=" << _context << ", {" << std::endl
+//				<< "\t{" << v_rect.x << " " << v_rect.y << " " << v_rect.width << " " << v_rect.height << "}" << std::endl
+//				<< "})" << std::endl;
+
 	rv_render(_context, v_rect);
 }
 

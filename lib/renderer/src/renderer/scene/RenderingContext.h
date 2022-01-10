@@ -18,6 +18,14 @@ namespace renderer::scene {
 			_instance = std::make_unique<RenderingContext>(std::move(renderer));
 		}
 
+		static bool has_renderer() {
+			return (bool)_instance;
+		}
+
+		static void reset(){
+			_instance.reset();
+		}
+
 //		static std::unique_ptr<RenderingContext>& instance() {
 //			return _instance;
 //		}

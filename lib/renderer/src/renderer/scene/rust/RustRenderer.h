@@ -23,6 +23,9 @@ namespace renderer::scene::rust {
 	private:
 		rv_context _context;
 		bool _map_created;
+		bool _camera_created;
+
+
 	};
 
 }
