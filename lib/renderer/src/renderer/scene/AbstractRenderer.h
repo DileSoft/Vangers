@@ -71,7 +71,7 @@ namespace renderer::scene {
 		// Renders the scene into the viewport with size viewport_width*viewport_height and with camera position *camera_pos_XXX*
 		// TODO: need to discuss and refactor this function signature
 		virtual void render(const Rect& viewport) = 0;
-		
+		virtual void destroy() = 0;
 		virtual ~AbstractRenderer() = default;
 	};
 }

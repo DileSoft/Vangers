@@ -19,6 +19,7 @@ namespace renderer::scene::rust {
 		void map_request_update(const Rect& region) override;
 		void map_update_palette(uint32_t* palette, int32_t palette_size) override;
 		void render(const Rect& viewport) override;
+		void destroy() override;
 	private:
 		rv_context _context;
 		bool _map_created;

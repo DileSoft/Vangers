@@ -125,3 +125,9 @@ void RustRenderer::render(const Rect& viewport)
 	rv_render(_context, v_rect);
 }
 
+void RustRenderer::destroy()
+{
+//	std::cout << "rv_exit(context=" << _context << ", )" << std::endl;
+	rv_exit(_context);
+}
+
