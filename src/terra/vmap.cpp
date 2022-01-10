@@ -438,7 +438,6 @@ void vrtMap::init(void)
 
 	auto& r = renderer::scene::RenderingContext::renderer();
 	r->map_destroy();
-	r->camera_destroy();
 
 	r->map_create({
 		.width = H_SIZE,
@@ -448,15 +447,6 @@ void vrtMap::init(void)
 		.material_end_offsets = ENDCOLOR,
 		.material_count = TERRAIN_MAX,
 	});
-
-	float FOV = atan((float)xgrScreenSizeX / 2.0 / (float)focus) * 2 / M_PI * 180.0;
-
-	r->camera_create({
-		  .fov = FOV,
-		  .aspect = (float)xgrScreenSizeX/(float)xgrScreenSizeY,
-		  .near = 0.01,
-		  .far = 10000,
-	  });
 }
 
 #ifdef _SURMAP_
