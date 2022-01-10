@@ -981,21 +981,24 @@ void LoadingRTO2::Init(int id)
 	StandScreenPrepare();
 #endif
 _MEM_STATISTIC_("\nBEFORE VMAP  -> ");
-	if(!RenderingContext::has_renderer()){
-		// TODO:
-
-		RenderingContext::create(std::make_unique<RustRenderer>(xgrScreenSizeX, xgrScreenSizeY));
-
-		float FOV = atan((float)xgrScreenSizeY / 2.0 / (float)focus) * 2/ M_PI * 180.0;
-
-		RenderingContext::renderer()->camera_create({
-			  .fov = FOV,
-			  .aspect = (float)xgrScreenSizeX/(float)xgrScreenSizeY,
-			  .near = 100,
-			  .far = 5000,
-		  });
-
+	if(RenderingContext::has_renderer()){
+		RenderingContext::renderer()->destroy();
 	}
+
+	// TODO:
+
+	RenderingContext::create(std::make_unique<RustRenderer>(XGR_Obj.RealX, XGR_Obj.RealY));
+
+	float FOV = atan((float)xgrScreenSizeY / 2.0 / (float)focus) * 2/ M_PI * 180.0;
+
+	RenderingContext::renderer()->camera_create({
+		  .fov = FOV,
+		  .aspect = (float)xgrScreenSizeX/(float)xgrScreenSizeY,
+		  .near = 10,
+		  .far = 5000,
+	  });
+
+
 
 	vMapPrepare(mapFName,CurrentWorld);
 	vMapInit();
