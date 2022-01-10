@@ -166,9 +166,9 @@ void RustRenderer::map_update_palette(uint32_t* palette, int32_t palette_size)
 
 	for(int i = 0; i < palette_size; i++){
 		uint8_t* color = (uint8_t*)&palette[i];
-		rv_pal[i * 3 + 0] = std::clamp((double)color[0] * correction, 0.0, 255.0);
-		rv_pal[i * 3 + 1] = std::clamp((double)color[1] * correction, 0.0, 255.0);
-		rv_pal[i * 3 + 2] = std::clamp((double)color[2] * correction, 0.0, 255.0);
+		rv_pal[i * 3 + 0] = color[0];
+		rv_pal[i * 3 + 1] = color[1];
+		rv_pal[i * 3 + 2] = color[2];
 	}
 	rv_map_update_palette(_context, 0, palette_size, rv_pal);
 }
