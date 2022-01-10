@@ -1736,6 +1736,10 @@ void KeyCenter(SDL_Event *key)
 				aciSetCameraMenu();
 			}
 			break;
+
+		case SDL_SCANCODE_BACKSLASH:
+			vMap->__use_external_renderer = !vMap->__use_external_renderer;
+			break;
 		}
 	
 	if (iKeyPressed(iKEY_ZOOM_IN)) {
@@ -2021,86 +2025,95 @@ void iGameMap::draw(int self)
 			
 		}
 
+		if(vMap->__use_external_renderer){
+			auto& renderer = renderer::scene::RenderingContext::renderer();
 
-		auto& renderer = renderer::scene::RenderingContext::renderer();
+			// TODO: put the camera related stuff to the Camera class
+			float turn = GTOR(TurnAngle);
+			float slope = GTOR(SlopeAngle);
 
-		// TODO: put the camera related stuff to the Camera class
-		float turn = GTOR(TurnAngle);
-		float slope = GTOR(SlopeAngle);
+			Quaternion slopeQ(slope, DBV(1, 0, 0));
+			Quaternion turnQ(-turn, DBV(0, 0, 1));
+			Quaternion rotationQuaternion = Quaternion::multiply(
+				turnQ, slopeQ
+			);
 
-		Quaternion slopeQ(slope, DBV(1, 0, 0));
-		Quaternion turnQ(-turn, DBV(0, 0, 1));
-		Quaternion rotationQuaternion = Quaternion::multiply(
-			slopeQ,
-			turnQ
-		);
-
-		DBV pos0(ViewX, ViewY, 0);
-		DBV camera_pos = Quaternion::multiply(turnQ, slopeQ) * DBV(0, 0, ViewZ);
-		std::cout << "camera_pos: "
-					<< camera_pos.x << " "
-					<< camera_pos.y << " "
-					<< camera_pos.z << std::endl;
-		camera_pos += pos0;
+			DBV pos0(ViewX, ViewY, 0);
+			DBV camera_pos = Quaternion::multiply(turnQ, slopeQ) * DBV(0, 0, ViewZ);
+			std::cout << "camera_pos: "
+						<< camera_pos.x << " "
+						<< camera_pos.y << " "
+						<< camera_pos.z << std::endl;
+			camera_pos += pos0;
 
 
-		renderer::scene::Quaternion rotation = {
-			.x = (float)rotationQuaternion.x,
-			.y = (float)rotationQuaternion.y,
-			.z = (float)rotationQuaternion.z,
-			.w = (float)rotationQuaternion.w,
-		};
+			renderer::scene::Quaternion rotation = {
+				.x = (float)rotationQuaternion.x,
+				.y = (float)rotationQuaternion.y,
+				.z = (float)rotationQuaternion.z,
+				.w = (float)rotationQuaternion.w,
+			};
 
-		renderer::scene::Vector3 position = {
-			.x = (float) camera_pos.x,
-			.y = (float) camera_pos.y,
-			.z = (float) camera_pos.z,
-		};
+			renderer::scene::Vector3 position = {
+				.x = (float) camera_pos.x,
+				.y = (float) camera_pos.y,
+				.z = (float) camera_pos.z,
+			};
 
-		std::cout << "TurnAngle: " << TurnAngle				  
-				  << ", TurnSecX: " << TurnSecX
-				  << ", SlopeAngle" << SlopeAngle
-				  << ", turn: " << turn
-				  << ", slope: " << slope
-				  << ", ViewX: " << ViewX
-				  << ", ViewY: " << ViewY
-				  << ", ViewZ: " << ViewZ
-				  << ", focus: " << focus
-				  << std::endl;
+			// 854 14835 512, rotation=-0.544639 -0 -0 0.838671
+//			position = {854, 14835, 512};
+//			rotation = {-0.544639, -0, -0, 0.838671};
+//			rotation = {-0.156434, -0, -0, 0.987688};
 
-		renderer->camera_set_transform({
-		   .position = position,
-		   .rotation = rotation,
-		});
+			std::cout << "TurnAngle: " << TurnAngle
+					  << ", TurnSecX: " << TurnSecX
+					  << ", SlopeAngle" << SlopeAngle
+					  << ", turn: " << turn
+					  << ", slope: " << slope
+					  << ", ViewX: " << ViewX
+					  << ", ViewY: " << ViewY
+					  << ", ViewZ: " << ViewZ
+					  << ", focus: " << focus
+					  << std::endl;
 
-		renderer->map_update_palette(XGR_Obj.XGR32_PaletteCache, 256);
-		renderer::Rect view_rect = {
-			.x = 0,
-			.y = 0,
-			.width = XGR_Obj.RealX,
-			.height = XGR_Obj.RealY,
-		};
-		renderer->render(view_rect);
+			renderer->camera_set_transform({
+			   .position = position,
+			   .rotation = rotation,
+			});
+
+			renderer->map_update_palette(XGR_Obj.XGR32_PaletteCache, 256);
+			renderer::Rect view_rect = {
+				.x = 0,
+				.y = 0,
+				.width = XGR_Obj.RealX,
+				.height = XGR_Obj.RealY,
+			};
+			renderer->render(view_rect);
+
+
+		}
+
+
 
 
 		// TODO: this calls are needed only for level loading
 		// TODO: Dummy rederer should do the software rendering here
-		vMap -> scaling_3D(A_g2s,ViewZ,focus,ViewX,ViewY,xc,yc,xside,yside,TurnAngle);
-//		if(DepthShow) {
-//			if(SkipShow) {
-//				//Наклон изображения
-//				vMap -> SlopTurnSkip(TurnAngle,SlopeAngle,ViewZ,focus,ViewX,ViewY,xc,yc,xsize/2,ysize/2);
-//			} else {
-//				vMap -> scaling_3D(A_g2s,ViewZ,focus,ViewX,ViewY,xc,yc,xside,yside,TurnAngle);
-//			}
-//		} else {
-//			if(TurnAngle) {
-//				//Вращение
-//				vMap -> turning(TurnSecX,-TurnAngle,ViewX,ViewY,xc,yc,xside,yside);
-//			} else {
-//				vMap -> scaling(TurnSecX,ViewX,ViewY,xc,yc,xside,yside);
-//			}
-//		}
+//		vMap -> scaling_3D(A_g2s,ViewZ,focus,ViewX,ViewY,xc,yc,xside,yside,TurnAngle);
+		if(DepthShow) {
+			if(SkipShow) {
+				//Наклон изображения
+				vMap -> SlopTurnSkip(TurnAngle,SlopeAngle,ViewZ,focus,ViewX,ViewY,xc,yc,xsize/2,ysize/2);
+			} else {
+				vMap -> scaling_3D(A_g2s,ViewZ,focus,ViewX,ViewY,xc,yc,xside,yside,TurnAngle);
+			}
+		} else {
+			if(TurnAngle) {
+				//Вращение
+				vMap -> turning(TurnSecX,-TurnAngle,ViewX,ViewY,xc,yc,xside,yside);
+			} else {
+				vMap -> scaling(TurnSecX,ViewX,ViewY,xc,yc,xside,yside);
+			}
+		}
 		
 		
 		//Отрисовка 3д моделей

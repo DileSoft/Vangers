@@ -31,6 +31,7 @@ struct vrtMap {
 	uchar** lineT; //Масив с вокселями.
 	uchar** lineTcolor; //Масив цветов(картинка) поверхности.
 
+	bool __use_external_renderer;
 	int upLine,downLine;
 
 	uchar* dHeap;

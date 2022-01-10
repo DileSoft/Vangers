@@ -316,7 +316,7 @@ vrtMap::~vrtMap(void)
 }
 
 vrtMap::vrtMap(void)
-	: fmap(0), kmap(0)
+	: fmap(0), kmap(0), __use_external_renderer(true)
 {
 	pFile = new PrmFile;
 	cWorld = 0;
@@ -1908,7 +1908,9 @@ void vrtMap::scaling(int XSrcSize,int cx,int cy,int xc,int yc,int xside,int ysid
 	request(MIN(y0,y1) - MAX_RADIUS/2,MAX(y0,y1) + MAX_RADIUS/2,MIN(x0,x1) - 4,MAX(x0,x1) + 4);
 
 	// TODO: allow to continue rendering for the DummyRenderer
-	return;
+	if(__use_external_renderer){
+		return;
+	}
 
 #if defined(_ROAD_) && defined(_DEBUG)
 	if(!TotalDrawFlag) return;
@@ -2157,7 +2159,9 @@ void vrtMap::turning(int XSrcSize,int Turn,int cx,int cy,int xc,int yc,int XDstS
 			MAX(MAX(MAX(y0,y1),y2),y3) + MAX_RADIUS/2,0,0);
 	
 	// TODO: allow to continue rendering for the DummyRenderer
-	return;
+	if(__use_external_renderer){
+		return;
+	}
 
 	int x, y, srcx, srcy;
 	
@@ -2512,8 +2516,10 @@ void vrtMap::scaling_3D(DBM& A,int H,int focus,int cx,int cy,int xc,int yc,int x
 
 	request(MIN(MIN(MIN(y0,y1),y2),y3) - MAX_RADIUS/2,MAX(MAX(MAX(y0,y1),y2),y3) + MAX_RADIUS/2,0,0);
 
-	// TODO: allow to continue rendering for the DummyRenderer
-	return;
+	if(__use_external_renderer){
+		return;
+	}
+
 
 	double al = -ai - aj;
 	double bl = -bi - bj;
