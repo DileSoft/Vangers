@@ -2,7 +2,7 @@ FIND_LIBRARY(RUST_VANGERS_LIBRARY
   NAMES
     vangers_ffi
   PATHS
-    ${RUST_VANGERS_ROOT}/lib
+    ${RUST_VANGERS_ROOT}
     /usr/lib
 	/usr/local/lib
 	/opt/local/lib
