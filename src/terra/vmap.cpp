@@ -1178,7 +1178,7 @@ void vrtMap::accept(int up,int down)
 			i = YCYCL(i + 1);
 		} while(i != max);
 
-	request_region_update(0, up, H_SIZE, down);
+	request_region_update(0, up, H_SIZE - 1, down);
 	upLine = up;
 	downLine = down;
 	preViewY = ViewY;
@@ -1429,16 +1429,29 @@ void vrtMap::quant(void)
 
 void vrtMap::request_region_update(int32_t left, int32_t bottom, int32_t right, int32_t top)
 {
+	left = XCYCL(left);
+	bottom = YCYCL(bottom);
+	right = XCYCL(right);
+	top = YCYCL(top);
+
+	if(left > right) {
+		request_region_update(left, bottom, H_SIZE - 1, top);
+		request_region_update(0, bottom, right, top);
+		return;
+	}
+
+	if(bottom > top){
+		request_region_update(left, bottom, right, V_SIZE - 1);
+		request_region_update(left, 0, right, top);
+		return;
+	}
+
 	renderer::Rect rect {
 		.x = left,
 		.y = bottom,
-		.width = right - left,
-		.height = top - bottom,
+		.width = right - left + 1,
+		.height = top - bottom + 1,
 	};
-
-	// TODO: alignment is neded for RustRenderer
-	rect.width = std::ceil(rect.width / 256.0) * 256;
-	rect.height = std::floor(rect.height / 4.0) * 4;
 
 	renderer::scene::RenderingContext::renderer()->map_request_update(rect);
 }
@@ -1605,7 +1618,7 @@ if (NetworkON && zMod_flood_level_delta!=0) {
 			}
 		i = YCYCL(i + d);
 	} while(i != max);
-	request_region_update(0, up, H_SIZE, down);
+	request_region_update(0, up, H_SIZE - 1, down);
 }
 
 void vrtMap::delink(int up, int down)
