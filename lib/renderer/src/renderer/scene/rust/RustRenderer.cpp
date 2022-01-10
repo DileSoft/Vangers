@@ -143,12 +143,6 @@ void RustRenderer::map_request_update(const Rect& region)
 		.height = region.height,
 	};
 
-	// TODO: alignment is neded for RustRenderer
-//	v_rect.width = std::floor(v_rect.width / 256.0) * 256;
-	v_rect.x = 0;
-	v_rect.width = 2048;
-//	v_rect.height = std::floor(v_rect.height / 4.0) * 4;
-
 	if(v_rect.width == 0 || v_rect.height == 0){
 		return;
 	}
