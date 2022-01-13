@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstring>
 #include <cassert>
+#include <cstdint>
+
 #include "../../lib/sokol_gfx.h"
 #include "../../lib/sokol_gfx_ext.h"
 #include "../../lib/HandmadeMath.h"
@@ -292,7 +294,7 @@ std::unique_ptr<RenderContext> SokolHeightMap::create_context(const MapDescripti
 	sg_image height_texture = make_height_texture(width, height);
 	sg_image meta_texture = make_height_texture(width, height);
 	sg_image palette_texture = make_palette_texture(256);
-	uint8_t* offsets_buffer = new u_int8_t[sizeof(uint32_t) * map_description.material_count];
+    uint8_t* offsets_buffer = new uint8_t[sizeof(uint32_t) * map_description.material_count];
 	sg_image offsets_texture = make_offsets_texture(map_description, offsets_buffer);
 	delete[] offsets_buffer;
 
