@@ -2,6 +2,8 @@ find_library(GLES2_LIBRARY
 	NAMES
 	    GLESv2
 		libGLESv2.dll
+		libGLESv2.dll.lib
+		libGLESv2.lib
 	PATHS
 	    ${GLES2_ROOT}/lib
 		/usr/lib

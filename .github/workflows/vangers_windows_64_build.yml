@@ -22,6 +22,36 @@ jobs:
         mingw-w64-x86_64-yasm
         mingw-w64-x86_64-make'
     - uses: actions/checkout@v1
+
+    - name: vange-rs -- install rustup
+      uses: actions-rs/toolchain@v1
+      with:
+            toolchain: stable
+            target: x86_64-pc-windows-gnu
+            default: true
+    - name: vange-rs -- configure rustup
+      run: rustup default stable-x86_64-pc-windows-gnu
+
+    # TODO: revision 
+    - name: vange-rs -- download
+      # run: git clone --depth 1 https://github.com/kvark/vange-rs vange-rs
+      uses: actions/checkout@v2
+      with:
+        repository: kvark/vange-rs
+        ref: 439d89a
+        path: vange-rs
+        # fetch-depth: 1
+
+    - name: vange-rs -- build
+      run: cargo build --release
+      working-directory: vange-rs/lib/ffi
+
+    - name: vange-rs -- copy artifacts to prefix
+      run: msys2 -c 'cp vange-rs/target/release/libvangers_ffi.a /mingw64/lib/'
+
+    - name: ANGLE/GLES2 -- download
+      run: msys2 -c 'wget -O /mingw64/lib/libGLESv2.dll.lib "https://github.com/lpenguin/libGLESv2-angle/releases/download/v1/libGLESv2.dll.lib"'
+
     - name: clunk -- download
       run: git clone --depth 1 https://github.com/stalkerg/clunk.git clunk
     - name: clunk -- create build dir
@@ -53,6 +83,8 @@ jobs:
         msys2 -c 'mingw32-make -j4'
         msys2 -c 'mingw32-make install'
       working-directory: ffmpeg
+
+
     - name: vangers -- create build dir
       run: msys2 -c 'mkdir build'
     - name: vangers -- configure
@@ -63,6 +95,7 @@ jobs:
       working-directory: build
     - name: vangers -- prepare release folder
       run: |
+        msys2 -c 'pwd; ls *'
         msys2 -c 'mkdir -p vangers/bin'
         msys2 -c 'cp /mingw64/bin/SDL2.dll vangers/bin/'
         msys2 -c 'cp /mingw64/bin/SDL2_net.dll vangers/bin/'
@@ -85,6 +118,10 @@ jobs:
         cp build/server/vangers_server.exe vangers/bin/vangers_server_debug.exe
         msys2 -c 'strip vangers/bin/vangers_server.exe'
         cp build/surmap/surmap.exe vangers/bin/
+
+        msys2 -c 'cp -r data/ vangers'
+        msys2 -c 'cp -r vange-rs/res vangers/data'
+
     - uses: actions/upload-artifact@v1
       with:
         name: Vangers-Release-64

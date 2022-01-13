@@ -11,9 +11,23 @@ jobs:
       run: sudo apt-get update
     - name: install libs
       run: sudo apt-get install cmake libsdl2-dev libsdl2-net-dev libogg-dev libvorbis-dev libavcodec-dev libavformat-dev libavutil-dev
+
+    - name: install rustup toolchain
+      uses: actions-rs/toolchain@v1
+
+    - name: vange-rs -- download
+      run: git clone --depth 1 https://github.com/kvark/vange-rs vange-rs
+    - name: vange-rs -- build
+      run: cargo build --release
+      working-directory: vange-rs/lib/ffi
+    - name: vange-rs -- copy artifacts to prefix
+      run: cp target/release/libvangers_ffi.a /usr/lib/
+      working-directory: vange-rs/
+
     - name: clunk download lib
       run: git clone --depth 1 https://github.com/stalkerg/clunk.git clunk
       working-directory: /tmp
+
     - name: clunk build and install
       run: cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_C_COMPILER=/usr/bin/gcc-9 -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 . && make && sudo make install
       working-directory: /tmp/clunk
