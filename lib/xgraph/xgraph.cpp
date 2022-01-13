@@ -9,6 +9,7 @@
 #include <SDL_surface.h>
 #include <cstdint>
 #include <renderer/compositor/sokol/SokolCompositor.h>
+#include <GLES3/gl32.h>
 #include <assert.h>
 
 #ifdef __APPLE__
@@ -125,6 +126,87 @@ XGR_Screen::XGR_Screen(void)
 	texture = renderer::compositor::Texture::Invalid;
 }
 
+const char * get_debug_type_str(GLenum type){
+	switch(type){
+	case GL_DEBUG_TYPE_ERROR:
+		return "ERROR";
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		return "DEPRECATED_BEHAVIOR";
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		return "UNDEFINED_BEHAVIOR";
+	case GL_DEBUG_TYPE_PORTABILITY:
+		return "PORTABILITY";
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		return "PERFORMANCE";
+	case GL_DEBUG_TYPE_OTHER:
+		return "OTHER";
+	case GL_DEBUG_TYPE_MARKER:
+		return "MARKER";
+	case GL_DEBUG_TYPE_POP_GROUP:
+		return "POP_GROUP";
+	case GL_DEBUG_TYPE_PUSH_GROUP:
+		return "PUSH_GROUP";
+	default:
+		return "Unknown";
+	}
+}
+
+const char* get_debug_severity_str(GLenum severity){
+	switch(severity){
+	case GL_DEBUG_SEVERITY_HIGH:
+		return "HIGH";
+	case GL_DEBUG_SEVERITY_LOW:
+		return "LOW";
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		return "MEDIUM";
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		return "NOTIFICATION";
+	default:
+		return "Unknown";
+	}
+}
+
+const char* get_debug_source_str(GLenum source){
+	switch(source){
+	case GL_DEBUG_SOURCE_API:
+		return "API";
+	case GL_DEBUG_SOURCE_APPLICATION:
+		return "APPLICATION";
+	case GL_DEBUG_SOURCE_OTHER:
+		return "OTHER";
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		return "SHADER_COMPILER";
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		return "THIRD_PARTY";
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		return "WINDOW_SYSTEM";
+	default:
+		return "Unknown";
+	}
+}
+
+void DebugCallbackARB(GLenum source,
+					  GLenum type,
+					  GLuint id,
+					  GLenum severity,
+					  GLsizei length,
+					  const GLchar* message,
+					  const GLvoid* userParam) {
+	if(userParam != nullptr ||
+	   type == GL_DEBUG_TYPE_ERROR)
+	{
+		std::cout << "GL Debug Message:"
+				  << std::endl
+				  << "\tseverity=" << get_debug_severity_str(severity)
+				  << ", type=" << get_debug_type_str(type)
+				  << ", source=" << get_debug_source_str(source)
+				  << std::endl;
+
+		std::cout << "\tmessage=" << std::string(message).substr(0, length) << std::endl;
+	}
+}
+
+
 int XGR_Screen::init(int x,int y,int flags_in)
 {
 	flags = flags_in;
@@ -167,6 +249,11 @@ int XGR_Screen::init(int x,int y,int flags_in)
 
 	std::cout<<"SDL_GL_CreateContext"<<std::endl;
 	openGlContext = SDL_GL_CreateContext(sdlWindow);
+
+	glEnable(GL_DEBUG_OUTPUT);
+	// pass here any value to catch only every debug message
+	glDebugMessageCallback(&DebugCallbackARB, (GLvoid*)true);
+
 	std::cout<<"Load and set icon"<<std::endl;
 #ifdef __APPLE__
 	IconSurface = SDL_LoadBMP("vangers_mac.bmp");
