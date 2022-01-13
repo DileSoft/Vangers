@@ -1,7 +1,3 @@
-# For sdl_ext only
-FIND_PACKAGE(SDL2 REQUIRED)
-FIND_PACKAGE(RustVangers REQUIRED)
-
 SET(renderer_SRCS
 	src/renderer/lib/HandmadeMath.h
 	src/renderer/lib/HandmadeMath_impl.c
@@ -50,11 +46,29 @@ SET(renderer_SRCS
 
 
 ADD_LIBRARY(renderer STATIC ${renderer_SRCS})
+
+TARGET_INCLUDE_DIRECTORIES(
+	renderer 
+	INTERFACE "${PROJECT_SOURCE_DIR}/lib/glad/include"
+)
+
+SET(RENDERER_LIBS
+	${RUSTVANGERS_LIBRARY}
+	glad
+	)
+
+IF(MINGW)
+SET(RENDERER_LIBS
+	${RENDERER_LIBS}
+		userenv
+		bcrypt
+		d3d12
+		d3dcompiler
+		ws2_32
+		)
+ENDIF(MINGW)
+
 TARGET_LINK_LIBRARIES(
 	renderer
-	${OPENGL_gles2_LIBRARY}
-	${GLUT_LIBRARY}
-	${SDL2_LIBRARY}
-	${RUST_VANGERS_LIBRARY}
-	dl
+	${RENDERER_LIBS}
 )
