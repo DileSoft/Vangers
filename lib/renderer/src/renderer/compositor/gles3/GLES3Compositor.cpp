@@ -5,8 +5,8 @@
 #include "../CompositorException.h"
 #include "../../lib/HandmadeMath.h"
 
+#include <glad/glad.h>
 #include <cstring>
-#include <GLES3/gl32.h>
 
 using namespace renderer::compositor;
 using namespace renderer::compositor::gles3;
@@ -46,9 +46,10 @@ const char* fs_code = R"(
 
 
 
-GLES3Compositor::GLES3Compositor(int32_t screen_width, int32_t screen_height)
+
+GLES3Compositor::GLES3Compositor(int32_t screen_width, int32_t screen_height, GLADloadproc loadproc)
 	: _screen_width(screen_width)
-	, _screen_height(screen_height)
+    , _screen_height(screen_height)
 	, _logical_screen_width(screen_width)
 	, _logical_screen_height(screen_height)
 	, _texture_storage()
@@ -56,6 +57,8 @@ GLES3Compositor::GLES3Compositor(int32_t screen_width, int32_t screen_height)
 	, _vertex_array(std::make_unique<QuadVertexArray>())
 	, _previous_vao(0)
 {
+	gladLoadGLES2Loader(loadproc);
+
 	_texture_shader->initialize(vs_code, fs_code);
 	_texture_shader->use();
 	_texture_shader->set_uniform("tex", 0);

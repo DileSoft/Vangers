@@ -5,17 +5,19 @@
 
 #include "../AbstractCompositor.h"
 #include "../../ResourceStorage.h"
+#include <glad/glad.h>
 
 namespace renderer::compositor::gles3 {
 	// PIMPL;
 	class GLES3Texture;
 	class Shader;
 	class QuadVertexArray;
+    typedef void* (*gl_functor)(const char*) ;
 
 	class GLES3Compositor: public AbstractCompositor
 	{
 	public:
-		GLES3Compositor(int32_t screen_width, int32_t screen_height);
+        GLES3Compositor(int32_t screen_width, int32_t screen_height, GLADloadproc loadproc);
 		~GLES3Compositor();
 		Texture texture_create(int32_t width, int32_t height, TextureType texture_type, BlendMode blend_mode);
 		void texture_set_data(Texture texture, uint8_t* data);
@@ -32,7 +34,7 @@ namespace renderer::compositor::gles3 {
 		void set_logical_screen_size(int32_t width, int32_t height);
 		void read_pixels(uint8_t* output);
 	private:
-		int32_t _screen_width;
+        int32_t _screen_width;
 		int32_t _screen_height;
 
 		int32_t _logical_screen_width;

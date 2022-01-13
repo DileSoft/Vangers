@@ -3,7 +3,7 @@
 #include "../CompositorException.h"
 #include "../AbstractCompositor.h"
 
-#include <GLES3/gl32.h>
+#include <glad/glad.h>
 
 using namespace renderer;
 using namespace renderer::compositor;

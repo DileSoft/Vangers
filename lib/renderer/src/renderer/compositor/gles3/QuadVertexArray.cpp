@@ -1,4 +1,4 @@
-#include <GLES3/gl32.h>
+#include <glad/glad.h>
 #include "QuadVertexArray.h"
 
 using namespace renderer::compositor::gles3;

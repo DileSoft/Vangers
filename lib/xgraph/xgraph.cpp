@@ -268,8 +268,8 @@ int XGR_Screen::init(int x,int y,int flags_in)
 		std::cout<<"Can't load icon vangers.bmp"<<std::endl;
 	}
 
-//	renderer = new renderer::compositor::sokol::SokolCompositor(x, y);
-	renderer = new renderer::compositor::gles3::GLES3Compositor(x, y);
+//    renderer = new renderer::compositor::sokol::SokolCompositor(x, y);
+    renderer = new renderer::compositor::gles3::GLES3Compositor(x, y, (GLADloadproc)SDL_GL_GetProcAddress);
 	renderer->initialize();
 	// TODO:
 	std::cout<<"SDL_SetRenderDrawColor"<<std::endl;

@@ -1,6 +1,6 @@
 #include "Shader.h"
 
-#include <GLES3/gl32.h>
+#include <glad/glad.h>
 #include <iostream>
 #include "../CompositorException.h"
 
