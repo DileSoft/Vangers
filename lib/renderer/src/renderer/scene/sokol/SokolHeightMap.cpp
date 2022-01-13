@@ -55,12 +55,15 @@ void SokolHeightMap::request_update_region(const renderer::Rect &region)
 sg_shader make_shader(){
 	sg_shader_desc shd_desc {
 		.vs = {
-			.source = "#version 330\n" CODE(
+			.source = CODE(
+				precision highp float;
+
 				uniform mat4 transform;
 
-				layout(location=0) in vec2 position;
-				layout(location=1) in vec2 texcoord;
-				out vec2 uv;
+				attribute vec2 position;
+				attribute vec2 texcoord;
+
+				varying vec2 uv;
 
 				void main(){
 					gl_Position = transform * vec4(position, 0.0, 1.0);
@@ -80,8 +83,11 @@ sg_shader make_shader(){
 			}
 		},
 		.fs = {
-			.source = "#version 330\n" CODE(
-				const float c_HorFactor = 0.5f; //H_CORRECTION
+			.source = R"(
+				#version 300 es
+				precision highp float;
+
+				const float c_HorFactor = 0.5; //H_CORRECTION
 				const float c_DiffuseScale = 8.0;
 				const float c_ShadowDepthScale = 2.0 / 3.0;
 
@@ -92,8 +98,7 @@ sg_shader make_shader(){
 
 				uniform vec4 u_MapData;
 
-				in vec2 uv;
-				out vec4 frag_color;
+				varying vec2 uv;
 
 				struct TexelInfo {
 					uint height;
@@ -153,13 +158,14 @@ sg_shader make_shader(){
 				vec4 color =  mix(color_begin, color_end, lit_factor);
 				return color;
 			}
-				void main(){
-					TexelInfo info = get_texel_info(ivec2(mod(uv, 1.0f) * u_MapData.xy));
 
-					frag_color = get_color(info);
+			void main(){
+				TexelInfo info = get_texel_info(ivec2(mod(uv, 1.0f) * u_MapData.xy));
 
-				}
-			),
+				gl_FragColor = get_color(info);
+
+			}
+			)",
 			.uniform_blocks = {
 				/*[0] =*/ {
 					.size = sizeof(fs_params_t),

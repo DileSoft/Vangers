@@ -7213,7 +7213,7 @@ _SOKOL_PRIVATE void _sg_gl_apply_pipeline(_sg_pipeline_t* pip) {
         #endif
 
         /* bind shader program */
-        if (pip->shader->gl.prog != _sg.gl.cache.prog) {
+		if (pip->shader->gl.prog != _sg.gl.cache.prog || true) {
             _sg.gl.cache.prog = pip->shader->gl.prog;
             glUseProgram(pip->shader->gl.prog);
         }

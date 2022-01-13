@@ -250,21 +250,23 @@ void SokolTexture::destroy() {
 sg_shader get_shader_rgba() {
 	sg_shader_desc shd_desc = {
 			.vs = {
-					.source = "#version 330\n" CODE(
-							uniform mat4 transform;
-							uniform vec4 uv_transform;
-							layout(location=0)  in vec2 position;
-							layout(location=1) in vec2 texcoord0;
+					.source = R"(
+	#version 300 es
+	precision mediump float;
+	uniform mat4 transform;
+	uniform vec4 uv_transform;
+	attribute vec2 position;
+	attribute vec2 texcoord0;
 
-							out vec2 uv;
+	out vec2 uv;
 
-							void main() {
-								vec4 pos = vec4(position, 0.5, 1.0);
+	void main() {
+		vec4 pos = vec4(position, 0.5, 1.0);
 
-								gl_Position = transform * pos;
-								uv = texcoord0 * uv_transform.zw + uv_transform.xy;
-							}
-					),
+		gl_Position = transform * pos;
+		uv = texcoord0 * uv_transform.zw + uv_transform.xy;
+	}
+					)",
 					.uniform_blocks = {
 							/*[0] =*/ {
 									.size = sizeof(vs_params_t),
@@ -283,17 +285,19 @@ sg_shader get_shader_rgba() {
 
 			},
 			.fs = {
-					.source = "#version 330\n" CODE(
+					.source = R"(
+	#version 300 es
+	precision mediump float;
 
-							uniform vec4 color; 
-							uniform sampler2D tex;
+	uniform vec4 color;
+	uniform sampler2D tex;
 
-							in vec2 uv;
-							out vec4 frag_color;
-							void main() {
-								frag_color = texture(tex, uv) * color;
-							}
-					),
+	in vec2 uv;
+	out vec4 FragColor;
+	void main() {
+		FragColor = texture(tex, uv) * color;
+	}
+					)",
 					.uniform_blocks = {
 							/*[0] =*/ {
 									.size = sizeof(fs_params_t),
@@ -347,7 +351,7 @@ sg_shader get_shader_rgba() {
 //
 //			},
 //			.fs = {
-//					.source = "#version 330\n" CODE(
+//					.source = CODE(
 //							  uniform usampler2D t_Color;
 //					          uniform sampler2D palette;
 //							  in vec2 uv;
