@@ -12,7 +12,7 @@
 #define __XGRAPH_H__
 
 #include "xglobal.h"
-#include <renderer/core/AbstractCoreRenderer.h>
+#include <renderer/compositor/AbstractCompositor.h>
 
 // Some defines for 64K modes...
 #define XGR_RGB64K(r,g,b)	(((r) << XGR_SHIFT_R) + ((g) << XGR_SHIFT_G) + ((b) << XGR_SHIFT_B))
@@ -203,11 +203,11 @@ private:
 	SDL_Surface *XGR32_ScreenSurface;
 
 	SDL_Surface *IconSurface;
-	renderer::core::Texture texture;
+	renderer::compositor::Texture texture;
 
-	renderer::core::Texture HDBackgroundTexture;
+	renderer::compositor::Texture HDBackgroundTexture;
 	SDL_Window *sdlWindow;
-	renderer::core::AbstractCoreRenderer * renderer;
+	renderer::compositor::AbstractCompositor * renderer;
 
 	SDL_Color XGR_Palette[256] {{0, 0, 0, 0}};
 

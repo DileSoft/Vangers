@@ -15,8 +15,8 @@ extern int getCurIScreenX();
 extern int CurrentWorld;
 
 namespace {
-renderer::core::Texture HDLeftSideTexture = renderer::core::Texture::Invalid;
-renderer::core::Texture HDRightSideTexture = renderer::core::Texture::Invalid;
+renderer::compositor::Texture HDLeftSideTexture = renderer::compositor::Texture::Invalid;
+renderer::compositor::Texture HDRightSideTexture = renderer::compositor::Texture::Invalid;
 
 std::pair<const char *, const char *> activeSides = std::make_pair<>(nullptr, nullptr);
 int currentRto = 0;
@@ -83,7 +83,7 @@ std::pair<const char *, const char *> getSideNames() {
 }
 }
 
-void XGR_RenderSides(renderer::core::AbstractCoreRenderer* renderer) {
+void XGR_RenderSides(renderer::compositor::AbstractCompositor* renderer) {
 	auto sideNames = getSideNames();
 
 	if (sideNames.first != activeSides.first) {
@@ -93,7 +93,7 @@ void XGR_RenderSides(renderer::core::AbstractCoreRenderer* renderer) {
 		HDLeftSideTexture =
 				sideNames.first
 				? BMP_CreateTexture(sideNames.first, renderer)
-				: renderer::core::Texture::Invalid;
+				: renderer::compositor::Texture::Invalid;
 		activeSides.first = sideNames.first;
 	}
 
@@ -103,7 +103,7 @@ void XGR_RenderSides(renderer::core::AbstractCoreRenderer* renderer) {
 		}
 		HDRightSideTexture = sideNames.second
 				? BMP_CreateTexture(sideNames.second, renderer)
-				: renderer::core::Texture::Invalid;
+				: renderer::compositor::Texture::Invalid;
 		activeSides.second = sideNames.second;
 	}
 

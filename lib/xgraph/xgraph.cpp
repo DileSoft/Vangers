@@ -8,8 +8,7 @@
 #include <SDL_pixels.h>
 #include <SDL_surface.h>
 #include <cstdint>
-#include <renderer/core/sokol/SokolCoreRenderer.h>
-
+#include <renderer/compositor/sokol/SokolCompositor.h>
 #include <assert.h>
 
 #ifdef __APPLE__
@@ -123,7 +122,7 @@ XGR_Screen::XGR_Screen(void)
 	XGR32_ScreenSurface = NULL;
 	sdlWindow = NULL;
 	renderer = NULL;
-	texture = renderer::core::Texture::Invalid;
+	texture = renderer::compositor::Texture::Invalid;
 }
 
 int XGR_Screen::init(int x,int y,int flags_in)
@@ -176,7 +175,7 @@ int XGR_Screen::init(int x,int y,int flags_in)
 		std::cout<<"Can't load icon vangers.bmp"<<std::endl;
 	}
 
-	renderer = new renderer::core::SokolCoreRenderer(x, y);
+	renderer = new renderer::compositor::sokol::SokolCompositor(x, y);
 	renderer->initialize();
 	// TODO:
 	std::cout<<"SDL_SetRenderDrawColor"<<std::endl;
@@ -231,7 +230,7 @@ void XGR_Screen::create_surfaces(int width, int height) {
 	std::cout<<"SDL_SetSurfacePalette"<<std::endl;
 
 	std::cout<<"SDL_CreateTexture sdlTexture"<<std::endl;
-	texture = renderer->texture_create(width, height, renderer::core::TextureType::RGBA32, renderer::core::BlendMode::Alpha);
+	texture = renderer->texture_create(width, height, renderer::compositor::TextureType::RGBA32, renderer::compositor::BlendMode::Alpha);
 
 	HDBackgroundTexture = BMP_CreateTexture("resource/actint/hd/hd_background.bmp", renderer);
 
@@ -297,8 +296,8 @@ void XGR_Screen::destroy_surfaces() {
 	delete[] XGR_ScreenSurface2DRgba;
 	SDL_FreeSurface(XGR32_ScreenSurface);
 
-	texture = renderer::core::Texture::Invalid;
-	HDBackgroundTexture = renderer::core::Texture::Invalid;
+	texture = renderer::compositor::Texture::Invalid;
+	HDBackgroundTexture = renderer::compositor::Texture::Invalid;
 	XGR_ScreenSurface = nullptr;
 	XGR_ScreenSurface2D = nullptr;
 	XGR_ScreenSurface2DRgba = nullptr;

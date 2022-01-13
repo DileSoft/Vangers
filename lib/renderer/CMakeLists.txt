@@ -14,13 +14,13 @@ SET(renderer_SRCS
 	src/renderer/ResourceId.h
 	src/renderer/common.h
 	src/renderer/common.cpp
-	src/renderer/core/AbstractCoreRenderer.h
-	src/renderer/core/sokol/SokolCoreRenderer.cpp
-	src/renderer/core/sokol/SokolCoreRenderer.h
-	src/renderer/core/sokol/SokolTexture.cpp
-	src/renderer/core/sokol/SokolTexture.h
-	src/renderer/core/sdl_ext/SDL_extensions.cpp
-	src/renderer/core/sdl_ext/SDL_extensions.h
+	src/renderer/compositor/AbstractCompositor.h
+	src/renderer/compositor/sokol/SokolCompositor.cpp
+	src/renderer/compositor/sokol/SokolCompositor.h
+	src/renderer/compositor/sokol/SokolTexture.cpp
+	src/renderer/compositor/sokol/SokolTexture.h
+	src/renderer/compositor/sdl_ext/SDL_extensions.cpp
+	src/renderer/compositor/sdl_ext/SDL_extensions.h
 	src/renderer/scene/AbstractRenderer.h
 	src/renderer/scene/RenderingContext.cpp
 	src/renderer/scene/RenderingContext.h

@@ -6,7 +6,7 @@
 #define VANGERS_XSIDE_H
 
 #include <SDL.h>
-#include <renderer/core/AbstractCoreRenderer.h>
-void XGR_RenderSides(renderer::core::AbstractCoreRenderer* renderer);
+#include <renderer/compositor/AbstractCompositor.h>
+void XGR_RenderSides(renderer::compositor::AbstractCompositor* renderer);
 
 #endif // VANGERS_XSIDE_H

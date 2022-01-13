@@ -4,15 +4,17 @@
 
 #include <fstream>
 
-#include <renderer/core/sdl_ext/SDL_extensions.h>
+#include <renderer/compositor/sdl_ext/SDL_extensions.h>
 
 #include "xbmp.h"
 
-renderer::core::Texture BMP_CreateTexture(const char *file, renderer::core::AbstractCoreRenderer *renderer) {
-	return renderer::core::sdl_ext::texture_load_bmp(
+using namespace renderer::compositor;
+
+Texture BMP_CreateTexture(const char *file, AbstractCompositor *renderer) {
+	return sdl_ext::texture_load_bmp(
 		*renderer, 
 		file, 
-		renderer::core::TextureType::RGBA32, 
-		renderer::core::BlendMode::Alpha
+		TextureType::RGBA32,
+		BlendMode::Alpha
 	);
 }
