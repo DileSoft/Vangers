@@ -994,8 +994,8 @@ _MEM_STATISTIC_("\nBEFORE VMAP  -> ");
 	RenderingContext::renderer()->camera_create({
 		  .fov = FOV,
 		  .aspect = (float)xgrScreenSizeX/(float)xgrScreenSizeY,
-		  .near = 10,
-		  .far = 5000,
+          .near_plane = 10,
+          .far_plane = 5000,
 	  });
 
 

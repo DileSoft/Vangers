@@ -23,8 +23,8 @@ namespace renderer::scene {
 	struct CameraDescription {
 		float fov;
 		float aspect;
-		float near;
-		float far;
+        float near_plane;
+        float far_plane;
 	};
 
 	struct Vector3 {

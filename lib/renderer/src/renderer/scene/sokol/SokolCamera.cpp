@@ -5,8 +5,8 @@ renderer::scene::sokol::SokolCamera::SokolCamera(const renderer::scene::CameraDe
 	: _projection(HMM_Perspective(
 					  camera_description.fov,
 					  camera_description.aspect,
-					  camera_description.near,
-					  camera_description.far
+					  camera_description.near_plane,
+					  camera_description.far_plane
 					  ))
 	, _position(HMM_Vec3(0, 0, 0))
 	, _rotation(HMM_Quaternion(0, 0, 0, 0))

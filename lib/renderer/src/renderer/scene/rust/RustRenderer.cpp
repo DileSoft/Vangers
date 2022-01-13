@@ -48,8 +48,8 @@ void RustRenderer::camera_create(const CameraDescription& camera_description)
 	rv_camera_description v_desc {
 		.fov = camera_description.fov,
 		.aspect = camera_description.aspect,
-		.near= camera_description.near,
-		.far = camera_description.far,
+        .near= camera_description.near_plane,
+        .far = camera_description.far_plane,
 	};
 
 	std::cout << "rv_camera_init(context=" << _context << ", {" << std::endl
