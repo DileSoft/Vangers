@@ -1,7 +1,6 @@
-FIND_PACKAGE(OpenGL REQUIRED)
 # For sdl_ext only
 FIND_PACKAGE(SDL2 REQUIRED)
-
+FIND_PACKAGE(RustVangers REQUIRED)
 
 SET(renderer_SRCS
 	src/renderer/lib/HandmadeMath.h
@@ -34,11 +33,18 @@ SET(renderer_SRCS
 	src/renderer/scene/sokol/MapUpdater.cpp
 	src/renderer/scene/dummy/DummyRenderer.cpp
 	src/renderer/scene/dummy/DummyRenderer.h
+	src/renderer/scene/rust/RustRenderer.cpp
+	src/renderer/scene/rust/RustRenderer.h
+	src/renderer/scene/rust/vange_rs.h
 	)
 
 
 ADD_LIBRARY(renderer STATIC ${renderer_SRCS})
 TARGET_LINK_LIBRARIES(
 	renderer
-	${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${SDL2_LIBRARY}
+	${OPENGL_gles2_LIBRARY}
+	${GLUT_LIBRARY}
+	${SDL2_LIBRARY}
+	${RUST_VANGERS_LIBRARY}
+	dl
 )

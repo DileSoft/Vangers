@@ -145,6 +145,11 @@ int XGR_Screen::init(int x,int y,int flags_in)
 
 		SDL_DestroyWindow(sdlWindow);
 	}
+
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+
 	std::cout<<"SDL_CreateWindowAndRenderer"<<std::endl;
 	if (XGR_FULL_SCREEN) {
 		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, 0, 0, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP)) == nullptr) {

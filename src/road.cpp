@@ -103,6 +103,7 @@ XStream fmemory("memstats.dmp", XS_OUT);
 #endif
 
 #include <renderer/scene/sokol/SokolRenderer.h>
+#include <renderer/scene/rust/RustRenderer.h>
 
 /* ----------------------------- EXTERN SECTION ---------------------------- */
 extern XStream fout;
@@ -378,8 +379,6 @@ void showModal(char* fname, float reelW, float reelH, float screenW, float scree
 
 
 int xtInitApplication(void) {
-	renderer::scene::RenderingContext::create(std::make_unique<renderer::scene::SokolRenderer>());
-
     XGraphWndID = "VANGERS";
     char *tmp;
 
@@ -497,6 +496,8 @@ int xtInitApplication(void) {
 
     if (XGR_Init(w, h, emode)) ErrH.Abort(ErrorVideoMss);
 
+	renderer::scene::RenderingContext::create(std::make_unique<renderer::scene::rust::RustRenderer>(xgrScreenSizeX, xgrScreenSizeY));
+//	renderer::scene::RenderingContext::create(std::make_unique<renderer::scene::SokolRenderer>());
 
 //WORK	sWinVideo::Init();
 //	::ShowCursor(0);

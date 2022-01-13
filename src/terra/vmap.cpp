@@ -1138,8 +1138,6 @@ void vrtMap::accept(int up,int down)
 	uchar* p;
 	int off;
 
-	auto& r = renderer::scene::RenderingContext::renderer();
-
 	if(!isCompressed)
 		do {
 			freeMax--;
@@ -1162,7 +1160,6 @@ void vrtMap::accept(int up,int down)
 			lineTcolor[i] = use_c();
 			//TODO: Move LINE_render to the SoftwareRenderer implementation
 			LINE_render(i);
-			request_region_update({0, i, H_SIZE, 1});
 			i = YCYCL(i + 1);
 		} while(i != max);
 	else
@@ -1188,10 +1185,10 @@ void vrtMap::accept(int up,int down)
 #endif
 			//TODO: Move LINE_render to the SoftwareRenderer implementation
 			LINE_render(i);
-			request_region_update({0, i, H_SIZE, 1});
 			i = YCYCL(i + 1);
 		} while(i != max);
 
+	request_region_update(0, up, H_SIZE, down);
 	upLine = up;
 	downLine = down;
 	preViewY = ViewY;
@@ -1440,8 +1437,19 @@ void vrtMap::quant(void)
 	change(ytop,ybottom);
 }
 
-void vrtMap::request_region_update(const renderer::Rect &rect)
+void vrtMap::request_region_update(int32_t left, int32_t bottom, int32_t right, int32_t top)
 {
+	renderer::Rect rect {
+		.x = left,
+		.y = bottom,
+		.width = right - left,
+		.height = top - bottom,
+	};
+
+	// TODO: alignment is neded for RustRenderer
+	rect.width = std::ceil(rect.width / 256.0) * 256;
+	rect.height = std::floor(rect.height / 4.0) * 4;
+
 	renderer::scene::RenderingContext::renderer()->map_request_update(rect);
 }
 
@@ -1544,7 +1552,6 @@ void vrtMap::linkC(int up,int down,int d)
 	do {
 		if(!lineTcolor[i]) {
 			//TODO: request_region_update once
-			request_region_update({0, i, H_SIZE, 1});
 			if(freeMax <= 1) {
 				std::cout<<"We have no more free space in terrain buffer"<<std::endl;
 				return;
@@ -1608,6 +1615,7 @@ if (NetworkON && zMod_flood_level_delta!=0) {
 			}
 		i = YCYCL(i + d);
 	} while(i != max);
+	request_region_update(0, up, H_SIZE, down);
 }
 
 void vrtMap::delink(int up, int down)

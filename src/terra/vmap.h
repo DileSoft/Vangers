@@ -85,7 +85,7 @@ struct vrtMap {
 	void quant(void);
 
 	// TODO: merge with void request(int up,int down,int left, int right)
-	void request_region_update(const renderer::Rect& rect);
+	void request_region_update(int32_t left, int32_t bottom, int32_t right, int32_t top);
 	void link(int up,int down,int d);
 	void linkC(int up,int down,int d);
 	void delink(int up,int down);

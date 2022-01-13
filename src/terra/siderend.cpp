@@ -447,13 +447,6 @@ void regRender(int LowX,int LowY,int HiX,int HiY,int changed)
 	int SizeX = (0 == XCYCL(HiX - LowX)) ? H_SIZE : XCYCL(HiX - LowX);
 
 
-	vMap->request_region_update({
-												 .x = LowX,
-												 .y = LowY,
-												 .width = SizeX,
-												 .height = SizeY,
-											 });
-
 	int BackScanLen = 0;
 	int j;
 	for(j = 0;j < SizeY;j++){
@@ -634,6 +627,7 @@ void regRender(int LowX,int LowY,int HiX,int HiY,int changed)
 		if(CurrScanLenght > BackScanLen) BackScanLen = CurrScanLenght;
 		}
 	}
+	vMap->request_region_update(LowX, LowY, LowX + SizeX, LowY + SizeY);
 }
 
 //znfo render
