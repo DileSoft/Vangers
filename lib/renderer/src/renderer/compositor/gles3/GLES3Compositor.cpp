@@ -11,8 +11,7 @@
 using namespace renderer::compositor;
 using namespace renderer::compositor::gles3;
 
-const char* vs_code = R"(
-	#version 300 es
+const char* vs_code = R"(#version 300 es
 	precision mediump float;
 
 	uniform mat4 transform;
@@ -29,8 +28,7 @@ const char* vs_code = R"(
 	}
 )";
 
-const char* fs_code = R"(
-	#version 300 es
+const char* fs_code = R"(#version 300 es
 	precision mediump float;
 
 	uniform vec4 color;
