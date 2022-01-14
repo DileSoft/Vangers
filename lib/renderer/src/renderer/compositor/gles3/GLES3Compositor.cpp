@@ -135,10 +135,15 @@ GLES3Compositor::GLES3Compositor(int32_t screen_width, int32_t screen_height, GL
 {
 	gladLoadGLES2Loader(loadproc);
 
-	glEnable(GL_DEBUG_OUTPUT);
-	// pass here any value to catch only every debug message
-	glDebugMessageCallback(&DebugCallbackARB, nullptr);
 
+//	 pass here any value to catch only every debug message
+	if(glDebugMessageCallback != nullptr){
+		glEnable(GL_DEBUG_OUTPUT);
+		glDebugMessageCallback(&DebugCallbackARB, nullptr);
+	}
+
+	const GLubyte * glVersion = glGetString(GL_VERSION);
+	std::cout << "glVersion: " << glVersion <<std::endl;
 	_texture_shader->initialize(vs_code, fs_code);
 	_texture_shader->use();
 	_texture_shader->set_uniform("tex", 0);
@@ -276,7 +281,10 @@ const char* guiDebugGroup = "GLES3Compositor render";
 
 void GLES3Compositor::render_begin()
 {
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, std::strlen(guiDebugGroup), guiDebugGroup);
+	if(glPushDebugGroup != nullptr){
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, std::strlen(guiDebugGroup), guiDebugGroup);
+	}
+
 	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &_previous_vao);
 
 	glDisable(GL_DEPTH_TEST);
@@ -290,7 +298,9 @@ void GLES3Compositor::render_begin()
 void GLES3Compositor::render_present()
 {
 	glBindVertexArray(_previous_vao);
-	glPopDebugGroup();
+	if(glPopDebugGroup != nullptr){
+		glPopDebugGroup();
+	}
 }
 
 void GLES3Compositor::initialize()
