@@ -94,6 +94,7 @@ TARGET_LINK_LIBRARIES(vangers
 	${ZLIB_LIBRARIES}
 	${WIN_LIB}
 	${STEAM_LIBS}
+#	${GLES2_LIBRARY}  # Disabled, because we would use dynamic lib
 	xtool
 	xgraph
 	xsound
