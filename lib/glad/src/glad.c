@@ -894,7 +894,7 @@ static void find_coreGLES2(void) {
 #ifdef _MSC_VER
     sscanf_s(version, "%d.%d", &major, &minor);
 #else
-    sscanf_s(version, "%d.%d", &major, &minor);
+	sscanf(version, "%d.%d", &major, &minor);
 #endif
 
     GLVersion.major = major; GLVersion.minor = minor;
