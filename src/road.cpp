@@ -373,7 +373,10 @@ void showModal(char* fname, float reelW, float reelH, float screenW, float scree
 
 
 int xtInitApplication(void) {
+	int *a;
+	*a = 0;
     XGraphWndID = "VANGERS";
+
     char *tmp;
 
 #ifdef _DEMO_
