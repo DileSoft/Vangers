@@ -169,7 +169,7 @@ int XGR_Screen::init(int x,int y,int flags_in)
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	} else {
-		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, x, y, SDL_WINDOW_OPENGL)) == nullptr) {
+		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, x, y, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)) == nullptr) {
 			std::cout<<"ERROR2"<<std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
@@ -2180,7 +2180,7 @@ XGR_MousePromptData::XGR_MousePromptData(void)
 
 XGR_MousePromptData::~XGR_MousePromptData(void)
 {
-	if(textData && flags & XGR_PROMPT_MEM_ALLOC) delete textData;
+	if(textData && flags & XGR_PROMPT_MEM_ALLOC) delete [] textData;
 }
 
 void XGR_MousePromptData::init_text(char* p)
