@@ -155,7 +155,7 @@ int XGR_Screen::init(int x,int y,int flags_in)
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	} else {
-		if (SDL_CreateWindowAndRenderer(x, y, 0, &sdlWindow, &sdlRenderer) < 0) {
+		if (SDL_CreateWindowAndRenderer(x, y, SDL_WINDOW_RESIZABLE, &sdlWindow, &sdlRenderer) < 0) {
 			std::cout<<"ERROR2"<<std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
