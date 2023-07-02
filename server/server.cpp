@@ -1323,9 +1323,6 @@ int Player::receive() {
 			code_queue.put(GAMES_LIST_RESPONSE);
 			IN_EVENTS_LOG(GAMES_LIST_QUERY);
 			break;
-		case ATTACH_TO_GAME:
-			jdata = json::object();
-			jdata["name"] = "ATTACH_TO_GAME";
 		case ATTACH_TO_GAME: {
 			jdata = json::object();
 			jdata["name"] = "ATTACH_TO_GAME";
