@@ -91,14 +91,24 @@ void XGR_FinitFnc(void)
 
 Uint32 CursorAnim(Uint32 interval, void *param)
 {
+	SDL_Event event;
+	SDL_zero(event);
+	event.type = SDL_USEREVENT;
+	event.user.code = CursorAnimationEvent;
+	event.user.data1 = nullptr;
+	event.user.data2 = nullptr;
+	SDL_PushEvent(&event);
+
+	return interval;
+}
+
+void doCursorAnimation() {
 	int result = 0;
 	result += XGR_MouseObj.NextFrame();
 	result += XGR_MouseObj.NextPromptFrame();
 	if(result) {
 		XGR_MouseObj.Redraw();
 	}
-
-	return interval;
 }
 
 
@@ -122,7 +132,7 @@ XGR_Screen::XGR_Screen(void)
 	sdlTexture = NULL;
 }
 
-int XGR_Screen::init(int x,int y,int flags_in)
+int XGR_Screen::init(int flags_in)
 {
 	flags = flags_in;
 	std::cout<<"XGR_Screen::init"<<std::endl;
@@ -138,6 +148,25 @@ int XGR_Screen::init(int x,int y,int flags_in)
 		SDL_DestroyRenderer(sdlRenderer);
 		SDL_DestroyWindow(sdlWindow);
 	}
+
+	SDL_DisplayMode displayMode;
+	SDL_GetCurrentDisplayMode(0, &displayMode);
+	int maxWidth = displayMode.w;
+	int maxHeight = displayMode.h;
+
+	const float maxAspect = 1280.0f / 600;
+	float aspect = (float) maxWidth / (float) maxHeight;
+	if (aspect < 4/3.f) {
+		aspect = 4/3.f;
+	}
+
+	if (aspect > maxAspect) {
+		aspect = maxAspect;
+	}
+
+	this->hdWidth = 1280;
+	this->hdHeight = round(1280 / aspect);
+
 	std::cout<<"SDL_CreateWindowAndRenderer"<<std::endl;
 	if (XGR_FULL_SCREEN) {
 		if (SDL_CreateWindowAndRenderer(0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP, &sdlWindow, &sdlRenderer) < 0) {
@@ -145,12 +174,12 @@ int XGR_Screen::init(int x,int y,int flags_in)
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	} else {
-		if (SDL_CreateWindowAndRenderer(x, y, 0, &sdlWindow, &sdlRenderer) < 0) {
+		if (SDL_CreateWindowAndRenderer(this->hdWidth, this->hdHeight, SDL_WINDOW_RESIZABLE, &sdlWindow, &sdlRenderer) < 0) {
 			std::cout<<"ERROR2"<<std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	}
-	std::cout<<"SDL_SetWindowTitle"<<std::endl;
+	std::cout << "SDL_Window created: " << this->hdWidth << "x" << this->hdHeight << std::endl;
 	SDL_SetWindowTitle(sdlWindow, "Vangers");
 	
 	std::cout<<"Load and set icon"<<std::endl;
@@ -175,7 +204,7 @@ int XGR_Screen::init(int x,int y,int flags_in)
 	std::cout<<"SDL_SetHint"<<std::endl;
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");  // "linear" make the scaled rendering look smoother.
 
-	create_surfaces(x, y);
+	create_surfaces(this->hdWidth, this->hdHeight);
 
 	std::cout<<"SDL_ShowCursor"<<std::endl;
 	//SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -211,9 +240,9 @@ int XGR_Screen::init(int x,int y,int flags_in)
 }
 
 void XGR_Screen::create_surfaces(int width, int height) {
-	XGR_ScreenSurface = new uint8_t[width * height] {0};
-	XGR_ScreenSurface2D = new uint8_t[width * height] {0};
-	XGR_ScreenSurface2DRgba = new uint32_t[width * height] {0};
+	XGR_ScreenSurface.reset(new uint8_t[width * height] {0});
+	XGR_ScreenSurface2D.reset(new uint8_t[width * height] {0});
+	XGR_ScreenSurface2DRgba.reset(new uint32_t[width * height] {0});
 
 	std::cout<<"XGR32_ScreenSurface = SDL_CreateRGBSurface"<<std::endl;
 	XGR32_ScreenSurface = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
@@ -248,16 +277,7 @@ void XGR_Screen::create_surfaces(int width, int height) {
 }
 
 void XGR_Screen::set_resolution(int width, int height){
-	// TODO: do not change resolution, is new res is the same
 	std::cout << "XGR_Screen::set_resolution: " << width << ", " << height << std::endl;
-	if(width == ScreenX && height == ScreenY){
-		std::cout << "Resolution didn't change" << std::endl;
-		return;
-	}
-
-	destroy_surfaces();
-	SDL_SetWindowSize(sdlWindow, width, height);
-	create_surfaces(width, height);
 
 	if (width == 800 && height == 600) {
 		// for comparison == 1
@@ -267,6 +287,15 @@ void XGR_Screen::set_resolution(int width, int height){
 		screen_scale_x = (float)width / 800;
 		screen_scale_y = (float)height / 600;
 	}
+
+	if(width == ScreenX && height == ScreenY){
+		std::cout << "Resolution didn't change" << std::endl;
+		return;
+	}
+
+	destroy_surfaces();
+	SDL_SetWindowSize(sdlWindow, width, height);
+	create_surfaces(width, height);
 }
 
 const float XGR_Screen::get_screen_scale_x() {
@@ -283,9 +312,6 @@ void XGR_Screen::destroy_surfaces() {
 
 	SDL_UnlockSurface(XGR32_ScreenSurface);
 
-	delete[] XGR_ScreenSurface;
-	delete[] XGR_ScreenSurface2D;
-	delete[] XGR_ScreenSurface2DRgba;
 	SDL_FreeSurface(XGR32_ScreenSurface);
 
 	sdlTexture = nullptr;
@@ -857,15 +883,15 @@ uint8_t* XGR_Screen::get_active_render_buffer() {
 }
 
 uint8_t* XGR_Screen::get_default_render_buffer() {
-	return XGR_ScreenSurface;
+	return XGR_ScreenSurface.get();
 }
 
 uint8_t* XGR_Screen::get_2d_render_buffer() {
-	return XGR_ScreenSurface2D;
+	return XGR_ScreenSurface2D.get();
 }
 
 uint32_t* XGR_Screen::get_2d_rgba_render_buffer() {
-	return XGR_ScreenSurface2DRgba;
+	return XGR_ScreenSurface2DRgba.get();
 }
 
 void XGR_Screen::set_active_render_buffer(uint8_t *buf) {
@@ -873,11 +899,11 @@ void XGR_Screen::set_active_render_buffer(uint8_t *buf) {
 }
 
 void XGR_Screen::set_default_render_buffer() {
-	set_active_render_buffer(XGR_ScreenSurface);
+	set_active_render_buffer(get_default_render_buffer());
 }
 
 void XGR_Screen::set_2d_render_buffer() {
-	set_active_render_buffer(XGR_ScreenSurface2D);
+	set_active_render_buffer(get_2d_render_buffer());
 }
 
 SDL_Surface* XGR_Screen::get_screenshot() {
@@ -920,7 +946,7 @@ void XGR_Screen::flip()
 		void *pixels;
 		int pitch;
 		SDL_LockTexture(sdlTexture, NULL, &pixels, &pitch);
-		blitRgba((uint32_t*)pixels, XGR_ScreenSurface, XGR_ScreenSurface2DRgba, XGR_ScreenSurface2D);
+		blitRgba((uint32_t*)pixels, get_default_render_buffer(), get_2d_rgba_render_buffer(), get_2d_render_buffer());
 		SDL_UnlockTexture(sdlTexture);
 		
 		SDL_RenderClear(sdlRenderer);
@@ -945,7 +971,7 @@ void XGR_Screen::flip()
 					.w = new_width,
 					.h = xgrScreenSizeY,
 			};
-			XGR_RenderSides(sdlRenderer);
+			XGR_RenderSides(sdlRenderer, new_width);
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
 			SDL_RenderCopy(sdlRenderer, sdlTexture, &src_rect, &dst_rect);
 		}else{
@@ -1013,8 +1039,9 @@ void XGR_Screen::flush(int x,int y,int sx,int sy)
 
 void XGR_Screen::fill(int col, void* buffer)
 {
-	if (buffer == XGR_ScreenSurface2DRgba) {
-		memset(XGR_ScreenSurface2DRgba, col, ScreenX * ScreenY * 4);
+	auto surface2dRgba = XGR_ScreenSurface2DRgba.get();
+	if (buffer == surface2dRgba) {
+		memset(surface2dRgba, col, ScreenX * ScreenY * 4);
 	} else {
 		memset(buffer == NULL ? ScreenBuf : buffer, col, ScreenX * ScreenY);
 	}
@@ -1556,7 +1583,7 @@ XGR_Mouse::XGR_Mouse(void)
 	PromptFon = NULL;
 	promptData = NULL;
 	AlphaData = NULL;
-
+	PromptFonBufSize = 0;
 }
 
 void XGR_Mouse::Hide(void)
@@ -1631,8 +1658,8 @@ static unsigned short XGR_MouseDefFrameHC[240] =
 
 void XGR_Mouse::Init(int x,int y,int sx,int sy,int num,void* p)
 {
-	PosX = x;
-	PosY = y;
+	PosX = x - SpotX;
+	PosY = y - SpotX;
 	SizeX = sx;
 	SizeY = sy;
 	PosZ = LastPosZ = MovementZ = 0;
@@ -1820,8 +1847,8 @@ void XGR_Mouse::InitPos(int x,int y)
 	LastSizeX = SizeX;
 	LastSizeY = SizeY;
 
-	PosX = x;
-	PosY = y;
+	PosX = x - SpotX;
+	PosY = y - SpotY;
 
 	AdjustPos();
 }
@@ -1856,10 +1883,10 @@ void XGR_Mouse::SetPos(int x,int y)
 	LastSizeX = SizeX;
 	LastSizeY = SizeY;
 
-	PosX = x;
-	PosY = y;
+	PosX = x - SpotX;
+	PosY = y - SpotY;
 
-	//AdjustPos();
+	AdjustPos();
 
 //	pt.x = PosX;
 //	pt.y = PosY;
@@ -2147,7 +2174,7 @@ XGR_MousePromptData::XGR_MousePromptData(void)
 
 XGR_MousePromptData::~XGR_MousePromptData(void)
 {
-	if(textData && flags & XGR_PROMPT_MEM_ALLOC) delete textData;
+	if(textData && flags & XGR_PROMPT_MEM_ALLOC) delete [] textData;
 }
 
 void XGR_MousePromptData::init_text(char* p)
@@ -2263,18 +2290,13 @@ void XGR_Mouse::InitPrompt(void)
 		else
 			return;
 	}
-	if(flags & XGM_HICOLOR){
-		if(PromptFonBufSize < p -> textSizeX * p -> textSizeY * 2){
-			if(PromptFon) delete[] PromptFon;
-			PromptFonBufSize = p -> textSizeX * p -> textSizeY * 2;
-			PromptFon = new char[PromptFonBufSize];
-		}
-	}
-	else {
-		if(PromptFonBufSize < p -> textSizeX * p -> textSizeY){
-			if(PromptFon) delete[] PromptFon;
-			PromptFonBufSize = p -> textSizeX * p -> textSizeY;
-			PromptFon = new char[PromptFonBufSize];
+	int hiColorMult = flags & XGM_HICOLOR ? 2 : 1;
+	if (PromptFonBufSize < p -> textSizeX * p -> textSizeY * hiColorMult) {
+		char *oldPromptFon = PromptFon ? PromptFon : nullptr;
+		PromptFonBufSize = p -> textSizeX * p -> textSizeY * hiColorMult;
+		PromptFon = new char[PromptFonBufSize];
+		if (oldPromptFon) {
+			delete[] oldPromptFon;
 		}
 	}
 

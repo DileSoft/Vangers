@@ -23,7 +23,7 @@ typedef unsigned char uchar;
 #include "../src/units/hobj.h"
 #include "../src/units/uvsapi.h"
 #include "../src/units/items.h"
-#include "../src/lang.h"
+#include "lang.h"
 #include "../src/network.h"
 #include "../src/sound/hsound.h"
 #include "../src/xjoystick.h"
@@ -261,5 +261,9 @@ int EngineNoise = 0;
 int CurrentWorld = -1;
 
 int getCurIScreenId() {
+	return 0;
+}
+
+int getCurIScreenX() {
 	return 0;
 }
