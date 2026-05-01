@@ -1,107 +1,77 @@
 const fs = require('fs');
 
 /**
- * Very basic parser for the Vangers .scr format.
- * It identifies blocks like Screen "Name" { ... } and Object "Name" { ... }
- * and key-value pairs or single-word commands.
+ * Advanced token-based AST parser for Vangers .scr files.
+ * Preserves exact formatting, whitespace, and comments.
  */
 function parseScr(text) {
-    const lines = text.split('\n');
-    let root = { type: 'root', children: [] };
-    let stack = [root];
+    const root = { type: 'root', children: [] };
+    const stack = [root];
     let current = root;
 
-    const blockRegex = /^(Screen|Object|Element|Event|EvComm)\s*"?([^"{]*)"?\s*\{/i;
-    const defineRegex = /^#define\s+(\w+)\s+(.+)$/;
-    const includeRegex = /^#include\s+"(.+)"/;
+    const tokens = [
+        { name: 'comment_block', regex: /^\/\*[\s\S]*?\*\// },
+        { name: 'comment_inline', regex: /^\/\/.*/ },
+        { name: 'preprocessor', regex: /^#(define|include)/ },
+        { name: 'block_start', regex: /^(Screen|Object|Element|Event|EvComm)(\s+"[^"]*")?\s*\{/i },
+        { name: 'block_end', regex: /^\}/ },
+        { name: 'tab', regex: /^\t+/ },
+        { name: 'space', regex: /^ +/ },
+        { name: 'newline', regex: /^[\n\r]+/ },
+        { name: 'string_quoted', regex: /^"[^"]*"/ },
+        { name: 'constant', regex: /^\$[A-Za-z0-9_$]+/ },
+        { name: 'word', regex: /^[^\s\n\r\{\}]+/ }
+    ];
 
-    for (let line of lines) {
-        line = line.trim();
-        if (!line || line.startsWith('//')) continue;
+    let remaining = text;
 
-        // Handle defines and includes as special top-level or inline items
-        if (line.startsWith('#define')) {
-            const match = line.match(defineRegex);
+    while (remaining.length > 0) {
+        let matched = false;
+        for (const token of tokens) {
+            const match = remaining.match(token.regex);
             if (match) {
-                current.children.push({ type: 'define', name: match[1], value: match[2] });
+                const raw = match[0];
+                const node = { type: token.name, raw };
+
+                if (token.name === 'block_start') {
+                    node.children = [];
+                    current.children.push(node);
+                    stack.push(node);
+                    current = node;
+                } else if (token.name === 'block_end') {
+                    current.children.push(node);
+                    stack.pop();
+                    current = stack[stack.length - 1] || root;
+                } else {
+                    current.children.push(node);
+                }
+
+                remaining = remaining.slice(raw.length);
+                matched = true;
+                break;
             }
-            continue;
-        }
-        if (line.startsWith('#include')) {
-            const match = line.match(includeRegex);
-            if (match) {
-                current.children.push({ type: 'include', file: match[1] });
-            }
-            continue;
         }
 
-        // Handle block start
-        const blockMatch = line.match(blockRegex);
-        if (blockMatch) {
-            const newNode = {
-                type: blockMatch[1].toLowerCase(),
-                name: blockMatch[2].trim(),
-                children: []
-            };
-            current.children.push(newNode);
-            stack.push(newNode);
-            current = newNode;
-            continue;
-        }
-
-        // Handle block end
-        if (line === '}') {
-            stack.pop();
-            current = stack[stack.length - 1];
-            if (!current) {
-                console.warn('Warning: Unmatched closing brace. Resetting to root.');
-                current = root;
-                stack = [root];
-            }
-            continue;
-        }
-
-        // Handle properties/commands
-        // Split by whitespace but respect quotes if any (simple version)
-        const parts = line.split(/\s+/);
-        if (parts.length > 0 && current) {
-            current.children.push({ type: 'property', key: parts[0], values: parts.slice(1) });
+        if (!matched) {
+            current.children.push({ type: 'unknown', raw: remaining[0] });
+            remaining = remaining.slice(1);
         }
     }
 
     return root;
 }
 
-/**
- * Converts the JSON structure back to the .scr format.
- */
-function stringifyScr(node, indent = '') {
-    let output = '';
-    if (node.type === 'root') {
-        return node.children.map(child => stringifyScr(child, '')).join('\n');
+function stringifyScr(node) {
+    if (node.type === 'root' || node.children) {
+        let out = (node.type === 'root') ? '' : node.raw;
+        if (node.children) {
+            out += node.children.map(stringifyScr).join('');
+        }
+        return out;
     }
-
-    if (node.type === 'define') {
-        return `#define ${node.name} ${node.value}`;
-    }
-    if (node.type === 'include') {
-        return `#include "${node.file}"`;
-    }
-    if (node.type === 'property') {
-        return `${indent}${node.key}\t${node.values.join(' ')}`;
-    }
-
-    // Generic block
-    const typeLabel = node.type.charAt(0).toUpperCase() + node.type.slice(1);
-    const nameLabel = node.name ? ` "${node.name}"` : '';
-    output += `${indent}${typeLabel}${nameLabel}\n${indent}{\n`;
-    output += node.children.map(child => stringifyScr(child, indent + '\t')).join('\n');
-    output += `\n${indent}}`;
-
-    return output;
+    return node.raw || '';
 }
 
-// CLI usage
 const args = process.argv.slice(2);
 if (args.length < 3) {
     console.log('Usage: node scr_converter.js [to-json|from-json] input_file output_file');
@@ -124,3 +94,4 @@ if (mode === 'to-json') {
     fs.writeFileSync(outputPath, scr);
     console.log(`Converted ${inputPath} from JSON -> ${outputPath}`);
 }
+
