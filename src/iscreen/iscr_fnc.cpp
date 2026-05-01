@@ -2210,6 +2210,11 @@ void iHandleExtEvent(int code,int data)
 {
 	int mode;
 	switch(code){
+		case iEXT_OPEN_STEAM:
+#ifdef WIN32
+			ShellExecute(NULL, "open", "steam://open/main", NULL, NULL, 5);
+#endif
+			break;
 		case iEXT_INIT_SOCKETS:
 			XSocketInit();
 			iGetIP();

@@ -71,4 +71,6 @@
 
 #define iEXT_INIT_SOCKETS		47
 
+#define iEXT_OPEN_STEAM         49
+
 #define iEXT_UPDATE_FPS_MODE	48

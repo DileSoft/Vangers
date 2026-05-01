@@ -28,6 +28,9 @@
 #define iSTR_EXIT1			"EXIT"
 #define iSTR_EXIT2			"‚›•„"
 
+#define iSTR_STEAM1			"STEAM"
+#define iSTR_STEAM2			"STEAM"
+
 #define iSTR_Credits1			"Credits"
 #define iSTR_Credits2			" α®§¤ β¥«οε"
 
@@ -695,4 +698,7 @@
 
 #define iSTR_CreditsPathIB1		"resource/iscreen/text/eng/credits92.txt"
 #define iSTR_CreditsPathIB2		"resource/iscreen/text/rus/credits92.txt"
+
+
+
 

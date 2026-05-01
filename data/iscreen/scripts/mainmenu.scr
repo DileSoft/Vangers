@@ -119,7 +119,7 @@
 
 /* -------------------------- Main Screen Defines --------------------------- */
 
-#define NEW_GAME_X		80
+#define NEW_GAME_X		0
 #define NEW_GAME_Y		20
 
 #define LOAD_GAME_X		60
@@ -557,7 +557,7 @@ Object "Multiplayer Option"
 
 			font		$MAIN_FNT
 			null_level	$DEFAULT_NULL
-			string		$iSTR_NEW_GAME
+			string		"STEAM"
 		}
 		Event {
 			if_selected
@@ -565,24 +565,15 @@ Object "Multiplayer Option"
 			key $VK_RETURN
 			key $VK_LBUTTON
 
-			time { $PRESS_OBJ_TIME + $MOVE2SCREEN_TIME + 1 }
+			time { $PRESS_OBJ_TIME + 2 }
 			EvComm {
 				low_obj 	"New Game Option 2"
 				time		$PRESS_OBJ_TIME
 				start_time	0
 			}
 			EvComm {
-				reset_texts
-				start_time	0
-			}
-			EvComm {
-				next_text	"TextScreen00"  0
-				start_time	{ $PRESS_OBJ_TIME - 1 }
-			}
-			EvComm {
-				move2screen	 "TextScreen00"
+				ext_event	$iEXT_OPEN_STEAM	0
 				start_time	$PRESS_OBJ_TIME
-				time		$MOVE2SCREEN_TIME
 			}
 		}
 
@@ -590,21 +581,7 @@ Object "Multiplayer Option"
 			if_not_selected
 			key $VK_RBUTTON
 
-			time { $PRESS_OBJ_TIME + $SMOOTH_OBJ_TIME + $HIDE_OBJ_TIME + $MOVE2SCREEN_TIME + 1 }
-			EvComm {
-				jump_obj	"New Game Option 2"
-				start_time	$PRESS_OBJ_TIME
-			}
-			EvComm {
-				smooth_obj	"New Game Option 2" 4
-				start_time	$PRESS_OBJ_TIME
-				time		$SMOOTH_OBJ_TIME
-			}
-			EvComm {
-				hide_obj       "New Game Option 2"
-				start_time	{ $PRESS_OBJ_TIME + $SMOOTH_OBJ_TIME }
-				time		$HIDE_OBJ_TIME
-			}
+			time { $PRESS_OBJ_TIME + 2 }
 			EvComm {
 				low_obj 	"SELECTED_OBJ"
 				start_time	0
@@ -616,46 +593,18 @@ Object "Multiplayer Option"
 				time		$PRESS_OBJ_TIME
 			}
 			EvComm {
-				reset_texts
-				start_time	0
-			}
-			EvComm {
-				next_text	"TextScreen00"  0
+				ext_event	$iEXT_OPEN_STEAM	0
 				start_time	$PRESS_OBJ_TIME
-			}
-			EvComm {
-				move2screen	 "TextScreen00"
-				start_time	{ $PRESS_OBJ_TIME + $SMOOTH_OBJ_TIME + $HIDE_OBJ_TIME }
-				time		$MOVE2SCREEN_TIME
 			}
 		}
 		Event {
 			if_selected
 			key $VK_RBUTTON
 
-			time { $PRESS_OBJ_TIME + $HIDE_OBJ_TIME + $MOVE2SCREEN_TIME }
+			time { $PRESS_OBJ_TIME + 2 }
 			EvComm {
-				smooth_obj	"New Game Option 2" 4
-				start_time	0
-				time		$PRESS_OBJ_TIME
-			}
-			EvComm {
-				hide_obj	"New Game Option 2"
+				ext_event	$iEXT_OPEN_STEAM	0
 				start_time	$PRESS_OBJ_TIME
-				time		$HIDE_OBJ_TIME
-			}
-			EvComm {
-				reset_texts
-				start_time	0
-			}
-			EvComm {
-				next_text	"TextScreen00"  0
-				start_time	$PRESS_OBJ_TIME
-			}
-			EvComm {
-				move2screen	 "TextScreen00"
-				start_time	{ $PRESS_OBJ_TIME + $HIDE_OBJ_TIME }
-				time		$MOVE2SCREEN_TIME
 			}
 		}
 
@@ -12782,4 +12731,6 @@ Screen "Identification screen2"
 		}
 	}
 }
+
+
 
