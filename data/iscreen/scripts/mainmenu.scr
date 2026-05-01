@@ -119,11 +119,14 @@
 
 /* -------------------------- Main Screen Defines --------------------------- */
 
-#define NEW_GAME_X		60
+#define NEW_GAME_X		80
 #define NEW_GAME_Y		20
 
 #define LOAD_GAME_X		60
 #define LOAD_GAME_Y		90
+
+#define NEW_GAME_2_X	120
+#define NEW_GAME_2_Y	90
 
 #define OPTIONS_X		160
 #define OPTIONS_Y		160
@@ -263,139 +266,6 @@ Screen "Main Screen"
 		EvComm {
 			exit	0
 		}
-	}
-
-	Object "Load Game Option"
-	{
-		x	$LOAD_GAME_X
-		y	$LOAD_GAME_Y
-
-		selectable_obj
-		Element STRING {
-			align_x center
-
-			terrain_num	$TERRAIN2
-
-			font		$MAIN_FNT
-			null_level	$DEFAULT_NULL
-			string		$iSTR_LOAD_GAME
-		}
-
-		Event {
-			if_selected
-			key $VK_SPACE
-			key $VK_RETURN
-			key $VK_LBUTTON
-
-			time { $PRESS_OBJ_TIME + MOVE2SCREEN_TIME + 1 }
-			EvComm {
-				low_obj 	"Load Game Option"
-				time		$PRESS_OBJ_TIME
-				start_time	0
-			}
-			EvComm {
-				ext_event	$iEXT_PREPARE_SLOTS	0
-				start_time	1
-			}
-			EvComm {
-				move2screen	"Loading screen"
-				start_time	$PRESS_OBJ_TIME
-				time		$MOVE2SCREEN_TIME
-			}
-		}
-		Event {
-			if_not_selected
-			key $VK_RBUTTON
-
-			time { $SMOOTH_OBJ_TIME + $PRESS_OBJ_TIME + $HIDE_OBJ_TIME + MOVE2SCREEN_TIME + 1 }
-			EvComm {
-				jump_obj	"Load Game Option"
-				start_time	$SMOOTH_OBJ_TIME
-			}
-			EvComm {
-				smooth_obj	"Load Game Option" 4
-				start_time	$PRESS_OBJ_TIME
-				time		$SMOOTH_OBJ_TIME
-			}
-			EvComm {
-				hide_obj       "Load Game Option"
-				start_time	{ $SMOOTH_OBJ_TIME + $PRESS_OBJ_TIME }
-				time		$HIDE_OBJ_TIME
-			}
-			EvComm {
-				low_obj 	"SELECTED_OBJ"
-				start_time	0
-				time		$PRESS_OBJ_TIME
-			}
-			EvComm {
-				rise_obj	"Load Game Option"
-				start_time	0
-				time		$PRESS_OBJ_TIME
-			}
-			EvComm {
-				ext_event	$iEXT_PREPARE_SLOTS	0
-				start_time	1
-			}
-			EvComm {
-				move2screen	"Loading screen"
-				start_time	{ $SMOOTH_OBJ_TIME + $PRESS_OBJ_TIME + $HIDE_OBJ_TIME }
-				time		$MOVE2SCREEN_TIME
-			}
-		}
-		Event {
-			if_selected
-			key $VK_RBUTTON
-
-			time { $SMOOTH_OBJ_TIME + $HIDE_OBJ_TIME + MOVE2SCREEN_TIME + 1 }
-			EvComm {
-				smooth_obj	"Load Game Option" 4
-				start_time	0
-				time		$SMOOTH_OBJ_TIME
-			}
-			EvComm {
-				hide_obj	"Load Game Option"
-				start_time	$SMOOTH_OBJ_TIME
-				time		$HIDE_OBJ_TIME
-			}
-			EvComm {
-				ext_event	$iEXT_PREPARE_SLOTS	0
-				start_time	1
-			}
-			EvComm {
-				move2screen	"Loading screen"
-				start_time	{ $SMOOTH_OBJ_TIME + $HIDE_OBJ_TIME }
-				time		$MOVE2SCREEN_TIME
-			}
-		}
-
-		#define OBJ1	"SELECTED_OBJ"
-		#define OBJ2	"Load Game Option"
-		Event {
-			if_not_selected
-			key $VK_LBUTTON
-			key $VK_MOVE
-
-			$EV_CHANGE_OBJ
-		}
-
-		#define OBJ1	"Load Game Option"
-		#define OBJ2	"Options Option"
-		Event {
-			if_selected
-			key $VK_DOWN
-			key $VK_TAB
-
-			$EV_CHANGE_OBJ
-		}
-
-		#define OBJ1	"Load Game Option"
-		#define OBJ2	"New Game Option"
-		Event {
-			if_selected
-			key $VK_UP
-
-			$EV_CHANGE_OBJ
-		} 
 	}
 
 Object "Multiplayer Option"
@@ -655,7 +525,7 @@ Object "Multiplayer Option"
 		}
 
 		#define OBJ1	"New Game Option"
-		#define OBJ2	"Load Game Option"
+		#define OBJ2	"New Game Option 2"
 		Event {
 			if_selected
 			key $VK_DOWN
@@ -666,6 +536,151 @@ Object "Multiplayer Option"
 
 		#define OBJ1	"New Game Option"
 		#define OBJ2	"Exit Option"
+		Event {
+			if_selected
+			key $VK_UP
+
+			$EV_CHANGE_OBJ
+		}
+	}
+
+	Object "New Game Option 2"
+	{
+		x	$NEW_GAME_2_X
+		y	$NEW_GAME_2_Y
+
+		selectable_obj
+		Element STRING {
+			align_x center
+
+			terrain_num	$TERRAIN2
+
+			font		$MAIN_FNT
+			null_level	$DEFAULT_NULL
+			string		$iSTR_NEW_GAME
+		}
+		Event {
+			if_selected
+			key $VK_SPACE
+			key $VK_RETURN
+			key $VK_LBUTTON
+
+			time { $PRESS_OBJ_TIME + $MOVE2SCREEN_TIME + 1 }
+			EvComm {
+				low_obj 	"New Game Option 2"
+				time		$PRESS_OBJ_TIME
+				start_time	0
+			}
+			EvComm {
+				reset_texts
+				start_time	0
+			}
+			EvComm {
+				next_text	"TextScreen00"  0
+				start_time	{ $PRESS_OBJ_TIME - 1 }
+			}
+			EvComm {
+				move2screen	 "TextScreen00"
+				start_time	$PRESS_OBJ_TIME
+				time		$MOVE2SCREEN_TIME
+			}
+		}
+
+		Event {
+			if_not_selected
+			key $VK_RBUTTON
+
+			time { $PRESS_OBJ_TIME + $SMOOTH_OBJ_TIME + $HIDE_OBJ_TIME + $MOVE2SCREEN_TIME + 1 }
+			EvComm {
+				jump_obj	"New Game Option 2"
+				start_time	$PRESS_OBJ_TIME
+			}
+			EvComm {
+				smooth_obj	"New Game Option 2" 4
+				start_time	$PRESS_OBJ_TIME
+				time		$SMOOTH_OBJ_TIME
+			}
+			EvComm {
+				hide_obj       "New Game Option 2"
+				start_time	{ $PRESS_OBJ_TIME + $SMOOTH_OBJ_TIME }
+				time		$HIDE_OBJ_TIME
+			}
+			EvComm {
+				low_obj 	"SELECTED_OBJ"
+				start_time	0
+				time		$PRESS_OBJ_TIME
+			}
+			EvComm {
+				rise_obj	"New Game Option 2"
+				start_time	0
+				time		$PRESS_OBJ_TIME
+			}
+			EvComm {
+				reset_texts
+				start_time	0
+			}
+			EvComm {
+				next_text	"TextScreen00"  0
+				start_time	$PRESS_OBJ_TIME
+			}
+			EvComm {
+				move2screen	 "TextScreen00"
+				start_time	{ $PRESS_OBJ_TIME + $SMOOTH_OBJ_TIME + $HIDE_OBJ_TIME }
+				time		$MOVE2SCREEN_TIME
+			}
+		}
+		Event {
+			if_selected
+			key $VK_RBUTTON
+
+			time { $PRESS_OBJ_TIME + $HIDE_OBJ_TIME + $MOVE2SCREEN_TIME }
+			EvComm {
+				smooth_obj	"New Game Option 2" 4
+				start_time	0
+				time		$PRESS_OBJ_TIME
+			}
+			EvComm {
+				hide_obj	"New Game Option 2"
+				start_time	$PRESS_OBJ_TIME
+				time		$HIDE_OBJ_TIME
+			}
+			EvComm {
+				reset_texts
+				start_time	0
+			}
+			EvComm {
+				next_text	"TextScreen00"  0
+				start_time	$PRESS_OBJ_TIME
+			}
+			EvComm {
+				move2screen	 "TextScreen00"
+				start_time	{ $PRESS_OBJ_TIME + $HIDE_OBJ_TIME }
+				time		$MOVE2SCREEN_TIME
+			}
+		}
+
+		#define OBJ1	"SELECTED_OBJ"
+		#define OBJ2	"New Game Option 2"
+		Event {
+			if_not_selected
+			key $VK_LBUTTON
+			key $VK_MOVE
+
+			$EV_CHANGE_OBJ
+		}
+
+		#define OBJ1	"New Game Option 2"
+		#define OBJ2	"Options Option"
+		Event {
+			if_selected
+			key $VK_DOWN
+			key $VK_TAB
+
+			$EV_CHANGE_OBJ
+		}
+
+		#define OBJ1	"New Game Option 2"
+		#define OBJ2	"New Game Option"
 		Event {
 			if_selected
 			key $VK_UP
@@ -788,7 +803,7 @@ Object "Multiplayer Option"
 		}
 
 		#define OBJ1	"Options Option"
-		#define OBJ2	"Load Game Option"
+		#define OBJ2	"New Game Option 2"
 		Event {
 			if_selected
 			key $VK_UP

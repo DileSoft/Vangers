@@ -36,3 +36,5 @@ CMakeSettings.json
 
 # Server env file
 .env
+
+game_data
