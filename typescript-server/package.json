@@ -1,0 +1,27 @@
+{
+    "name":  "typescript-server",
+    "version":  "1.0.0",
+    "description":  "",
+    "main":  "index.js",
+    "scripts":  {
+                    "test":  "echo \"Error: no test specified\" \u0026\u0026 exit 1",
+                    "start":  "node --loader ts-node/esm src/index.ts"
+                },
+    "keywords":  [
+
+                 ],
+    "author":  "",
+    "license":  "ISC",
+    "dependencies":  {
+                         "@types/express":  "^5.0.6",
+                         "@types/socket.io":  "^3.0.2",
+                         "express":  "^5.2.1",
+                         "socket.io":  "^4.8.3",
+                         "ts-node":  "^10.9.2",
+                         "typescript":  "^6.0.3"
+                     },
+    "type":  "module",
+    "devDependencies":  {
+                            "@types/node":  "^25.6.0"
+                        }
+}
