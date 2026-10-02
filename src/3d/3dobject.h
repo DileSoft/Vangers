@@ -220,6 +220,10 @@ struct Object : BaseObject {
 	ModelHandle* external_frame_model_handles;
 	ModelInstanceHandle* frame_handles;
 	int frame_count;
+	// ModelDispatcher index behind the handles above. Kept outside the memcpy range that
+	// convert_to_beeb() uses, so the original model can be rebound on the way back.
+	int external_model_index;
+	int beeb_return_model_index;
 
 	// Part of 3D data
 	int n_models;

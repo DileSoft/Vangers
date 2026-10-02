@@ -934,6 +934,9 @@ struct ModelDispatcher
 	void Init(Parser& in);
 	void Free(void);
 
+	// Point an object at model index, replacing whatever it was bound to before.
+	void BindExternalModel(Object& o, int index);
+
 	Object& ActiveModel(char id);
 	int FindModel(const char* name);
 };

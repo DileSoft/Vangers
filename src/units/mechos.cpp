@@ -719,6 +719,7 @@ void ActionUnit::CreateActionUnit(int nmodel/*Object& _model*/,int _status,const
 	external_model_handle = ModelD.ModelHandles[nModel];
 	external_wheel_model_handles = ModelD.WheelModelHandles[nModel];
 	external_frame_model_handles = ModelD.FrameModelHandles[nModel];
+	external_model_index = nModel;
 	create_model_instance();
 	cycleTor(R_curr.x,R_curr.y);
 
@@ -2403,6 +2404,22 @@ int ModelDispatcher::FindModel(const char* name)
 	ErrH.Abort("Model Not Found",XERR_USER,0,name);
 	return 0;
 };
+
+// convert_to_beeb() copies the model data but stops before the external handle fields,
+// so a Vanger that turns into a beeb kept rendering its own mesh on the GPU. Rebinding has to
+// be explicit: swap the handles and recreate the instances.
+void ModelDispatcher::BindExternalModel(Object& o, int index)
+{
+	if(index < 0 || index >= MaxModel)
+		return;
+	o.destroy_model_instance();
+	o.destroy_weapon_instances();
+	o.external_model_index = index;
+	o.external_model_handle = ModelHandles[index];
+	o.external_wheel_model_handles = WheelModelHandles[index];
+	o.external_frame_model_handles = FrameModelHandles[index];
+	o.create_model_instance();
+}
 
 void ModelDispatcher::Free(void)
 {
@@ -7174,6 +7191,7 @@ void VangerUnit::keyhandler(int key)
 			external_model_handle = ModelD.ModelHandles[NumHumanModel];
 			external_wheel_model_handles = ModelD.WheelModelHandles[NumHumanModel];
 			external_frame_model_handles = ModelD.FrameModelHandles[NumHumanModel];
+			external_model_index = NumHumanModel;
 			create_model_instance();
 			cycleTor(R_curr.x,R_curr.y);
 			set_active(1);
@@ -9604,6 +9622,7 @@ void VangerFunctionType::Quant(void)
 			case MECHANIC_BEEB_NATION:
 				if(ActD.mfActive){
 					((VangerUnit*)(ActD.mfActive))->convert_to_beeb(NULL);
+					ModelD.BindExternalModel(*ActD.mfActive,ActD.mfActive->beeb_return_model_index);
 					ActD.mfActive->BeebonationFlag = 0;
 				};
 				SOUND_MES_BEEBSOSPY();
@@ -9729,7 +9748,10 @@ void VangerFunctionType::Quant(void)
 						if(Time == LifeTime - (SKY_QUAKE_DELAY * GAME_TIME_COEFF)){
 							SOUND_MES_BEEBSOSPY();
 							ActD.mfActive->BeebonationFlag = 1;
-							((VangerUnit*)(ActD.mfActive))->convert_to_beeb(&(ModelD.ActiveModel(ModelD.FindModel("Bug"))));
+								const int beeb_model = ModelD.FindModel("Bug");
+						ActD.mfActive->beeb_return_model_index = ActD.mfActive->external_model_index;
+						((VangerUnit*)(ActD.mfActive))->convert_to_beeb(&(ModelD.ActiveModel(beeb_model)));
+						ModelD.BindExternalModel(*ActD.mfActive,beeb_model);
 							switch(((VangerUnit*)(ActD.mfActive))->uvsPoint->Pmechos->color){
 								case 0:			
 									((VangerUnit*)(ActD.mfActive))->set_body_color(COLORS_IDS::BODY_GREEN);
@@ -9831,6 +9853,7 @@ void VangerUnit::SetMechos(int n)
 	external_model_handle = ModelD.ModelHandles[n];
 	external_wheel_model_handles = ModelD.WheelModelHandles[n];
 	external_frame_model_handles = ModelD.FrameModelHandles[n];
+	external_model_index = n;
 	create_model_instance();
 	set_active(1);
 	set_3D(SET_3D_CHOOSE_LEVEL,R_curr.x,R_curr.y,R_curr.z,0,-Angle,Speed);
@@ -14556,6 +14579,7 @@ void VangerUnit::ChangeVangerProcess(void)
 	external_model_handle = ModelD.ModelHandles[nModel];
 	external_wheel_model_handles = ModelD.WheelModelHandles[nModel];
 	external_frame_model_handles = ModelD.FrameModelHandles[nModel];
+	external_model_index = nModel;
 	create_model_instance();
 	if(Status & SOBJ_ACTIVE) set_active(1);
 	else set_active(0);

@@ -966,6 +966,7 @@ void StuffObject::CreateStuff(const Vector& _v,StuffObject* p,int cMode)
 	Object::operator = (ModelD.ActiveModel(ModelID));
 	external_model_handle = ModelD.ModelHandles[ModelID];
 	external_frame_model_handles = ModelD.FrameModelHandles[ModelID];
+	external_model_index = ModelID;
 	create_model_instance();
 	Owner = NULL;
 	ItemD.ConnectTypeList(this);

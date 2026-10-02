@@ -250,6 +250,8 @@ Object::Object()
 	external_frame_model_handles = nullptr;
 	frame_handles = nullptr;
 	frame_count = 0;
+	external_model_index = -1;
+	beeb_return_model_index = -1;
 	for(int i = 0;i < MAX_SLOTS;i++)
 		weapon_handles[i] = {0};
 	i_model = n_models = 0;
