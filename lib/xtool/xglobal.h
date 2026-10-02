@@ -17,6 +17,8 @@
 #include <time.h>
 #include <memory>
 
+#include "xcompat.h"
+
 #ifdef WIN32
 #define snprintf sprintf_s
 #endif

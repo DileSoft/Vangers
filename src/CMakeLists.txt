@@ -127,6 +127,19 @@ else()
 		)
 	ENDIF(WIN32)
 
+	IF(MSVC)
+		# rusty-vangers' Rust std pulls in the Win32 socket API (WSASocketW,
+		# getaddrinfo, ...), the NT file API used by std::fs, and the user
+		# profile directory lookup. MinGW gets these via lib/renderer.
+		SET(WIN_LIB ${WIN_LIB}
+			ws2_32
+			advapi32
+			ntdll
+			userenv
+			bcrypt
+		)
+	ENDIF(MSVC)
+
 	TARGET_LINK_LIBRARIES(vangers
 		${SDL2_LIBRARY}
 		${OGG_LIBRARY}

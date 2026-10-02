@@ -86,7 +86,14 @@ IF(FFMPEG)
 	FIND_PACKAGE(FFMPEG REQUIRED)
 ENDIF(FFMPEG)
 
-set(WINDOWS_RES "../vangers.res")
+IF(MSVC)
+	# The committed vangers.res was produced by windres as a 32-bit COFF
+	# object, which MSVC's x64 linker rejects (LNK1112). The icon is optional,
+	# so MSVC builds without an embedded resource for now.
+	SET(WINDOWS_RES "")
+ELSE()
+	set(WINDOWS_RES "../vangers.res")
+ENDIF()
 
 IF(BINARY_SCRIPT)
 	ADD_DEFINITIONS(-D_BINARY_SCRIPT_)
@@ -123,16 +130,42 @@ ENDIF()
 # For modern gcc
 add_definitions(-D_USE_MATH_DEFINES)
 
-add_compile_options(-Werror=shift-negative-value)
-add_compile_options(-Werror=dangling-else)
-add_compile_options(-Werror=parentheses)
-add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror=delete-non-virtual-dtor>)
-add_compile_options(-Werror=write-strings)
-add_compile_options(-fsigned-char)
+IF(MSVC)
+	# The sources contain UTF-8 (Russian) string literals. GCC/clang use UTF-8 as
+	# the execution charset by default, so tell MSVC to do the same.
+	add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>")
+	# Report the real __cplusplus value instead of the legacy 199711L.
+	add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>")
+	# A few translation units (actint, univang) are large enough to exceed the
+	# default object file section limit otherwise.
+	add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj>")
+	add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:/W3>")
+	# The visual-backend code (renderer::Transform / MapDescription call sites in
+	# 3dobject.cpp, road.cpp, vmap.cpp) uses nested designated initializers.
+	# GCC/clang accept them in C++17 as an extension; MSVC requires C++20.
+	set(CMAKE_CXX_STANDARD 20)
+	# Keep the POSIX CRT names (strdup, ...) and the classic CRT functions usable
+	# without deprecation noise, and stop windows.h from defining min/max macros.
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE)
+	add_definitions(-DNOMINMAX)
+	# clunk's export_clunk.h marks every symbol __declspec(dllimport) whenever
+	# _MSC_VER is defined, but the project links clunk as a static library, so
+	# the linker would look for __imp_* entries. Override the macro with an
+	# empty definition; the header then leaves CLUNKAPI as-is.
+	add_definitions(-DCLUNKAPI=)
+ELSE()
+	add_compile_options(-Werror=shift-negative-value)
+	add_compile_options(-Werror=dangling-else)
+	add_compile_options(-Werror=parentheses)
+	add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror=delete-non-virtual-dtor>)
+	add_compile_options(-Werror=write-strings)
+	add_compile_options(-fsigned-char)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	add_compile_options(-Werror=mismatched-new-delete )
-endif()
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+		add_compile_options(-Werror=mismatched-new-delete )
+	endif()
+ENDIF()
 
 IF(ENABLE_ASAN AND NOT EMSCRIPTEN)
 	IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

@@ -2881,7 +2881,7 @@ void SetupPath(void)
 #if defined(BETA_TESTING) || defined(CDCHECK)
 	char* path = getVideoPath();
 	if(!path) ErrH.Abort("Software is NOT properly installed. Please, reinstall the Game!");
-	extern char* iVideoPath;
+	extern const char* iVideoPath;
 	strcat(path,"\\");
 	iVideoPath = path;
 #endif

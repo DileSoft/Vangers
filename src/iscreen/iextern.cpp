@@ -148,27 +148,27 @@ extern int EffectInUsePriory,EffectInUse;
 
 extern XBuffer* iResBuf;
 
-extern char* iSTR_MP_Kills;
-extern char* iSTR_MP_Deaths;
-extern char* iSTR_MP_DeathTimeMin;
-extern char* iSTR_MP_DeathTimeMax;
-extern char* iSTR_MP_Kills_rate;
-extern char* iSTR_MP_Deaths_rate;
-extern char* iSTR_MP_Ware01_Delivery;
-extern char* iSTR_MP_Ware02_Delivery;
-extern char* iSTR_MP_Min_delivery_time;
-extern char* iSTR_MP_Max_delivery_time;
-extern char* iSTR_MP_StolenWares;
-extern char* iSTR_MP_Wares_lost;
-extern char* iSTR_MP_Total_time;
-extern char* iSTR_MP_Min_checkpoint_time;
-extern char* iSTR_MP_Max_checkpoint_time;
-extern char* iSTR_MP_1st_part_delivery;
-extern char* iSTR_MP_2nd_part_delivery;
-extern char* iSTR_MP_Mechos_frame;
-extern char* iSTR_MP_Mechos_assembled_in;
-extern char* iSTR_NONE;
-extern char* iSTR_Checkpoints_Number;
+extern const char* iSTR_MP_Kills;
+extern const char* iSTR_MP_Deaths;
+extern const char* iSTR_MP_DeathTimeMin;
+extern const char* iSTR_MP_DeathTimeMax;
+extern const char* iSTR_MP_Kills_rate;
+extern const char* iSTR_MP_Deaths_rate;
+extern const char* iSTR_MP_Ware01_Delivery;
+extern const char* iSTR_MP_Ware02_Delivery;
+extern const char* iSTR_MP_Min_delivery_time;
+extern const char* iSTR_MP_Max_delivery_time;
+extern const char* iSTR_MP_StolenWares;
+extern const char* iSTR_MP_Wares_lost;
+extern const char* iSTR_MP_Total_time;
+extern const char* iSTR_MP_Min_checkpoint_time;
+extern const char* iSTR_MP_Max_checkpoint_time;
+extern const char* iSTR_MP_1st_part_delivery;
+extern const char* iSTR_MP_2nd_part_delivery;
+extern const char* iSTR_MP_Mechos_frame;
+extern const char* iSTR_MP_Mechos_assembled_in;
+extern const char* iSTR_NONE;
+extern const char* iSTR_Checkpoints_Number;
 
 
 // English version...
@@ -373,7 +373,7 @@ iScreen* create_screen(void)
 
 	iScreen* p = iCreateScreen("ExtScreen01");
 
-/* ----------------- ‘®§¤ ­ЁҐ Ё Ё­ЁжЁ «Ё§ жЁп iScreenEvent ------------------ */
+/* ----------------- вЂВ®В§В¤ В­РЃТђ РЃ РЃВ­РЃР¶РЃ В«РЃВ§ Р¶РЃРї iScreenEvent ------------------ */
 	ev = iCreateScreenEvent();
 	ev -> time = 7;
 
@@ -385,7 +385,7 @@ iScreen* create_screen(void)
 	ev -> add_command(ec);
 
 	ec = iCreateEventCommand();
-	ec -> EvType = EV_RISE_SCREEN;		// ’ЁЇл Є®¬ ­¤ - enum EventTypes ў ISCREEN.H
+	ec -> EvType = EV_RISE_SCREEN;		// вЂ™РЃР‡Р» Р„В®В¬ В­В¤ - enum EventTypes Сћ ISCREEN.H
 	ec -> time = 3;
 	ec -> start_time = 4;
 
@@ -394,8 +394,8 @@ iScreen* create_screen(void)
 	ec = iCreateEventCommand();
 	ec -> EvType = EV_SCREEN_JUMP;
 	ec -> init_objID("Main Screen");
-	ec -> objType = I_SCREEN;		// ’ЁЇ ®ЎкҐЄв , б Є®в®ал¬ а Ў®в Ґв Є®¬ ­¤ :
-						// enum EvObjTypes ў ISCREEN.H
+	ec -> objType = I_SCREEN;		// вЂ™РЃР‡ В®РЋРєТђР„РІ , Р± Р„В®РІВ®Р°Р»В¬ Р° РЋВ®РІ ТђРІ Р„В®В¬ В­В¤ :
+						// enum EvObjTypes Сћ ISCREEN.H
 	ec -> start_time = 3;
 
 	ev -> add_command(ec);
@@ -407,15 +407,15 @@ iScreen* create_screen(void)
 	p -> add_event((iListElement*)ev);
 /* -------------------------------------------------------------------------- */
 
-/* ----------------- ‘®§¤ ­ЁҐ Ё Ё­ЁжЁ «Ё§ жЁп iScreenObject ----------------- */
+/* ----------------- вЂВ®В§В¤ В­РЃТђ РЃ РЃВ­РЃР¶РЃ В«РЃВ§ Р¶РЃРї iScreenObject ----------------- */
 	obj = iCreateScreenObject("Obj00");
-	obj -> align_x = ALIGN_R;		// ‘¬. enum AlignTypes ў ISCREEN.H
+	obj -> align_x = ALIGN_R;		// вЂВ¬. enum AlignTypes Сћ ISCREEN.H
 	obj -> align_x_offs = 30;
 	obj -> align_y = ALIGN_CENTER;
 
 	// ---------- iBitmapElement (begin) ----------
-	iBitmapElement* bt = (iBitmapElement*)iCreateScreenElement(I_BITMAP_ELEM);	// ’ЁЇл н«Ґ¬Ґ­в®ў - enum iElementTypes ў ISCREEN.H
-	bt -> init_name("bitmap/coin.bmp");    // €¬п BMP,§ ¤ ­ЁҐ Ё¬Ґ­Ё н«Ґ¬Ґ­в  - init_id(char* p)
+	iBitmapElement* bt = (iBitmapElement*)iCreateScreenElement(I_BITMAP_ELEM);	// вЂ™РЃР‡Р» РЅВ«ТђВ¬ТђВ­РІВ®Сћ - enum iElementTypes Сћ ISCREEN.H
+	bt -> init_name("bitmap/coin.bmp");    // в‚¬В¬Рї BMP,В§ В¤ В­РЃТђ РЃВ¬ТђВ­РЃ РЅВ«ТђВ¬ТђВ­РІ  - init_id(char* p)
 
 	bt -> align_x = ALIGN_CENTER;
 	bt -> align_y = ALIGN_CENTER;
@@ -458,14 +458,14 @@ iScreen* create_screen(void)
 
 	p -> add_object(obj);
 
-/* ----------------- ‘®§¤ ­ЁҐ Ё Ё­ЁжЁ «Ё§ жЁп iTriggerObject ----------------- */
+/* ----------------- вЂВ®В§В¤ В­РЃТђ РЃ РЃВ­РЃР¶РЃ В«РЃВ§ Р¶РЃРї iTriggerObject ----------------- */
 	iTriggerObject* trg = iCreateTriggerObject("Test trigger");
 	trg -> align_x = ALIGN_L;
 	trg -> align_x_offs = 30;
 
-	trg -> PosY = 250;		// ‡ ¤ ­ЁҐ Є®®а¤Ё­ вл ®ЎкҐЄв  ­ Їап¬го,
-					// Ґб«Ё гбв ­®ўЁвм ҐйҐ Ё align_y, в® Є®®а¤Ё­ в 
-					// Ё§¬Ґ­Ёвбп Ї®б«Ґ ўл§®ў  init() ў б®®вўҐвбвўЁЁ б align_y
+	trg -> PosY = 250;		// вЂЎ В¤ В­РЃТђ Р„В®В®Р°В¤РЃВ­ РІР» В®РЋРєТђР„РІ  В­ Р‡Р°РїВ¬РіРѕ,
+					// ТђР±В«РЃ РіР±РІ В­В®СћРЃРІРј ТђР№Тђ РЃ align_y, РІВ® Р„В®В®Р°В¤РЃВ­ РІ 
+					// РЃВ§В¬ТђВ­РЃРІР±Рї Р‡В®Р±В«Тђ СћР»В§В®Сћ  init() Сћ Р±В®В®РІСћТђРІР±РІСћРЃРЃ Р± align_y
 	trg -> num_state = 3;
 	trg -> alloc_state();
 
@@ -524,7 +524,7 @@ iScreen* create_screen(void)
 	p -> add_object(trg);
 /* -------------------------------------------------------------------------- */
 
-/* ----- ‘®§¤ ­ЁҐ б¬ бив ЎЁа®ў ­­®© ®Ў« бвЁ (®ЎкҐЄв  б iTerrainElement) ----- */
+/* ----- вЂВ®В§В¤ В­РЃТђ Р±В¬ Р±РёРІ РЋРЃР°В®Сћ В­В­В®В© В®РЋВ« Р±РІРЃ (В®РЋРєТђР„РІ  Р± iTerrainElement) ----- */
 
 	obj = iCreateScreenObject("TERRAIN_OBJECT");
 	obj -> PosY = 150;
@@ -546,7 +546,7 @@ iScreen* create_screen(void)
 	p -> add_terr_object(obj);		// !!!
 /* -------------------------------------------------------------------------- */
 
-/* ------------------- ‘®§¤ ­ЁҐ Ё Ё­ЁжЁ «Ё§ жЁп бЄа®««Ґа  ------------------- */
+/* ------------------- вЂВ®В§В¤ В­РЃТђ РЃ РЃВ­РЃР¶РЃ В«РЃВ§ Р¶РЃРї Р±Р„Р°В®В«В«ТђР°  ------------------- */
 
 	obj = iCreateScreenObject("Scroller object");
 
@@ -554,8 +554,8 @@ iScreen* create_screen(void)
 	obj -> align_x = ALIGN_L;
 	obj -> align_x_offs = 30;
 	// ---------- iScrollerElement (begin) ----------
-	iScrollerElement* scl = (iScrollerElement*)iCreateScreenElement(I_SCROLLER_ELEM,"Test scroller");       // ‡¤Ґбм Ё¬  н«Ґ¬Ґ­в  § ¤ Ґвбп, в.Є. ­  ­ҐЈ®
-														// Ўг¤гв ббл«ЄЁ Ё§ б®ЎлвЁ©
+	iScrollerElement* scl = (iScrollerElement*)iCreateScreenElement(I_SCROLLER_ELEM,"Test scroller");       // вЂЎВ¤ТђР±Рј РЃВ¬  РЅВ«ТђВ¬ТђВ­РІ  В§ В¤ ТђРІР±Рї, РІ.Р„. В­  В­ТђР€В®
+														// РЋРіВ¤РіРІ Р±Р±Р»В«Р„РЃ РЃВ§ Р±В®РЋР»РІРЃВ©
 	scl -> init_name("bitmap/scroller.bmp");
 	scl -> bmp_null_level = 110;
 
@@ -588,7 +588,7 @@ iScreen* create_screen(void)
 
 /* -------------------------------------------------------------------------- */
 
-/* ------------------ ‘®§¤ ­ЁҐ Ё Ё­ЁжЁ «Ё§ жЁп AVI ®ЎкҐЄв  ------------------ */
+/* ------------------ вЂВ®В§В¤ В­РЃТђ РЃ РЃВ­РЃР¶РЃ В«РЃВ§ Р¶РЃРї AVI В®РЋРєТђР„РІ  ------------------ */
 
 	obj = iCreateScreenObject("AVI object");
 	obj -> align_x = obj -> align_y = ALIGN_CENTER;
@@ -2027,7 +2027,7 @@ void iSortPlayers(int mode)
 
 	iNumPlayers = 0;
 	for(i = 0; i < num; i ++){
-		// Играющие отображаются всегда, прошедшие - только в результатах игры
+		// РРіСЂР°СЋС‰РёРµ РѕС‚РѕР±СЂР°Р¶Р°СЋС‚СЃСЏ РІСЃРµРіРґР°, РїСЂРѕС€РµРґС€РёРµ - С‚РѕР»СЊРєРѕ РІ СЂРµР·СѓР»СЊС‚Р°С‚Р°С… РёРіСЂС‹
 		if(p -> name && (p -> status == GAMING_STATUS || (p -> status == FINISHED_STATUS && !mode))){
 			iPlayers[iNumPlayers] = p;
 			iPlayerRatings[iNumPlayers] = p -> body.rating;
@@ -2413,7 +2413,7 @@ void iPreparePlayerResults(int id)
 }
 
 const char* STR_NONE1 = "NONE";
-const char STR_NONE2[] = {(char)0x8D, (char)0x85, (char)0x92, (char)0x00}; //cp866 - НЕТ
+const char STR_NONE2[] = {(char)0x8D, (char)0x85, (char)0x92, (char)0x00}; //cp866 - РќР•Рў
 
 const char* STR_JOYSTICK_KEY_NAME[] = {
 	"jbutton_1",

@@ -1001,10 +1001,10 @@ void XGR_Screen::flip()
 			int new_width = screen_scale_y * 800;
 			renderer::Rect src_rect {0, 0, 800, 600};
 			renderer::Rect dst_rect {
-					.x = (xgrScreenSizeX - new_width)/2,
-					.y = 0,
-					.width = new_width,
-					.height = xgrScreenSizeY,
+					(xgrScreenSizeX - new_width)/2,
+					0,
+					new_width,
+					xgrScreenSizeY,
 			};
 			XGR_RenderSides(compositor, new_width);
 			compositor->texture_render(texture, src_rect, dst_rect);
@@ -2212,7 +2212,7 @@ XGR_MousePromptData::~XGR_MousePromptData(void)
 	if(textData && flags & XGR_PROMPT_MEM_ALLOC) delete [] textData;
 }
 
-void XGR_MousePromptData::init_text(char* p)
+void XGR_MousePromptData::init_text(const char* p)
 {
 	int sz = strlen(p) + 1;
 	textData = new char[sz];
@@ -2222,9 +2222,9 @@ void XGR_MousePromptData::init_text(char* p)
 	init();
 }
 
-void XGR_MousePromptData::set_text(char* p)
+void XGR_MousePromptData::set_text(const char* p)
 {
-	textData = p;
+	textData = const_cast<char*>(p);
 	flags &= ~XGR_PROMPT_MEM_ALLOC;
 
 	init();

@@ -5,7 +5,7 @@
 #include <zlib.h>
 #include "../vss/sys.h"
 
-#if defined(__APPLE__) || __GNUC__ < 9
+#if defined(__APPLE__) || (defined(__GNUC__) && __GNUC__ < 9)
 #include <sys/stat.h>
 #else
 #include <filesystem>
@@ -50,7 +50,7 @@
 #include "aci_scr.h"
 #include "chtree.h"
 
-#if defined(__APPLE__) || __GNUC__ < 9
+#if defined(__APPLE__) || (defined(__GNUC__) && __GNUC__ < 9)
 #else
 namespace fs = std::filesystem;
 #endif
@@ -5276,7 +5276,7 @@ void acsPrepareSlotNameInput(int id,int slot_num)
 	acsCurrentSlotNum = slot_num;
 }
 
-#if defined(__APPLE__) || __GNUC__ < 9
+#if defined(__APPLE__) || (defined(__GNUC__) && __GNUC__ < 9)
 void createDirIfNotExist(const char* dirName) {
 	struct stat info;
 	if (stat(dirName, &info) != 0) {

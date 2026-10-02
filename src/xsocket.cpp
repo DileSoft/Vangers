@@ -9,7 +9,9 @@
 #	include <winsock.h>
 #else
 #	include <limits.h> // HOST_NAME_MAX
+#if !defined(_MSC_VER)
 #	include <unistd.h> // gethostname()
+#endif
 #	ifdef __HAIKU__
 #		include <posix/sys/select.h> // fd_set
 #	endif

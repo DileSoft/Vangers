@@ -129,7 +129,7 @@ extern int aciWorldIndex;
 
 extern int Pause;
 
-extern char* aciSTR_OFF;
+extern const char* aciSTR_OFF;
 extern char* aciSTR_DAY;
 extern char* aciSTR_UNDEFINED_PRICE;
 extern char* aciSTR_PRICE;
@@ -154,10 +154,10 @@ extern char* aciSTR_BURST;
 extern char* aciSTR_WORKING_TIME;
 extern char* aciSTR_SECONDS;
 extern char* aciSTR_IN_PACK;
-extern char* aciSTR_NO_CASH;
-extern char* aciSTR_PICKUP_ITEMS_OFF;
-extern char* aciSTR_PICKUP_WEAPONS_OFF;
-extern char* aciSTR_PutThis;
+extern const char* aciSTR_NO_CASH;
+extern const char* aciSTR_PICKUP_ITEMS_OFF;
+extern const char* aciSTR_PICKUP_WEAPONS_OFF;
+extern const char* aciSTR_PutThis;
 
 extern char* aciSTR_RESTRICTIONS;
 extern char* aciSTR_STATISTICS;
