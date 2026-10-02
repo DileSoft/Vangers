@@ -216,6 +216,10 @@ struct Object : BaseObject {
 	ModelInstanceHandle model_instance_handle;
 	ModelInstanceHandle* wheel_handles;
 	ModelInstanceHandle weapon_handles[MAX_SLOTS];
+	// Animated (.a3d) objects get one instance per frame; exactly one is visible.
+	ModelHandle* external_frame_model_handles;
+	ModelInstanceHandle* frame_handles;
+	int frame_count;
 
 	// Part of 3D data
 	int n_models;
@@ -371,6 +375,10 @@ struct Object : BaseObject {
 	uint8_t external_body_color_id() const;
 	void create_model_instance();
 	void destroy_model_instance();
+	void destroy_frame_instances();
+#ifdef _ROAD_
+	void set_external_model_visible(bool visible);
+#endif
 	void destroy_wheel_instances();
 	void destroy_weapon_instances();
 

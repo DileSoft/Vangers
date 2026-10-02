@@ -718,6 +718,7 @@ void ActionUnit::CreateActionUnit(int nmodel/*Object& _model*/,int _status,const
 	Object::operator = (ModelD.ActiveModel(nModel));
 	external_model_handle = ModelD.ModelHandles[nModel];
 	external_wheel_model_handles = ModelD.WheelModelHandles[nModel];
+	external_frame_model_handles = ModelD.FrameModelHandles[nModel];
 	create_model_instance();
 	cycleTor(R_curr.x,R_curr.y);
 
@@ -926,8 +927,7 @@ void ActionUnit::Quant(void)
 	vUp = Vector(ymax_real,0,0)*MovMat;
 	vDown = -vUp;
 	const bool external_model_visible = ExternalModelVisible();
-	if(model_instance_handle.handle != 0)
-		renderer::visualbackend::VisualBackendContext::backend()->model_instance_set_visible(model_instance_handle,external_model_visible);
+	set_external_model_visible(external_model_visible);
 	if(wheel_handles)
 		for(int i = 0;i < n_wheels;i++)
 			if(wheel_handles[i].handle != 0)
@@ -2338,6 +2338,7 @@ void ModelDispatcher::Init(Parser& in)
 	NameData = new char*[MaxModel];
 	ModelHandles = new ModelHandle[MaxModel];
 	WheelModelHandles = new ModelHandle*[MaxModel];
+	FrameModelHandles = new ModelHandle*[MaxModel];
 
 	for(i = 0;i < MaxModel;i++){
 		in.search_name("ModelNum");
@@ -2351,8 +2352,16 @@ void ModelDispatcher::Init(Parser& in)
 		Data[i].ID = ID_VANGER;
 		Data[i].load(n,size);
 		WheelModelHandles[i] = Data[i].n_wheels ? new ModelHandle[Data[i].n_wheels] : nullptr;
+		// An .a3d holds the whole animation as separate meshes; upload all of them so the
+		// GPU can animate by showing one frame instance at a time.
+		FrameModelHandles[i] = Data[i].n_models > 1 ? new ModelHandle[Data[i].n_models] : nullptr;
 		if(renderer::visualbackend::VisualBackendContext::has_renderer()){
 			ModelHandles[i] = renderer::visualbackend::VisualBackendContext::backend()->model_create(n,Data[i].model);
+			if(FrameModelHandles[i]){
+				for(int j = 1;j < Data[i].n_models;j++)
+					FrameModelHandles[i][j] = renderer::visualbackend::VisualBackendContext::backend()->model_create(n,&Data[i].models[j]);
+				FrameModelHandles[i][0] = ModelHandles[i];
+			}
 			for(int j = 0;j < Data[i].n_wheels;j++)
 				WheelModelHandles[i][j] = Data[i].wheels[j].steer ?
 					renderer::visualbackend::VisualBackendContext::backend()->model_create(n,&Data[i].wheels[j].model) :
@@ -2360,6 +2369,9 @@ void ModelDispatcher::Init(Parser& in)
 		}
 		else{
 			ModelHandles[i] = {0};
+			if(FrameModelHandles[i])
+				for(int j = 0;j < Data[i].n_models;j++)
+					FrameModelHandles[i][j] = {0};
 			for(int j = 0;j < Data[i].n_wheels;j++)
 				WheelModelHandles[i][j] = {0};
 		}
@@ -2404,11 +2416,19 @@ void ModelDispatcher::Free(void)
 					renderer::visualbackend::VisualBackendContext::backend()->model_destroy(WheelModelHandles[i][j]);
 			delete[] WheelModelHandles[i];
 		}
+		if(FrameModelHandles[i]){
+			// Frame 0 aliases ModelHandles[i], which is destroyed by the loop above.
+			for(int j = 1;j < Data[i].n_models;j++)
+				if(FrameModelHandles[i][j].handle != 0 && renderer::visualbackend::VisualBackendContext::has_renderer())
+					renderer::visualbackend::VisualBackendContext::backend()->model_destroy(FrameModelHandles[i][j]);
+			delete[] FrameModelHandles[i];
+		}
 		Data[i].free();
 		delete[] NameData[i];
 	};
 	delete[] ModelHandles;
 	delete[] WheelModelHandles;
+	delete[] FrameModelHandles;
 	delete[] NameData;
 	delete[] Data;
 };
@@ -7153,6 +7173,7 @@ void VangerUnit::keyhandler(int key)
 			Object::operator = (ModelD.ActiveModel(NumHumanModel));
 			external_model_handle = ModelD.ModelHandles[NumHumanModel];
 			external_wheel_model_handles = ModelD.WheelModelHandles[NumHumanModel];
+			external_frame_model_handles = ModelD.FrameModelHandles[NumHumanModel];
 			create_model_instance();
 			cycleTor(R_curr.x,R_curr.y);
 			set_active(1);
@@ -9809,6 +9830,7 @@ void VangerUnit::SetMechos(int n)
 	Object::operator = (ModelD.ActiveModel(n));
 	external_model_handle = ModelD.ModelHandles[n];
 	external_wheel_model_handles = ModelD.WheelModelHandles[n];
+	external_frame_model_handles = ModelD.FrameModelHandles[n];
 	create_model_instance();
 	set_active(1);
 	set_3D(SET_3D_CHOOSE_LEVEL,R_curr.x,R_curr.y,R_curr.z,0,-Angle,Speed);
@@ -14533,6 +14555,7 @@ void VangerUnit::ChangeVangerProcess(void)
 	Object::operator = (ModelD.ActiveModel(nModel));
 	external_model_handle = ModelD.ModelHandles[nModel];
 	external_wheel_model_handles = ModelD.WheelModelHandles[nModel];
+	external_frame_model_handles = ModelD.FrameModelHandles[nModel];
 	create_model_instance();
 	if(Status & SOBJ_ACTIVE) set_active(1);
 	else set_active(0);

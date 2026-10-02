@@ -927,6 +927,9 @@ struct ModelDispatcher
 	char** NameData;
 	ModelHandle* ModelHandles;
 	ModelHandle** WheelModelHandles;
+	// Animated models (.a3d) upload every frame as a separate mesh. ModelHandles[i]
+	// stays the frame 0 handle so single-mesh callers keep working unchanged.
+	ModelHandle** FrameModelHandles;
 
 	void Init(Parser& in);
 	void Free(void);

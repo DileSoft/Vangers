@@ -806,8 +806,8 @@ void StuffObject::Quant(void)
 	if(NetworkON && (Status & SOBJ_WAIT_CONFIRMATION)) NetOwnerQuant();
 	lv = Visibility;
 	GetVisible();	
-	if(lv != Visibility && model_instance_handle.handle != 0)
-		renderer::visualbackend::VisualBackendContext::backend()->model_instance_set_visible(model_instance_handle,Visibility == VISIBLE);
+	if(lv != Visibility)
+		set_external_model_visible(Visibility == VISIBLE);
 
 	if(Status & SOBJ_WAIT_CONFIRMATION) return;
 
@@ -965,6 +965,7 @@ void StuffObject::CreateStuff(const Vector& _v,StuffObject* p,int cMode)
 	destroy_model_instance();
 	Object::operator = (ModelD.ActiveModel(ModelID));
 	external_model_handle = ModelD.ModelHandles[ModelID];
+	external_frame_model_handles = ModelD.FrameModelHandles[ModelID];
 	create_model_instance();
 	Owner = NULL;
 	ItemD.ConnectTypeList(this);
@@ -974,8 +975,8 @@ void StuffObject::CreateStuff(const Vector& _v,StuffObject* p,int cMode)
 	cycleTor(R_curr.x,R_curr.y);
 	set_active(0);	
 	GetVisible();
-	if(model_instance_handle.handle != 0)
-		renderer::visualbackend::VisualBackendContext::backend()->model_instance_set_visible(model_instance_handle,Visibility == VISIBLE);
+	set_external_model_visible(Visibility == VISIBLE);
+
 	switch_analysis(0);
 	CreateMode = cMode;
 	CycleTime = 0;
