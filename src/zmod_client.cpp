@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h>
 #include <time.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 int z_time = 0;
 int z_time_tic = 0;

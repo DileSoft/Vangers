@@ -285,7 +285,6 @@ int main(int argc, char *argv[]) {
 		if (XObj)
 			sys_runtimeObjectQuant(XObj->ID);
 	}
-#endif
 	xtDoneApplication();
 	xtSysFinit();
 	SDL_Quit();
@@ -574,16 +573,17 @@ int xtDispatchMessage(SDL_Event* msg)
 				renderer::visualbackend::VisualBackendContext::backend()->set_screen_resolution(XGR_Obj.RealX, XGR_Obj.RealY);
 			 }
 			 break;
-		 case SDL_EVENT_USER:
-	}
-
-	return ret;
+	 case SDL_EVENT_USER:
+		 switch (msg->user.code) {
+		 case CursorAnimationEvent:
+			 doCursorAnimation();
+		 }
+		 break;
+	 }
+	 return ret;
 }
 
-void xtClearMessageQueue(void)
-{
-	sys_tickQuant();
-
+void xtClearMessageQueue(void) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -603,62 +603,55 @@ void xtClearMessageQueue(void)
 }
 
 static void xtProcessMessageBuffer(void) {
-	SDL_Event event;
-	while (XMsgBuf->get(&event))
-		xtDispatchMessage(&event);
+	 SDL_Event event;
+	 while (XMsgBuf->get(&event))
+		 xtDispatchMessage(&event);
 }
 
 static void xtEventQuant(void) {
-	xtFrameCount++;
-	xtSysQuant();
-	xtClearMessageQueue();
-	xtProcessMessageBuffer();
+	 xtFrameCount++;
+	 xtSysQuant();
+	 xtClearMessageQueue();
+	 xtProcessMessageBuffer();
 }
 
-xtMsgHandlerObject::xtMsgHandlerObject(void (*p)(SDL_Event*),int id)
-{
+
+xtMsgHandlerObject::xtMsgHandlerObject(void (*p)(SDL_Event *), int id) {
 	list = NULL;
 	ID = id;
 
 	Handler = p;
 }
 
-void xtRegisterSysMsgFnc(void (*fPtr)(SDL_Event*),int id)
-{
-	xtMsgHandlerObject* p = new xtMsgHandlerObject(fPtr,id);
+void xtRegisterSysMsgFnc(void (*fPtr)(SDL_Event *), int id) {
+	xtMsgHandlerObject *p = new xtMsgHandlerObject(fPtr, id);
 	XSysHandlerLst.append(p);
 }
 
-void win32_break(char* error,char* msg)
-{
-	std::cout<<"--------------------------------\n";
-	std::cout<<error<<"\n";
-	std::cout<<msg<<"\n";
-	std::cout<<"--------------------------------\n";
+void win32_break(char *error, char *msg) {
+	std::cout << "--------------------------------\n";
+	std::cout << error << "\n";
+	std::cout << msg << "\n";
+	std::cout << "--------------------------------\n";
 }
 
-void* xtGet_hInstance(void)
-{
+void *xtGet_hInstance(void) {
 	return XAppHinst;
 }
 
-void* xtGet_hWnd(void)
-{
+void *xtGet_hWnd(void) {
 	return XGR_hWnd;
 }
 
-void xtSet_hWnd(void* hWnd)
-{
+void xtSet_hWnd(void *hWnd) {
 	XGR_hWnd = hWnd;
 }
 
-void xtSysQuantDisable(int v)
-{
+void xtSysQuantDisable(int v) {
 	xtSysQuantDisabled = v;
 }
 
-
-void set_key_handlers(void (*pH)(SDL_Event*),void (*upH)(SDL_Event*)) {
+void set_key_handlers(void (*pH)(SDL_Event *), void (*upH)(SDL_Event *)) {
 	press_handler = pH;
 	unpress_handler = upH;
 }

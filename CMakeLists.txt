@@ -76,12 +76,11 @@ ELSE(EMSCRIPTEN)
 	)
 ENDIF(EMSCRIPTEN)
 
-ExternalDependency(Clunk
-	GIT_REPOSITORY https://github.com/stalkerg/clunk.git
-	GIT_TAG d7d94324c7c2e869dc504ae6bd31dc2a07ccca2f
-	TARGET Clunk::clunk
-	CMAKE_ARGS -DWITH_SSE=OFF ${CLUNK_CMAKE_ARGS}
-)
+# clunk is prebuilt under external/clunk-install (upstream commit b52d1fda).
+# FindClunk.cmake takes CLUNK_ROOT as its hint and defines the Clunk::Clunk
+# imported target that the subdirectories link against.
+SET(CLUNK_ROOT "${PROJECT_SOURCE_DIR}/external/clunk-install" CACHE PATH "clunk install prefix")
+FIND_PACKAGE(Clunk REQUIRED)
 
 IF(FFMPEG)
 	FIND_PACKAGE(FFMPEG REQUIRED)

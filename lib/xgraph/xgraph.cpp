@@ -5,8 +5,8 @@
 #include "xgraph.h"
 #include "xbmp.h"
 #include "xside.h"
-#include <SDL_pixels.h>
-#include <SDL_surface.h>
+#include <SDL3/SDL_pixels.h>
+#include <SDL3/SDL_surface.h>
 #include <cstdint>
 #include <renderer/compositor/gles3/GLES3Compositor.h>
 
@@ -145,22 +145,17 @@ int XGR_Screen::init(int flags_in)
 	flags = flags_in;
 	std::cout<<"XGR_Screen::init"<<std::endl;
 	// Init SDL video
-	 if (XGR_ScreenSurface == NULL) {
-#ifdef EMSCRIPTEN
-		 if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER) < 0) {
-#else
-		 if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-#endif
-			 auto* error = SDL_GetError();
+	if (XGR_ScreenSurface == NULL) {
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC | SDL_INIT_SENSOR) < 0) {
+			auto *error = SDL_GetError();
 
-			 std::cerr << "SDL_Init failed: " << error << std::endl;
-			 ErrH.Abort(error, XERR_USER, 0);
-	 }
-	 if (!cursorTimer) {
-		 cursorTimer = SDL_AddTimer(100, CursorAnim, NULL);
-		 if (!cursorTimer)
-			 ErrH.Abort(SDL_GetError(), XERR_USER, 0);
-	 }
+			std::cerr << "SDL_Init failed: " << error << std::endl;
+			ErrH.Abort(error, XERR_USER, 0);
+		}
+		if (!cursorTimer) {
+			cursorTimer = SDL_AddTimer(100, CursorAnim, NULL);
+			if (!cursorTimer)
+				ErrH.Abort(SDL_GetError(), XERR_USER, 0);
 		}
 	} else {
 		compositor->texture_destroy(texture);
@@ -198,12 +193,12 @@ int XGR_Screen::init(int flags_in)
 
 	std::cout<<"SDL_CreateWindowAndRenderer"<<std::endl;
 	if (XGR_FULL_SCREEN) {
-		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, 0, 0, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP)) == nullptr) {
+		if ((sdlWindow = SDL_CreateWindow("Vangers", maxWidth, maxHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN)) == nullptr) {
 			std::cout << "SDL_CreateWindow failed for fullscreen mode" << std::endl;
 			ErrH.Abort(SDL_GetError(),XERR_USER, 0);
 		}
 	} else {
-		if ((sdlWindow = SDL_CreateWindow("Vangers", 0, 0, this->hdWidth, this->hdHeight,
+		if ((sdlWindow = SDL_CreateWindow("Vangers", this->hdWidth, this->hdHeight,
 SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 #ifdef ADNROID
 | SDL_WINDOW_MAXIMIZED
@@ -285,7 +280,7 @@ void XGR_Screen::create_surfaces(int width, int height) {
 	XGR_ScreenSurface2DRgba.reset(new uint32_t[width * height] {0});
 
 	std::cout<<"XGR32_ScreenSurface = SDL_CreateRGBSurface"<<std::endl;
-	XGR32_ScreenSurface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, SDL_PIXELFORMAT_RGBA32);
+	XGR32_ScreenSurface = SDL_CreateSurface(width, height, SDL_PIXELFORMAT_RGBA32);
 	std::cout<<"SDL_SetSurfacePalette"<<std::endl;
 
 	std::cout<<"SDL_CreateTexture sdlTexture"<<std::endl;

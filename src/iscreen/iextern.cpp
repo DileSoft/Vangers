@@ -2491,7 +2491,7 @@ const char* iGetKeyNameText(int vkey, Language lang, bool scan)
 	} else if (vkey & SDLK_JOYSTICK_HAT_MASK) {
 		return get_joystick_hat_name( (vkey ^ SDLK_JOYSTICK_HAT_MASK) % 10 );
 	} else if (vkey & SDLK_SCANCODE_MASK) {
-		return SDL_GetKeyName(vkey);
+		return SDL_GetKeyName((SDL_Keycode)vkey);
 	} else if (scan) {
 		return SDL_GetScancodeName((SDL_Scancode)vkey);
 	} else {

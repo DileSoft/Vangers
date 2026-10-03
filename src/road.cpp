@@ -679,23 +679,18 @@ int xtInitApplication(void) {
 		// SteamAPI_RestartAppIfNecessary starts the local Steam client and also launches this game
 		// again.
 
-	//STEAM
-#ifdef _STEAM_API_
-	if ( SteamAPI_RestartAppIfNecessary( k_uAppIdInvalid ) ) {
-		// if Steam is not running or the game wasn't started through Steam, SteamAPI_RestartAppIfNecessary starts the
-		// local Steam client and also launches this game again.
-
-		// Once you get a public Steam AppID assigned for this game, you need to replace k_uAppIdInvalid with it and
-		// removed steam_appid.txt from the game depot.
+		// Once you get a public Steam AppID assigned for this game, you need to replace
+		// k_uAppIdInvalid with it and removed steam_appid.txt from the game depot.
 
 		SDL_Quit();
 	}
 
-
 	// Init Steam CEG
-	if ( !Steamworks_InitCEGLibrary() )	{
-		std::cout<<"Steamworks_InitCEGLibrary() failed"<<std::endl;
-		std::cout<<"Fatal Error, Steam must be running to play this game (InitDrmLibrary() failed)."<<std::endl;
+	if (!Steamworks_InitCEGLibrary()) {
+		std::cout << "Steamworks_InitCEGLibrary() failed" << std::endl;
+		std::cout
+			<< "Fatal Error, Steam must be running to play this game (InitDrmLibrary() failed)."
+			<< std::endl;
 		SDL_Quit();
 	}
 
@@ -706,21 +701,23 @@ int xtInitApplication(void) {
 	// This will also load the in-game steam overlay dll into your process.  That dll is normally
 	// injected by steam when it launches games, but by calling this you cause it to always load,
 	// even when not launched via steam.
-	if ( !SteamAPI_Init() )	{
-		std::cout<<"SteamAPI_Init() failed"<<std::endl;
-		std::cout<<"Fatal Error, Steam must be running to play this game (SteamAPI_Init() failed)."<<std::endl;
+	if (!SteamAPI_Init()) {
+		std::cout << "SteamAPI_Init() failed" << std::endl;
+		std::cout
+			<< "Fatal Error, Steam must be running to play this game (SteamAPI_Init() failed)."
+			<< std::endl;
 		SDL_Quit();
 	}
 
 	// set our debug handler
-	//SteamClient()->SetWarningMessageHook( &SteamAPIDebugTextHook );
+	// SteamClient()->SetWarningMessageHook( &SteamAPIDebugTextHook );
 
-	// Tell Steam where it's overlay should show notification dialogs, this can be top right, top left,
-	// bottom right, bottom left. The default position is the bottom left if you don't call this.
-	// Generally you should use the default and not call this as users will be most comfortable with
-	// the default position.  The API is provided in case the bottom right creates a serious conflict
-	// with important UI in your game.
-	SteamUtils()->SetOverlayNotificationPosition( k_EPositionTopRight );
+	// Tell Steam where it's overlay should show notification dialogs, this can be top right, top
+	// left, bottom right, bottom left. The default position is the bottom left if you don't call
+	// this. Generally you should use the default and not call this as users will be most
+	// comfortable with the default position.  The API is provided in case the bottom right creates
+	// a serious conflict with important UI in your game.
+	SteamUtils()->SetOverlayNotificationPosition(k_EPositionTopRight);
 #endif
 #if defined(__unix__) || defined(__linux__) || defined(__APPLE__)
 	std::cout<<"Set locale. ";
