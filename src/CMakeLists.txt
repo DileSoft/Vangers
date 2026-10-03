@@ -212,6 +212,11 @@ if (NOT ANDROID)
 	)
 endif()
 	IF(EMSCRIPTEN)
+		# SDL3::SDL3 above is a header-only interface target (there is no SDL3
+		# config package under Emscripten), so -sUSE_SDL=3 has to reach the link
+		# line explicitly or every SDL_* call ends up undefined. There is
+		# deliberately no -sUSE_SDL_NET=3: emscripten ships no sdl3-net port.
+		target_link_options(vangers PRIVATE "-sUSE_SDL=3")
 		target_link_options(vangers PRIVATE
 			"SHELL:--preload-file ${PROJECT_SOURCE_DIR}/vange-rs/res@/res/"
 			"-sMIN_WEBGL_VERSION=2"

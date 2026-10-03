@@ -3,7 +3,16 @@
 
 #include <string>
 
+#ifdef EMSCRIPTEN
+// Emscripten has no SDL3_net port (only the older sdl2_net one), and there are
+// no BSD sockets in a browser anyway - the JavaScript side talks over
+// WebSockets through the vss bridge. Forward declare the single type we need so
+// the rest of this header, and every caller that takes an XSocket reference,
+// still compiles; xsocket.cpp supplies do-nothing bodies.
+struct NET_StreamSocket;
+#else
 #include <SDL3_net/SDL_net.h>
+#endif
 
 int XSocketInit(int ErrHUsed = 1);
 void XSocketFinit();

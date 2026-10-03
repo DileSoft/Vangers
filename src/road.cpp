@@ -22,7 +22,12 @@
 #endif
 
 #include "_xsound.h"
+#ifndef EMSCRIPTEN
+// ffmpeg is optional and there is no Emscripten build of it, so the startup
+// AVI player compiles out there. runtime.h declares ShowAviRTO with a void*
+// buffer, so the class itself still exists; only the decoder calls go away.
 #include "avi.h"
+#endif
 
 #define DEFINE_GAME_RTO_TIMERS
 #include "runtime.h"
@@ -2415,6 +2420,7 @@ void ShowImageRTO::Init(int id)
 _MEM_STATISTIC_("AFTER SHOW IMAGE RTO INIT -> ");
 }
 
+#ifndef EMSCRIPTEN
 static void DrawStartupVideoFrame(void *avi) {
 	const int canvas_width = XGR_MAXX;
 	const int canvas_height = XGR_MAXY;
@@ -2439,6 +2445,10 @@ static void DrawStartupVideoFrame(void *avi) {
 		avi, x, y, XGR_MAXX, XGR_Obj.get_2d_rgba_render_buffer(), 1.0f, output_width, output_height
 	);
 }
+#else
+static void DrawStartupVideoFrame(void *avi) {
+}
+#endif
 
 void ShowAviRTO::Init(int id) {
 	XGR_Obj.set_is_scaled_renderer(false);
@@ -2451,6 +2461,13 @@ void ShowAviRTO::Init(int id) {
 	XGR_MouseSetPressHandler(XGM_LEFT_BUTTON, ShowImageMousePress);
 	XGR_MouseSetPressHandler(XGM_RIGHT_BUTTON, ShowImageMousePress);
 
+	// Without ffmpeg there is nothing to decode, so the browser build always
+	// takes the "no video" branch and just clears the screen.
+#ifdef EMSCRIPTEN
+	XGR_Obj.fill(0);
+	XGR_Obj.clear_2d_surface();
+	XGR_Obj.fill(0, XGR_Obj.get_2d_rgba_render_buffer());
+#else
 	if (AVIopen(fileNames[curFile], AVI_NODRAW | AVI_NOPALETTE, 0, &aviBuf)) {
 		AVIplay(aviBuf, 0, 0);
 		DrawStartupVideoFrame(aviBuf);
@@ -2459,6 +2476,7 @@ void ShowAviRTO::Init(int id) {
 		XGR_Obj.clear_2d_surface();
 		XGR_Obj.fill(0, XGR_Obj.get_2d_rgba_render_buffer());
 	}
+#endif
 	_MEM_STATISTIC_("AFTER SHOW IMAGE RTO INIT -> ");
 }
 
@@ -2500,8 +2518,10 @@ int ShowAviRTO::Quant(void) {
 	if (aviBuf && !ShowImageKeyFlag && !ShowImageMouseFlag) {
 		DrawStartupVideoFrame(aviBuf);
 
+		#ifndef EMSCRIPTEN
 		if (!AVIisFinished(aviBuf))
 			return 0;
+#endif
 	}
 
 	curFile++;
@@ -2527,8 +2547,10 @@ _MEM_STATISTIC_("AFTER SHOW IMAGE RTO 4 FINIT -> ");
 
 void ShowAviRTO::Finit(void) {
 	if (aviBuf) {
+#ifndef EMSCRIPTEN
 		AVIstop(aviBuf);
 		AVIclose(aviBuf);
+#endif
 		aviBuf = NULL;
 		}
 	XGR_Obj.fill(0);

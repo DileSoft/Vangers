@@ -25,6 +25,81 @@
 
 #include "xsocket.h"
 
+#ifdef EMSCRIPTEN
+
+// Emscripten provides no SDL3_net port and a browser has no BSD sockets, so
+// every entry point below reports failure. That keeps all callers - which only
+// ever take an XSocket reference - compiling and linking, while making sure no
+// code path mistakes a dead socket for a live one: is_open() stays false and
+// send/receive return an error.
+
+std::string XSocketLocalHostAddress;
+std::string XSocketLocalHostExternalAddress;
+
+int XSocketInit(int ErrHUsed) {
+	return 0;
+}
+
+void XSocketFinit() {
+}
+
+XSocket::XSocket() : ErrHUsed(0), streamSocket(nullptr), remotePort(0) {
+}
+
+XSocket::~XSocket() {
+}
+
+XSocket::XSocket(XSocket &&donor) noexcept : ErrHUsed(donor.ErrHUsed), streamSocket(donor.streamSocket), remoteAddress(std::move(donor.remoteAddress)), remotePort(donor.remotePort) {
+	donor.streamSocket = nullptr;
+	donor.remotePort = 0;
+}
+
+XSocket &XSocket::operator=(XSocket &&donor) noexcept {
+	if (this != &donor) {
+		ErrHUsed = donor.ErrHUsed;
+		streamSocket = donor.streamSocket;
+		remoteAddress = std::move(donor.remoteAddress);
+		remotePort = donor.remotePort;
+		donor.streamSocket = nullptr;
+		donor.remotePort = 0;
+	}
+	return *this;
+}
+
+int XSocket::open(int IP, int port) {
+	return -1;
+}
+
+int XSocket::open(const char *name, int port) {
+	return -1;
+}
+
+void XSocket::close() {
+	streamSocket = nullptr;
+}
+
+int XSocket::send(const char *buffer, int size) {
+	return -1;
+}
+
+int XSocket::send_if_ready(const char *buffer, int size) {
+	return -1;
+}
+
+int XSocket::flush(int ms_time) {
+	return -1;
+}
+
+int XSocket::receive(char *buffer, int size_of_buffer, int ms_time) {
+	return -1;
+}
+
+int XSocket::tcp_open(const char *name, int port) {
+	return -1;
+}
+
+#else
+
 #define XSOCKET_ERROR(str, code)                      \
 	do {                                              \
 		if (ErrHUsed) {                               \
@@ -248,3 +323,5 @@ int XSocket::receive(char *buffer, int size_of_buffer, int ms_time) {
 	}
 	return status;
 }
+
+#endif // EMSCRIPTEN
