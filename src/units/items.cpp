@@ -75,9 +75,19 @@ static int CheckLiveVangerPointer(VangerUnit* p)
 	return 0;
 };
 
-static void NetworkLogStuffObject(const char* tag,StuffObject* p,const char* extra)
-{
-	if(!p)
+static int should_play_spheroid_activation_sound(VangerUnit *owner) {
+	if (!ActD.Active || !owner)
+		return 0;
+	if (!NetworkON)
+		return 1;
+	if (owner == ActD.Active)
+		return 1;
+	return owner->Visibility == VISIBLE && owner->ExternalDraw &&
+		   !(owner->Status & SOBJ_WAIT_CONFIRMATION);
+}
+
+static void NetworkLogStuffObject(const char *tag, StuffObject *p, const char *extra) {
+	if (!p)
 		return;
 	network_log_item_event(tag,
 		p->NetID,
@@ -1157,14 +1167,14 @@ void GunDevice::DeviceIn(void)
 	if(pData->BulletID == BULLET_TYPE_ID::HYPNOTISE){
 		switch(ActIntBuffer.type){
 			case ACI_AMPUTATOR:
-				EffD.CreateDeform(Owner->R_curr,DEFORM_ALL,PASSING_WAVE_PROCESS);
-				if(ActD.Active)
-					SOUND_AMPUTATOR_SHOT(getDistX(ActD.Active->R_curr.x,Owner->R_curr.x));
-				break;
-			case ACI_DEGRADATOR:
-				EffD.CreateDeform(Owner->R_curr,DEFORM_ALL,PASSING_WAVE_PROCESS);
-				if(ActD.Active)
-					SOUND_DEGRADATOR_SHOT(getDistX(ActD.Active->R_curr.x,Owner->R_curr.x));
+			EffD.CreateDeform(Owner->R_curr, DEFORM_ALL, PASSING_WAVE_PROCESS);
+			if (should_play_spheroid_activation_sound(Owner))
+				SOUND_AMPUTATOR_SHOT(getDistX(ActD.Active->R_curr.x, Owner->R_curr.x));
+			break;
+		case ACI_DEGRADATOR:
+			EffD.CreateDeform(Owner->R_curr, DEFORM_ALL, PASSING_WAVE_PROCESS);
+			if (should_play_spheroid_activation_sound(Owner))
+				SOUND_DEGRADATOR_SHOT(getDistX(ActD.Active->R_curr.x, Owner->R_curr.x));
 				break;
 			case ACI_MECHOSCOPE:
 				if(NetworkON){

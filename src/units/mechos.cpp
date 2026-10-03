@@ -71,6 +71,7 @@ extern int multi_analysis;
 extern int multi_draw;
 extern int RAM16;
 extern int GameQuantReturnValue;
+extern int aciKeyboardLocked;
 
 extern int aciWorldIndex;
 
@@ -6973,8 +6974,10 @@ VangerUnit* addVanger(uvsVanger* p,uvsSpot* origin,int Human)
 extern VangerUnit* actCurrentViewObject;
 void uvsChangeCycle(void);
 
-void VangerUnit::NewKeyHandler(void)
-{
+void VangerUnit::NewKeyHandler(void) {
+	if (aciKeyboardLocked)
+		return;
+
 	Vector vCheck;
 	BulletObject* g;
 //	VangerUnit* v;
