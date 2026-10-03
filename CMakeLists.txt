@@ -36,6 +36,11 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/glad/include")
 ADD_DEFINITIONS(-DRV_API_3)
 
 # toml11 is header-only; vcpkg provides the config package (see vcpkg.json).
+# vcpkg is not used for a wasm build, so point the search at the vendored config
+# in cmake/toml11 there - see that file for why the vcpkg one cannot be reused.
+IF(EMSCRIPTEN)
+	LIST(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/cmake")
+ENDIF(EMSCRIPTEN)
 FIND_PACKAGE(toml11 4.4...<4.5 CONFIG REQUIRED)
 
 # depends
