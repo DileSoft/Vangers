@@ -6,6 +6,8 @@
 #include <SDL.h>
 #include <string>
 
+#include "xtcore.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,8 +16,8 @@ extern "C" {
 #	define UINT64_C(c) (c ## ULL)
 #endif
 
-#include <avformat.h>
 #include <avcodec.h>
+#include <avformat.h>
 #ifdef __cplusplus
 }
 #endif

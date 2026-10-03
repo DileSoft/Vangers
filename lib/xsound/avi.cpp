@@ -1,14 +1,14 @@
 #ifndef NO_FFMPEG
 /* ---------------------------- INCLUDE SECTION ----------------------------- */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "_xsound.h"
-#include "xglobal.h"
-#include "xcritical.h"
-#include "xgraph.h"
 #include "avi.h"
+#include "xcritical.h"
+#include "xglobal.h"
+#include "xgraph.h"
 
 /* ----------------------------- STRUCT SECTION ----------------------------- */
 

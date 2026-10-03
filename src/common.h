@@ -1,5 +1,6 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
+#include <stdlib.h>
 
 
 #define MIN(a,b)	(((a) < (b))?(a):(b))

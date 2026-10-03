@@ -1,5 +1,6 @@
 #ifndef __XUTIL_H
 #define __XUTIL_H
+#include <stdlib.h>
 
 void* xalloc(unsigned sz);
 void* xrealloc(void* p,unsigned sz);
