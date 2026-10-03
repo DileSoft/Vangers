@@ -112,11 +112,7 @@ if (ANDROID)
 		$<TARGET_OBJECTS:glad>
 	)
 else()
-	ADD_EXECUTABLE(vangers ${vangers_SRCS} ${vss_SRCS}
-		$<TARGET_OBJECTS:xtool>
-		$<TARGET_OBJECTS:xgraph>
-		$<TARGET_OBJECTS:xsound>
-	)
+	ADD_EXECUTABLE(vangers ${vangers_SRCS} ${vss_SRCS})
 
 	IF(WIN32)
 		SET(WIN_LIB
@@ -140,23 +136,31 @@ else()
 		)
 	ENDIF(MSVC)
 
-	TARGET_LINK_LIBRARIES(vangers
-		${SDL2_LIBRARY}
-		${OGG_LIBRARY}
-		${VORBIS_LIBRARY}
-		${VORBISFILE_LIBRARY}
-		${CLUNK_LIBRARY}
-		${SDL2_NET_LIBRARY}
-		${FFMPEG_LIBRARIES}
-		${ZLIB_LIBRARIES}
-		${OPENGL_LIBRARIES}
-		${WIN_LIB}
-		${STEAM_LIBS}
-		renderer
+	endif(ANDROID)
+
+TARGET_LINK_LIBRARIES(vangers PRIVATE
+	SDL3::SDL3
+	SDL3_net::SDL3_net
+	Clunk::Clunk
+	${OGG_LIBRARY}
+	${VORBIS_LIBRARY}
+	${VORBISFILE_LIBRARY}
+	${FFMPEG_LIBRARIES}
+	${ZLIB_LIBRARIES}
+	${OPENGL_LIBRARIES}
+	${WIN_LIB}
+	${STEAM_LIBS}
+	renderer
+)
+
+if (NOT ANDROID)
+	TARGET_LINK_LIBRARIES(vangers PRIVATE
 		xtool
 		xgraph
 		xsound
+		glad
 	)
+endif()
 	IF(EMSCRIPTEN)
 		target_link_options(vangers PRIVATE
 			"SHELL:--preload-file ${PROJECT_SOURCE_DIR}/vange-rs/res@/res/"
@@ -192,4 +196,3 @@ else()
 			COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/app/public"
 			COMMAND ${CMAKE_COMMAND} -E rename "$<TARGET_FILE_DIR:vangers>/vangers.data" "${PROJECT_SOURCE_DIR}/app/public/vangers.data")
 	ENDIF(EMSCRIPTEN)
-endif(ANDROID)

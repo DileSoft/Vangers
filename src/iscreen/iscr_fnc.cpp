@@ -32,10 +32,6 @@
 #include "../actint/aci_scr.h"
 #include "../actint/acsconst.h"
 
-#ifndef _WIN32
-#include <arpa/inet.h> // ntohl() FIXME: remove
-#endif
-
 #include "../sound/hmusic.h"
 #include "../sound/hsound.h"
 
@@ -59,8 +55,6 @@ extern iStringElement** iControlsStr;
 extern int MusicON;
 extern int SoundVolumePanning;
 extern int KeepON;
-
-extern int RecorderMode;
 
 extern int iCurMultiGame;
 extern int SoundVolumeCD;
@@ -787,7 +781,7 @@ int iQuantSecond(void)
 					k = KeyBuf -> get();
 					if(iChatON)
 						iChatKeyQuant(k);
-					if ((k->type == SDL_KEYDOWN && k->key.keysym.scancode == SDL_SCANCODE_ESCAPE) &&
+					if ((k->type == SDL_EVENT_KEY_DOWN && k->key.scancode == SDL_SCANCODE_ESCAPE) &&
 						actIntLog) {
 						if (!iPause)
 							ipal_iter(iScreenOffs);
@@ -799,19 +793,22 @@ int iQuantSecond(void)
 						}
 					}
 
-//					if(k->type == SDL_KEYDOWN && k->key.keysym.scancode == SDL_SCANCODE_F11) {
-					if(iKeyPressed(iKEY_SCREENSHOT)) {
+					//					if(k->type == SDL_EVENT_KEY_DOWN && k->key.scancode ==
+					// SDL_SCANCODE_F11) {
+					if (iKeyPressed(iKEY_SCREENSHOT)) {
 						shotFlush();
 					}
 
-					if (k->type == SDL_KEYDOWN || k->type == SDL_KEYUP) {
-						iKeyTrap(k->key.keysym.scancode);
-					} else if (k->type == SDL_JOYBUTTONDOWN || k->type == SDL_JOYBUTTONUP) {
+					if (k->type == SDL_EVENT_KEY_DOWN || k->type == SDL_EVENT_KEY_UP) {
+						iKeyTrap(k->key.scancode);
+					} else if (k->type == SDL_EVENT_JOYSTICK_BUTTON_DOWN ||
+							   k->type == SDL_EVENT_JOYSTICK_BUTTON_UP) {
 						iKeyTrap(k->jbutton.button | SDLK_JOYSTICK_BUTTON_MASK);
-					} else if (k->type == SDL_CONTROLLERBUTTONDOWN || k->type == SDL_CONTROLLERBUTTONUP) {
-						iKeyTrap(k->cbutton.button | SDLK_GAMECONTROLLER_BUTTON_MASK);
-					} else if (k->type == SDL_JOYHATMOTION) {
-						iKeyTrap((k->jhat.value + 10*k->jhat.hat) | SDLK_JOYSTICK_HAT_MASK);
+					} else if (k->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN ||
+							   k->type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
+						iKeyTrap(k->gbutton.button | SDLK_GAMEPAD_BUTTON_MASK);
+					} else if (k->type == SDL_EVENT_JOYSTICK_HAT_MOTION) {
+						iKeyTrap((k->jhat.value + 10 * k->jhat.hat) | SDLK_JOYSTICK_HAT_MASK);
 					}
 				}
 			} /*else {
@@ -1804,13 +1801,13 @@ void aciShowLocation(void)
 	//XGR_Flush(0,0,XGR_MAXX,XGR_MAXY);
 	//i_evince_pal(iscrPal,8);
 
-	timer = CLOCK();
-	for(i = 0; i < ACI_DOOR_DELAY; i ++){
-		while(CLOCK() < timer + I_TIME_DELTA){
+	Uint64 door_timer = CLOCK();
+	for (i = 0; i < ACI_DOOR_DELAY; i++) {
+		while (CLOCK() < door_timer + I_TIME_DELTA) {
 			xtClearMessageQueue();
 		}
 		SlowCDTRACK();
-		timer = CLOCK();
+		door_timer = CLOCK();
 	}
 
 	SOUND_GATE();
@@ -2101,13 +2098,11 @@ void iUnlockExit(void)
 void iSaveData(void)
 {
 #ifndef _ACI_SKIP_MAINMENU_
-	if(!RecorderMode){
-		XStream fh("options.dat",XS_OUT);
-		iScrDisp -> save_data(&fh);
-//		fh < aciAutoRun;
+	XStream fh("options.dat", XS_OUT);
+	iScrDisp->save_data(&fh);
+	//		fh < aciAutoRun;
 		fh < iGetOptionValue(iAUTO_ACCELERATION);
 		fh.close();
-	}
 #endif
 }
 
@@ -2115,23 +2110,21 @@ void iLoadData(void)
 {
 	XStream fh(0);
 
-	if(!RecorderMode){
-		if(fh.open("options.dat",XS_IN)){
-			iScrDisp -> load_data(&fh);
-			fh > aciAutoRun;
-			fh.close();
-		}
-
-		// These options live in localStorage (see the vss-default-options
-		// addon). iGetOptionValue() routes through vss and returns the
-		// localStorage value, so this pulls it back into the C++ option state:
-		// the options screen, options.dat persistence and gameplay all follow
-		// localStorage instead of whatever options.dat happened to contain.
-		iOptionsDataLoading = 1;
-		for(int id : {iFPS_60, iAUTO_ACCELERATION, iCAMERA_TURN, iCAMERA_SLOPE})
-			iSetOptionValue(id, iGetOptionValue(id));
-		iOptionsDataLoading = 0;
+	if (fh.open("options.dat", XS_IN)) {
+		iScrDisp->load_data(&fh);
+		fh > aciAutoRun;
+		fh.close();
 	}
+
+	// These options live in localStorage (see the vss-default-options
+	// addon). iGetOptionValue() routes through vss and returns the
+	// localStorage value, so this pulls it back into the C++ option state:
+	// the options screen, options.dat persistence and gameplay all follow
+	// localStorage instead of whatever options.dat happened to contain.
+	iOptionsDataLoading = 1;
+	for (int id : {iFPS_60, iAUTO_ACCELERATION, iCAMERA_TURN, iCAMERA_SLOPE})
+		iSetOptionValue(id, iGetOptionValue(id));
+	iOptionsDataLoading = 0;
 
 	aciAutoRun = iGetOptionValue(iAUTO_ACCELERATION);
 
@@ -3137,13 +3130,7 @@ void aciShowLocationPicture(void)
 	i_evince_pal(iscrPal,8);
 }
 
-void iGetIP(void)
-{
-	//Should be BigEndian in anycase
-	int IP = XSocketLocalHostExternADDR.host;
-	XBuffer XBuf;
-
-	XBuf <= (IP & 0xff) < "." <= ((IP >> 8) & 0xff) < "." <= ((IP >> 16) & 0xff) < "." <= ((IP >> 24) & 0xff);
-	iSetOptionValueCHR(iIP_ADDRESS,XBuf.address());
+void iGetIP(void) {
+	iSetOptionValueCHR(iIP_ADDRESS, XSocketLocalHostExternalAddress.c_str());
 }
 

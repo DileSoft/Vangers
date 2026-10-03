@@ -8,7 +8,9 @@
 #include <process.h>
 #endif
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include <ctype.h>
+#include <memory>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -32,7 +34,6 @@
 #include "xerrhand.h"
 #include "xbuffer.h"
 #include "xstream.h"
-#include "xrec.h"
 #include "xutl.h"
 #include "xcpuid.h"
 #include "xmsgbuf.h"

@@ -22,6 +22,7 @@
 #endif
 
 #include "_xsound.h"
+#include "avi.h"
 
 #define DEFINE_GAME_RTO_TIMERS
 #include "runtime.h"
@@ -216,7 +217,8 @@ char* host_name = 0;
 int host_port = DEFAULT_SERVER_PORT;
 
 int network_log = 0;
-int fps_frame,fps_start,uvsQuantFrame,gameDQuantFrame,actQuantFrame,MLQuantFrame;
+int fps_frame, uvsQuantFrame, gameDQuantFrame, actQuantFrame, MLQuantFrame;
+Uint64 fps_start;
 char fps_string[20];
 
 int stop_all_except_me = 0;
@@ -239,7 +241,7 @@ void memstatDumpLeak(void);
 #endif
 
 int page;
-clock_t _Timer_;
+Uint64 _Timer_;
 int frame;
 int Quit = 1;
 int Dead;
@@ -264,7 +266,7 @@ int MuteLog = 0;
 int Verbose;
 int DepthShow;
 
-int SkipIntro = 0;
+extern int SkipIntro;
 
 int PalIterLock = 0;
 
@@ -292,7 +294,7 @@ int Pause = 0;
 int FirstDraw = 1;
 
 int speed_correction_enabled = 1;
-int prev_frame_time = 0;
+Uint64 prev_frame_time = 0;
 
 iGameMap* curGMap;
 
@@ -317,9 +319,6 @@ extern int* AVI_index;
 
 int TotalDrawFlag = 1;
 int StartMainQuantFlag = 0;
-
-int RecorderMode = 0;
-char* RecorderName = NULL;
 
 int COMPAS_RIGHT;
 constexpr int DEFAULT_COMPAS_RIGHT = 80;
@@ -382,6 +381,74 @@ void showModal(char* fname, float reelW, float reelH, float screenW, float scree
 	winVideo.Close(); */
 }
 
+static bool SkipStartupOptionString(XStream &options, long options_size) {
+	if (options.tell() > options_size - (long)sizeof(int))
+		return false;
+
+	int length;
+	options > length;
+	if (length < 0 || length > options_size - options.tell())
+		return false;
+
+	options.seek(length, XS_CUR);
+	return true;
+}
+
+static bool LoadStartupDisplayOptions(int &fullscreen, int &resolution) {
+	XStream options(0);
+	if (!options.open("options.dat", XS_IN))
+		return false;
+
+	const long options_size = options.size();
+	const long saved_values_size = 4 * (long)sizeof(int);
+	if (options_size < (long)sizeof(int) + saved_values_size) {
+		options.close();
+		return false;
+	}
+
+	int option_count;
+	options > option_count;
+	if (option_count != iMAX_OPTION_ID) {
+		options.close();
+		return false;
+	}
+
+	// iSCREEN_RESOLUTION follows the first ten integer options and four
+	// length-prefixed strings in the serialized iScreen option order.
+	const long integer_options_size = 10 * (long)sizeof(int);
+	if (options.tell() > options_size - integer_options_size) {
+		options.close();
+		return false;
+	}
+	options.seek(integer_options_size, XS_CUR);
+	for (int i = 0; i < 4; ++i) {
+		if (!SkipStartupOptionString(options, options_size)) {
+			options.close();
+			return false;
+		}
+	}
+	if (options.tell() > options_size - (long)sizeof(int)) {
+		options.close();
+		return false;
+	}
+	options > resolution;
+
+	int auto_acceleration;
+	int fps_60;
+	int repeated_auto_acceleration;
+	// These are the final three saved options followed by iSaveData's repeated
+	// auto-acceleration value. The complete options file is loaded normally by the menu later.
+	options.seek(-saved_values_size, XS_END);
+	options > fullscreen > auto_acceleration > fps_60 > repeated_auto_acceleration;
+	options.close();
+
+	if ((fullscreen != 0 && fullscreen != 1) || (resolution != 0 && resolution != 1) ||
+		(auto_acceleration != 0 && auto_acceleration != 1) || (fps_60 != 0 && fps_60 != 1) ||
+		auto_acceleration != repeated_auto_acceleration)
+		return false;
+
+	return true;
+}
 
 int xtInitApplication(void) {
     XGraphWndID = "VANGERS";
@@ -472,10 +539,19 @@ int xtInitApplication(void) {
 
 
     emode = ExclusiveLog ? XGR_EXCLUSIVE : 0;
-    //emode |= XGR_HICOLOR;
+	// emode |= XGR_HICOLOR;
+	int startup_fullscreen = -1;
+	int startup_resolution = -1;
+	if (LoadStartupDisplayOptions(startup_fullscreen, startup_resolution)) {
+		if (!XGR_FULL_SCREEN)
+			XGR_FULL_SCREEN = startup_fullscreen;
+	}
 
 	actintLowResFlag = 1;
-    if (XGR_Init(emode)) ErrH.Abort(ErrorVideoMss);
+	if (XGR_Init(emode))
+		ErrH.Abort(ErrorVideoMss);
+	if (startup_resolution == 0)
+		XGR_Obj.set_resolution(800, 600);
 
 	// TODO:
 
@@ -562,29 +638,10 @@ int xtInitApplication(void) {
 //	  siObj -> SetName("resource\\iscreen\\bitmap\\kdlogo.bmp",0);
 //	  siObj -> SetNext(RTO_MAIN_MENU_ID);
 
-    if (lang() == RUSSIAN) {
-        saObj->SetNumFiles(3);
-        //saObj -> SetName("resource\\video\\intro\\logo1.avi",0);
-        //saObj -> SetName("resource\\video\\intro\\logo2.avi",1);
-        //saObj -> SetName("resource\\video\\intro\\intro.avi",2);
-
-        //	saObj -> SetFlag(0,AVI_RTO_HICOLOR);
-//	saObj -> SetFlag(1,AVI_RTO_HICOLOR);
-//	saObj -> SetFlag(2,AVI_RTO_HICOLOR);
-    } else {
-        saObj->SetNumFiles(4);
-        saObj->SetName("resource/video/intro/logo0.avi", 0);
-        saObj->SetName("resource/video/intro/logo1.avi", 1);
-        saObj->SetName("resource/video/intro/logo2.avi", 2);
-        saObj->SetName("resource/video/intro/intro.avi", 3);
-    //znfo commented in zmod
-    //	saObj -> SetFlag(0,AVI_RTO_HICOLOR);
-    //	saObj -> SetFlag(1,AVI_RTO_HICOLOR);
-    //	saObj -> SetFlag(2,AVI_RTO_HICOLOR);
-    //	saObj -> SetFlag(3,AVI_RTO_HICOLOR);
-    //znfo
-    }
-	saObj -> SetNext(RTO_MAIN_MENU_ID);
+	saObj->SetNumFiles(2);
+	saObj->SetName("resource/video/intro/logo2.avi", 0);
+	saObj->SetName("resource/video/intro/intro.avi", 1);
+	saObj->SetNext(RTO_MAIN_MENU_ID);
 
 	xtRegisterRuntimeObject(gqObj);
 	xtRegisterRuntimeObject(mmObj);
@@ -597,11 +654,8 @@ int xtInitApplication(void) {
 	xtRegisterRuntimeObject(lObj2);
 	xtRegisterRuntimeObject(lObj3);
 	xtRegisterRuntimeObject(siObj);
-	//xtRegisterRuntimeObject(saObj);
+	xtRegisterRuntimeObject(saObj);
 
-	if(RecorderMode)
-		XRec.Open(RecorderName,RecorderMode);
-	else
 		RNDVAL = SDL_GetTicks();
 
 	_MEM_STATISTIC_("AFTER FIRST INIT -> ");
@@ -618,12 +672,12 @@ int xtInitApplication(void) {
 		GameQuantRTO* p = (GameQuantRTO*)xtGetRuntimeObject(RTO_GAME_QUANT_ID);
 		p -> SetTimer(0);
 		}
-	if(RecorderMode){
-		GameQuantRTO* p = (GameQuantRTO*)xtGetRuntimeObject(RTO_GAME_QUANT_ID);
-//		p -> SetTimer(1000/20);
-		speed_correction_enabled = 0;
-		}
-
+	// STEAM
+#ifdef _STEAM_API_
+	if (SteamAPI_RestartAppIfNecessary(k_uAppIdInvalid)) {
+		// if Steam is not running or the game wasn't started through Steam,
+		// SteamAPI_RestartAppIfNecessary starts the local Steam client and also launches this game
+		// again.
 
 	//STEAM
 #ifdef _STEAM_API_
@@ -673,8 +727,10 @@ int xtInitApplication(void) {
 	char* res = setlocale(LC_NUMERIC, "POSIX");
 	std::cout<<"Result:"<<res<<std::endl;
 #endif
-	if(SkipIntro)
-		return RTO_MAIN_MENU_ID;
+#ifdef SHOW_LOGOS
+	if (!SkipIntro)
+		return RTO_SHOW_AVI_ID;
+#endif
 	return RTO_MAIN_MENU_ID;
 }
 
@@ -1144,8 +1200,12 @@ int GameQuantRTO::Quant(void)
 		gameQuant();
 //		DBGCHECK
 		frame++;
-		if(++fps_frame == RTO_GAME_QUANT_TIMER) {
-			sprintf(fps_string,"%.1f",(double)(RTO_GAME_QUANT_TIMER)/(SDL_GetTicks() - (int)fps_start)*1000);
+		if (++fps_frame == RTO_GAME_QUANT_TIMER) {
+			sprintf(
+				fps_string,
+				"%.1f",
+				(double)(RTO_GAME_QUANT_TIMER) / (SDL_GetTicks() - fps_start) * 1000
+			);
 #ifdef _DEBUG
 			network_analysis(network_analysis_buffer,0);
 #else
@@ -1272,10 +1332,10 @@ void LoadingRTO3::Init(int id)
 	if(!actIntLog){
 		palTr -> set(palbuf,NULL,0,255,&Quit);
 		Quit = 1;
-		int cnt = CLOCK();
-		while(Quit){
-			if(CLOCK() != cnt){
-				palTr -> quant();
+		Uint64 cnt = CLOCK();
+		while (Quit) {
+			if (CLOCK() != cnt) {
+				palTr->quant();
 				cnt = CLOCK();
 				xtClearMessageQueue();
 				}
@@ -1323,6 +1383,8 @@ void xtDoneApplication(void)
 void restore(void)
 {
 	KDWIN::destroy_server();
+	main_socket.close();
+	XSocketFinit();
 #ifdef _DEBUG
 	network_analysis(network_analysis_buffer,1);
 	fout < network_analysis_buffer.address();
@@ -1331,7 +1393,7 @@ void restore(void)
 	memStart = 0;
 #endif
 	RestoreSOUND();
-	SDL_Quit();
+	XJoystickCleanup();
 
 //	  win32_dump_mem();
 
@@ -1436,22 +1498,8 @@ void ComlineAnalyze(int argc,char** argv)
 	for(i = 1;i < argc;i++)
 		if(argv[i][0] == '/'){
 			j = 0;
-			while(argv[i][j] == '/' || argv[i][j] == '-'){
-				switch(argv[i][j + 1]){
-#ifdef zRECORDER_ENABLED
-					case 'W':
-					case 'w':
-						RecorderMode = XRC_RECORD_MODE;
-						RecorderName = argv[i] + 2;
-						SkipIntro = 1;
-						break;
-					case 'P':
-					case 'p':
-						RecorderMode = XRC_PLAY_MODE;
-						RecorderName = argv[i] + 2;
-						SkipIntro = 1;
-						break;
-#endif
+			while (argv[i][j] == '/' || argv[i][j] == '-') {
+				switch (argv[i][j + 1]) {
 					case 'X':
 					case 'x':
 						ExclusiveLog = 1;
@@ -1582,8 +1630,7 @@ void costab(void)
 //	dstrect.h = 256;
 //
 //
-//    surface = SDL_CreateRGBSurface(0, map_size_x, map_size_y, 8,
-//		0, 0, 0, 0);
+//     surface = SDL_CreateSurface(map_size_x, map_size_y, SDL_PIXELFORMAT_INDEX8);
 //	surface->format = XGR_Obj.XGR_ScreenSurface->format;
 //
 //	for (iter=0; iter<map_size_y/256;iter++) {
@@ -1665,8 +1712,8 @@ void KeyCenter(SDL_Event *key)
 #endif
 		case SDL_SCANCODE_F:
 			mod = SDL_GetModState();
-			if (mod&KMOD_CTRL) {
-				curGMap -> prmFlag ^= PRM_FPS;
+		if (mod & SDL_KMOD_CTRL) {
+			curGMap->prmFlag ^= PRM_FPS;
 			}
 #ifdef _DEBUG
 			else
@@ -1675,7 +1722,7 @@ void KeyCenter(SDL_Event *key)
 			break;
 		case SDL_SCANCODE_G:
 			mod = SDL_GetModState();
-			if (mod&KMOD_CTRL) {
+		if (mod & SDL_KMOD_CTRL) {
 				double old_game_time_coeff = GAME_TIME_COEFF;
 				if (GAME_TIME_COEFF == 1) {
 					RTO_GAME_QUANT_TIMER = 1000 / 60;
@@ -1879,8 +1926,22 @@ void iGameMap::reset(void)
 	camera_reset();
 }
 
-void calc_view_factors()
-{
+void calc_view_factors() {
+	// Stalkerg
+	//	if((speed_correction_enabled | NetworkON) && prev_frame_time){
+	//		int dt = SDL_GetTicks() - prev_frame_time;
+	//		if(dt > 5 && dt < 200) {
+	//			speed_correction_factor =
+	//(double)dt*((double)STANDART_FRAME_RATE/1000.)*speed_correction_tau +
+	// speed_correction_factor*(1 - speed_correction_tau);
+	//		}
+	//		std::cout<<"speed_correction_factor:"<<speed_correction_factor<<" dt:"<<dt<<std::endl;
+	//	} else {
+	//		speed_correction_factor = 1;
+	//	}
+	speed_correction_factor =
+		(double)50. * ((double)STANDART_FRAME_RATE / 1000.) * speed_correction_tau +
+		speed_correction_factor * (1 - speed_correction_tau);
 
 	//if(!(XRec.flags & (XRC_RECORD_MODE | XRC_PLAY_MODE)) && prev_frame_time)
 	//Stalkerg
@@ -1972,7 +2033,8 @@ void iGameMap::flush()
 void iGameMap::draw(int self)
 {
 	static XBuffer status;
-	static int blink,clcnt;
+	static int blink;
+	static Uint64 clcnt;
 
 	if(!MuteLog && ((ConTimer.counter&7) == 0)) {
 		SoundQuant();
@@ -2400,113 +2462,51 @@ void ShowImageRTO::Init(int id)
 _MEM_STATISTIC_("AFTER SHOW IMAGE RTO INIT -> ");
 }
 
+static void DrawStartupVideoFrame(void *avi) {
+	const int canvas_width = XGR_MAXX;
+	const int canvas_height = XGR_MAXY;
+	const int video_width = AVIwidth(avi);
+	const int video_height = AVIheight(avi);
 
-void ShowAviRTO::Init(int id)
-{
-#ifdef SHOW_LOGOS
-
-
-
-/*
-	int x,y,sx,sy;
-
-	XBuffer* XBuf = new XBuffer(1024);
-	char* avi_pal,*pal,*tpal;
-
-	if(!(Flags[curFile] & AVI_RTO_HICOLOR)){
-		pal = new char[768];
-		tpal = new char[768];
-		memset(tpal,0,768);
+	int output_width = canvas_width;
+	int output_height = (video_height * canvas_width + video_width / 2) / video_width;
+	if (output_height > canvas_height) {
+		output_height = canvas_height;
+		output_width = (video_width * canvas_height + video_height / 2) / video_height;
 	}
 
-	set_key_nadlers(ShowImageKeyPress,NULL);
-	XGR_MouseSetPressHandler(XGM_LEFT_BUTTON,ShowImageMousePress);
-	XGR_MouseSetPressHandler(XGM_RIGHT_BUTTON,ShowImageMousePress);
+	const int x = (canvas_width - output_width) / 2;
+	const int y = (canvas_height - output_height) / 2;
 
-	XBuf -> init();
-	*XBuf < iVideoPathDefault < fileNames[curFile];
+	XGR_Obj.fill(0);
+	XGR_Obj.clear_2d_surface();
+	XGR_Obj.fill(0, XGR_Obj.get_2d_rgba_render_buffer());
+	AVIPrepareFrame(avi);
+	AVIDrawFrame(
+		avi, x, y, XGR_MAXX, XGR_Obj.get_2d_rgba_render_buffer(), 1.0f, output_width, output_height
+	);
+}
 
-//	OLD XTOOL
-//	if(!AVIopen(XBuf -> address(),AVI_NOTIMER | AVI_NODRAW | AVI_NOPALETTE | AVI_NO_SOUND,0,&aviBuf)){
-	if(!AVIopen(XBuf -> address(),AVI_NOTIMER | AVI_NODRAW | AVI_NOPALETTE,0,&aviBuf)){
-		XBuf -> init();
-		*XBuf < iVideoPath < fileNames[curFile];
-//		OLD XTOOL
-//		if(!AVIopen(XBuf -> address(),AVI_NOTIMER | AVI_NODRAW | AVI_NOPALETTE | AVI_NO_SOUND,0,&aviBuf)){
-		if(!AVIopen(XBuf -> address(),AVI_NOTIMER | AVI_NODRAW | AVI_NOPALETTE,0,&aviBuf)){
-			aviBuf = NULL;
-		}
-	}
-
-	if(aviBuf){
-		if(!(Flags[curFile] & AVI_RTO_HICOLOR)){
-			if(XGR_Obj.flags & XGR_HICOLOR)
-				XGR_ReInit(800,600,emode);
-
-			XGR_Fill(0);
-			XGR_SetPal(tpal,0,255);
-			XGR_Flush(0,0,XGR_MAXX,XGR_MAXY);
-		}
-		else {
-			if(!(XGR_Obj.flags & XGR_HICOLOR)){
-				if(XGR_ReInit(800,600,emode | XGR_HICOLOR)){
-					XGR_ReInit(800,600,emode);
+void ShowAviRTO::Init(int id) {
+	XGR_Obj.set_is_scaled_renderer(false);
+	XGR_MouseHide();
 					aviBuf = NULL;
-				}
-			}
-			else {
-//				OLD XTOOL
-//				XGR_Fill16RGB(0,0,0);
-				XGR_Fill16(0);
-				XGR_Flush(0,0,XGR_MAXX - 1,XGR_MAXY - 1);
-			}
-		}
-
-		if(aviBuf){
-			sx = AVIwidth(aviBuf);
-			sy = AVIheight(aviBuf);
-
-			x = (XGR_MAXX - sx) / 2;
-			y = (XGR_MAXY - sy) / 2;
-
-			if(!(Flags[curFile] & AVI_RTO_HICOLOR)){
-				avi_pal = (char*)AVIGetPalette(aviBuf);
-				memcpy(pal,avi_pal,768);
-
-				AVIplay(aviBuf,x,y);
-				AVIdraw(aviBuf);
-				AVIstop(aviBuf);
-				AVIclose(aviBuf);
-
-				PalEvidence(tpal,pal);
-
-				if(!AVIopen(XBuf -> address(),0,0,&aviBuf))
-					ErrH.Abort(AVInotFoundMSS);
-			}
-			else {
-				AVIstop(aviBuf);
-				AVIclose(aviBuf);
-//				OLD XTOOL
-//				if(!AVIopen(XBuf -> address(),AVI_HICOLOR,0,&aviBuf))
-				if(!AVIopen(XBuf -> address(),AVI_LOOPING,0,&aviBuf))
-					ErrH.Abort(AVInotFoundMSS);
-			}
-			AVIplay(aviBuf,x,y);
-		}
-	}
-	count = CLOCK();
-
 	ShowImageMouseFlag = 0;
 	ShowImageKeyFlag = 0;
 
-	if(!(Flags[curFile] & AVI_RTO_HICOLOR)){
-		delete pal;
-		delete tpal;
+	set_key_handlers(&ShowImageKeyPress, NULL);
+	XGR_MouseSetPressHandler(XGM_LEFT_BUTTON, ShowImageMousePress);
+	XGR_MouseSetPressHandler(XGM_RIGHT_BUTTON, ShowImageMousePress);
+
+	if (AVIopen(fileNames[curFile], AVI_NODRAW | AVI_NOPALETTE, 0, &aviBuf)) {
+		AVIplay(aviBuf, 0, 0);
+		DrawStartupVideoFrame(aviBuf);
+	} else {
+		XGR_Obj.fill(0);
+		XGR_Obj.clear_2d_surface();
+		XGR_Obj.fill(0, XGR_Obj.get_2d_rgba_render_buffer());
 	}
-	delete XBuf;
-*/
-#endif
-_MEM_STATISTIC_("AFTER SHOW IMAGE RTO INIT -> ");
+	_MEM_STATISTIC_("AFTER SHOW IMAGE RTO INIT -> ");
 }
 
 int ShowImageRTO::Quant(void)
@@ -2543,32 +2543,17 @@ int ShowImageRTO::Quant(void)
 	return ID;
 }
 
-int ShowAviRTO::Quant(void)
-{
-#ifdef SHOW_LOGOS
-/*
-	int ret = 0;
-	if(aviBuf){
-		if(ShowImageKeyFlag || ShowImageMouseFlag){
-			ret = 1;
-		}
-//		OLD XTOOL
-//		if(AVIactive(aviBuf)){
-			count= CLOCK();
-//		}
-//		else {
-//			if((count + 100) < CLOCK())
-//				ret = 1;
-//		}
+int ShowAviRTO::Quant(void) {
+	if (aviBuf && !ShowImageKeyFlag && !ShowImageMouseFlag) {
+		DrawStartupVideoFrame(aviBuf);
 
-		if(!ret) return 0;
+		if (!AVIisFinished(aviBuf))
+			return 0;
 	}
-*/
-#endif
-	curFile ++;
-	if(curFile >= numFiles){
+
+	curFile++;
+	if (curFile >= numFiles)
 		return NextID;
-	}
 
 	return ID;
 }
@@ -2587,30 +2572,17 @@ void ShowImageRTO::Finit(void)
 _MEM_STATISTIC_("AFTER SHOW IMAGE RTO 4 FINIT -> ");
 }
 
-void ShowAviRTO::Finit(void)
-{
-#ifdef SHOW_LOGOS
-/*
-	char* pal;
-
-	if(aviBuf){
+void ShowAviRTO::Finit(void) {
+	if (aviBuf) {
 		AVIstop(aviBuf);
 		AVIclose(aviBuf);
-
-		if(XGR_Obj.flags & XGR_HICOLOR && curFile >= numFiles) XGR_ReInit(800,600,emode);
-
-		if(!(Flags[curFile - 1] & AVI_RTO_HICOLOR)){
-			pal = new char[768];
-			i_slake_pal((unsigned char*)pal,32);
-			delete pal;
+		aviBuf = NULL;
 		}
-	}
-	else {
-		if(XGR_Obj.flags & XGR_HICOLOR && curFile >= numFiles) XGR_ReInit(800,600,emode);
-	}
-*/
-#endif
-_MEM_STATISTIC_("AFTER SHOW IMAGE RTO 4 FINIT -> ");
+	XGR_Obj.fill(0);
+	XGR_Obj.clear_2d_surface();
+	XGR_Obj.fill(0, XGR_Obj.get_2d_rgba_render_buffer());
+	XGR_Obj.set_is_scaled_renderer(false);
+	_MEM_STATISTIC_("AFTER SHOW IMAGE RTO 4 FINIT -> ");
 }
 
 void set_map_to_fullscreen()
@@ -2671,10 +2643,15 @@ void shotFlush(void)
 		filestr.close();
 		curShotNumber++;
 	}
-	std::cout<<"ScreenShot name:"<<out_buf.GetBuf()<<std::endl;
-	SDL_Surface* screenshotSurface = XGR_Obj.get_screenshot();
-	SDL_SaveBMP(screenshotSurface, out_buf.GetBuf());
-	SDL_FreeSurface(screenshotSurface);
+	std::cout << "ScreenShot name:" << out_buf.GetBuf() << std::endl;
+	SDL_Surface *screenshotSurface = XGR_Obj.get_screenshot();
+	if (!screenshotSurface) {
+		std::cerr << "Screenshot failed: " << SDL_GetError() << std::endl;
+		return;
+	}
+	if (!SDL_SaveBMP(screenshotSurface, out_buf.GetBuf()))
+		std::cerr << "Screenshot save failed: " << SDL_GetError() << std::endl;
+	SDL_DestroySurface(screenshotSurface);
 }
 #endif
 
@@ -2874,11 +2851,10 @@ ShowImageRTO::ShowImageRTO(void)
 		fileNames[i] = new char[256];
 }
 
-ShowAviRTO::ShowAviRTO(void)
-{
-	int i;
+ShowAviRTO::ShowAviRTO(void) {
 	ID = RTO_SHOW_AVI_ID;
 	Timer = RTO_IMAGE_TIMER;
+	aviBuf = NULL;
 }
 
 void SetupPath(void)

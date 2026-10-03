@@ -3422,14 +3422,14 @@ void iScreenDispatcher::init_input_string(iScreenElement* p)
 	flags |= SD_INPUT_STRING;
 }
 
-void iScreenDispatcher::input_string_quant(void)
-{
-	SDL_StartTextInput();
-	int sz,init_flag = 0,redraw_flag = 0;
-	iListElementPtr* tmp;
-	iScreenObject* obj;
-	unsigned char* ptr = NULL;
-	const char* key_name = NULL;
+void iScreenDispatcher::input_string_quant(void) {
+	if (!SDL_StartTextInput(XGR_Obj.get_window()))
+		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
+	int sz, init_flag = 0, redraw_flag = 0;
+	iListElementPtr *tmp;
+	iScreenObject *obj;
+	unsigned char *ptr = NULL;
+	const char *key_name = NULL;
 	unsigned char code;
 	HFont* hfnt = NULL;
 
@@ -3448,17 +3448,17 @@ void iScreenDispatcher::input_string_quant(void)
 
 	while(KeyBuf -> size) {
 		SDL_Event *event = KeyBuf->get();
-		if (event->type != SDL_KEYDOWN && event->type != SDL_TEXTINPUT)
+		if (event->type != SDL_EVENT_KEY_DOWN && event->type != SDL_EVENT_TEXT_INPUT)
 			continue;
 		
-		if(!(ActiveEl -> flags & EL_KEY_NAME)){
-			if (event->type == SDL_KEYDOWN) {
-				if (event->key.keysym.sym > 0 && event->key.keysym.sym < 127) {
-					code = event->key.keysym.sym;
+		if (!(ActiveEl->flags & EL_KEY_NAME)) {
+			if (event->type == SDL_EVENT_KEY_DOWN) {
+				if (event->key.key > 0 && event->key.key < 127) {
+					code = event->key.key;
 				} else {
 					continue;
 				}
-				switch(event->key.keysym.sym) {
+				switch (event->key.key) {
 					case SDLK_RETURN:
 						sz = strlen((char*)ptr);
 						ptr[sz - 1] = 0;
@@ -3466,7 +3466,7 @@ void iScreenDispatcher::input_string_quant(void)
 						flags |= SD_FINISH_INPUT;
 						init_flag = 1;
 						redraw_flag = 1;
-						SDL_StopTextInput();
+					SDL_StopTextInput(XGR_Obj.get_window());
 						break;
 					case SDLK_ESCAPE:
 						strcpy((char*)ptr,BackupStr);
@@ -3474,7 +3474,7 @@ void iScreenDispatcher::input_string_quant(void)
 						flags |= SD_FINISH_INPUT;
 						init_flag = 1;
 						redraw_flag = 1;
-						SDL_StopTextInput();
+					SDL_StopTextInput(XGR_Obj.get_window());
 						break;
 					case SDLK_LEFT:
 					case SDLK_BACKSPACE:
@@ -3487,9 +3487,8 @@ void iScreenDispatcher::input_string_quant(void)
 						}
 						break;
 				}
-			}
-			else if (event->type == SDL_TEXTINPUT) {
-				if(!(ActiveEl -> flags & EL_NUMBER)){
+			} else if (event->type == SDL_EVENT_TEXT_INPUT) {
+				if (!(ActiveEl->flags & EL_NUMBER)) {
 					if ((unsigned char)event->text.text[0] < 128) {
 						code = event->text.text[0];
 					} else {
@@ -3543,7 +3542,7 @@ void iScreenDispatcher::input_string_quant(void)
 						init_flag = 1;
 						redraw_flag = 1;
 						iScreenLastInput = k;
-						SDL_StopTextInput();
+					SDL_StopTextInput(XGR_Obj.get_window());
 						break;
 					default:
 						//NEED rewrite

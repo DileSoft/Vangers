@@ -11,10 +11,7 @@
 #include <renderer/compositor/gles3/GLES3Compositor.h>
 
 #include <assert.h>
-
-#if defined(__APPLE__) && !defined(MOBILE)
-#include "ApplicationServices/ApplicationServices.h"
-#endif
+#include <cmath>
 
 /* ----------------------------- STRUCT SECTION ----------------------------- */
 
@@ -98,11 +95,10 @@ void XGR_FinitFnc(void)
 	XGR_Finit();
 }
 
-Uint32 CursorAnim(Uint32 interval, void *param)
-{
+Uint32 SDLCALL CursorAnim(void *, SDL_TimerID, Uint32 interval) {
 	SDL_Event event;
 	SDL_zero(event);
-	event.type = SDL_USEREVENT;
+	event.type = SDL_EVENT_USER;
 	event.user.code = CursorAnimationEvent;
 	event.user.data1 = nullptr;
 	event.user.data2 = nullptr;
@@ -139,6 +135,9 @@ XGR_Screen::XGR_Screen(void)
 	sdlWindow = NULL;
 	compositor = NULL;
 	texture = renderer::compositor::Texture::Invalid;
+	sdlRenderer = NULL;
+	sdlTexture = NULL;
+	cursorTimer = 0;
 }
 
 int XGR_Screen::init(int flags_in)
@@ -146,35 +145,43 @@ int XGR_Screen::init(int flags_in)
 	flags = flags_in;
 	std::cout<<"XGR_Screen::init"<<std::endl;
 	// Init SDL video
-	if (XGR_ScreenSurface==NULL) {
+	 if (XGR_ScreenSurface == NULL) {
 #ifdef EMSCRIPTEN
-		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER) < 0) {
+		 if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_TIMER) < 0) {
 #else
-		if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+		 if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 #endif
-			auto* error = SDL_GetError();
+			 auto* error = SDL_GetError();
 
-			std::cerr << "SDL_Init failed: "<<error<<std::endl;
-			ErrH.Abort(error,XERR_USER, 0);
+			 std::cerr << "SDL_Init failed: " << error << std::endl;
+			 ErrH.Abort(error, XERR_USER, 0);
+	 }
+	 if (!cursorTimer) {
+		 cursorTimer = SDL_AddTimer(100, CursorAnim, NULL);
+		 if (!cursorTimer)
+			 ErrH.Abort(SDL_GetError(), XERR_USER, 0);
+	 }
 		}
-		SDL_AddTimer(100, CursorAnim, NULL);
 	} else {
 		compositor->texture_destroy(texture);
 		compositor->dispose();
 		delete compositor;
 
+		destroy_surfaces();
+		SDL_DestroyRenderer(sdlRenderer);
 		SDL_DestroyWindow(sdlWindow);
+		sdlRenderer = nullptr;
+		sdlWindow = nullptr;
 	}
 
-	SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1");
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	 SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1");
+	 SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	 SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	 SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
-	SDL_DisplayMode displayMode;
-	SDL_GetCurrentDisplayMode(0, &displayMode);
-	int maxWidth = displayMode.w;
-	int maxHeight = displayMode.h;
+	 const SDL_DisplayMode *displayMode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+	 int maxWidth = displayMode ? displayMode->w : 1280;
+	 int maxHeight = displayMode ? displayMode->h : 720;
 
 	const float maxAspect = 1280.0f / 600;
 	float aspect = (float) maxWidth / (float) maxHeight;
@@ -207,7 +214,8 @@ SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 		}
 	}
 	std::cout << "SDL_Window created: " << this->hdWidth << "x" << this->hdHeight << std::endl;
-	SDL_SetWindowTitle(sdlWindow, "Vangers");
+	if (!SDL_SetWindowTitle(sdlWindow, "Vangers"))
+		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
 
 	std::cout<<"SDL_GL_CreateContext"<<std::endl;
 	openGlContext = SDL_GL_CreateContext(sdlWindow);
@@ -227,27 +235,27 @@ SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 	IconSurface = SDL_LoadBMP("vangers.bmp");
 #endif
 	if (IconSurface) {
-		SDL_SetWindowIcon(sdlWindow, IconSurface); 
-		SDL_FreeSurface(IconSurface);
+		if (!SDL_SetWindowIcon(sdlWindow, IconSurface))
+			std::cout << "Can't set window icon: " << SDL_GetError() << std::endl;
+		SDL_DestroySurface(IconSurface);
+		IconSurface = nullptr;
 	} else {
 		std::cout<<"Can't load icon vangers.bmp"<<std::endl;
 	}
-
-	compositor = new renderer::compositor::gles3::GLES3Compositor(this->hdWidth, this->hdHeight, (GLADloadproc)SDL_GL_GetProcAddress);
-	compositor->initialize();
-	// TODO:
-	std::cout<<"SDL_SetRenderDrawColor"<<std::endl;
-//	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
-	
-	std::cout<<"SDL_SetHint"<<std::endl;
-	// TODO: renderer filtering
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "best");  // "linear" make the scaled rendering look smoother.
+	std::cout << "SDL_SetRenderDrawColor" << std::endl;
+	if (!SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255))
+		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
+	std::cout << "SDL_RenderClear" << std::endl;
+	if (!SDL_RenderClear(sdlRenderer))
+		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
+	std::cout << "SDL_RenderPresent" << std::endl;
+	if (!SDL_RenderPresent(sdlRenderer))
+		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
 
 	create_surfaces(this->hdWidth, this->hdHeight);
 
-	std::cout<<"SDL_ShowCursor"<<std::endl;
-	//SDL_SetRelativeMouseMode(SDL_TRUE);
-	SDL_ShowCursor(SDL_DISABLE);
+	std::cout << "SDL_HideCursor" << std::endl;
+	SDL_HideCursor();
 
 	XFNT_Prepare();
 
@@ -256,10 +264,8 @@ SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 
 	flags &= ~XGR_REINIT;
 
-	//XRec.hWnd = XGR_hWnd;
-
-	if(XGR_MouseObj.flags & XGM_INIT){
-		if(XGR_MouseObj.flags & XGM_AUTOCLIP){
+	if (XGR_MouseObj.flags & XGM_INIT) {
+		if (XGR_MouseObj.flags & XGM_AUTOCLIP) {
 			XGR_MouseObj.SetClipAuto();
 			//XGR_MouseObj.AdjustPos();
 		}
@@ -269,11 +275,6 @@ SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 	xtClearMessageQueue();
 	XGR_InitFlag = 1;
 	flags |= XGR_INIT;
-
-// 	if (old_surface_1!=NULL) {
-// 		SDL_FreeSurface(old_surface_1);
-// 		SDL_FreeSurface(old_surface_2);
-// 	}
 
 	return false;
 }
@@ -331,14 +332,16 @@ void XGR_Screen::set_resolution(int width, int height){
 
 	destroy_surfaces();
 	compositor->set_resolution(width, height);
+	if (!SDL_SetWindowSize(sdlWindow, width, height))
+		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
 	create_surfaces(width, height);
 }
 
-const float XGR_Screen::get_screen_scale_x() {
+float XGR_Screen::get_screen_scale_x() const {
 	return screen_scale_x;
 }
 
-const float XGR_Screen::get_screen_scale_y() {
+float XGR_Screen::get_screen_scale_y() const {
 	return screen_scale_y;
 }
 
@@ -346,9 +349,7 @@ void XGR_Screen::destroy_surfaces() {
 	compositor->texture_destroy(texture);
 	compositor->texture_destroy(HDBackgroundTexture);
 
-	SDL_UnlockSurface(XGR32_ScreenSurface);
-
-	SDL_FreeSurface(XGR32_ScreenSurface);
+	SDL_DestroySurface(XGR32_ScreenSurface);
 
 	texture = renderer::compositor::Texture::Invalid;
 	HDBackgroundTexture = renderer::compositor::Texture::Invalid;
@@ -359,19 +360,19 @@ void XGR_Screen::destroy_surfaces() {
 }
 
 void XGR_Screen::set_fullscreen(bool fullscreen) {
-	if (fullscreen!=XGR_FULL_SCREEN) {
-		SDL_SetWindowFullscreen(sdlWindow, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	if (fullscreen != XGR_FULL_SCREEN) {
+		if (!SDL_SetWindowFullscreen(sdlWindow, fullscreen) || !SDL_SyncWindow(sdlWindow))
+			ErrH.Abort(SDL_GetError(), XERR_USER, 0);
 		if (!fullscreen) {
-			SDL_SetWindowSize(sdlWindow, XGR_MAXX, XGR_MAXY);
+			if (!SDL_SetWindowSize(sdlWindow, XGR_MAXX, XGR_MAXY))
+				ErrH.Abort(SDL_GetError(), XERR_USER, 0);
 			SDL_SetWindowPosition(sdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 			
 		} else {
 			SDL_SetWindowPosition(sdlWindow, 0, 0);
 		}
 		XGR_FULL_SCREEN = fullscreen;
-#if defined(__APPLE__) && !defined(MOBILE)
-		CGDisplayHideCursor(kCGDirectMainDisplay);
-#endif
+		SDL_HideCursor();
 	} 
 }
 
@@ -381,8 +382,15 @@ void XGR_Screen::set_is_scaled_renderer(bool is_scaled_renderer)
 	sys_scaledRendererQuant(is_scaled_renderer);
 }
 
-const bool XGR_Screen::get_is_scaled_renderer()
-{
+SDL_Window *XGR_Screen::get_window() const {
+	return sdlWindow;
+}
+
+SDL_Renderer *XGR_Screen::get_renderer() const {
+	return sdlRenderer;
+}
+
+bool XGR_Screen::get_is_scaled_renderer() const {
 	return this->is_scaled_renderer;
 }
 
@@ -780,11 +788,18 @@ void XGR_Screen::finit(void)
 		flags ^= XGR_INIT;
 
 		xtDeactivateSysFinitFnc(XGRAPH_SYSOBJ_ID);
+		if (cursorTimer) {
+			SDL_RemoveTimer(cursorTimer);
+			cursorTimer = 0;
+		}
 
 //		if(XGR_hWnd) KillTimer((HWND)XGR_hWnd,1);
 
 		destroy_surfaces();
-		SDL_Quit();
+		SDL_DestroyRenderer(sdlRenderer);
+		SDL_DestroyWindow(sdlWindow);
+		sdlRenderer = nullptr;
+		sdlWindow = nullptr;
 
 		// TODO(AMDmi3): uncomment/rewrite more stuff to free used resources
 
@@ -840,9 +855,16 @@ void XGR_Screen::close(void)
 		flags ^= XGR_INIT;
 
 		xtDeactivateSysFinitFnc(XGRAPH_SYSOBJ_ID);
+		if (cursorTimer) {
+			SDL_RemoveTimer(cursorTimer);
+			cursorTimer = 0;
+		}
 
 		XGR_Obj.destroy_surfaces();
-		SDL_Quit();
+		SDL_DestroyRenderer(sdlRenderer);
+		SDL_DestroyWindow(sdlWindow);
+		sdlRenderer = nullptr;
+		sdlWindow = nullptr;
 
 		// TODO(AMDmi3): uncomment/rewrite more stuff to free used resources
 		// TODO(AMDmi3): merge with finit
@@ -945,18 +967,8 @@ void XGR_Screen::set_2d_render_buffer() {
 	set_active_render_buffer(get_2d_render_buffer());
 }
 
-SDL_Surface* XGR_Screen::get_screenshot() {
-	int32_t w, h;
-	compositor->query_output_size(&w, &h);
-	SDL_Surface *screenshotSurface = SDL_CreateRGBSurfaceWithFormat(
-		0,
-		w,
-		h,
-		32,
-		SDL_PIXELFORMAT_RGBA32
-	);
-	compositor->read_pixels((uint8_t*)screenshotSurface->pixels);
-	return screenshotSurface;
+SDL_Surface *XGR_Screen::get_screenshot() {
+	return SDL_RenderReadPixels(sdlRenderer, NULL);
 }
 
 
@@ -1121,8 +1133,13 @@ void XGR_Screen::setpal(void* ptr,int start,int count)
 		XGR_Palette[i].r = pal[i - start].R << 2;
 		XGR_Palette[i].g = pal[i - start].G << 2;
 		XGR_Palette[i].b = pal[i - start].B << 2;
-		XGR32_PaletteCache[i] = SDL_MapRGB(XGR32_ScreenSurface->format,
-			XGR_Palette[i].r, XGR_Palette[i].g, XGR_Palette[i].b);
+		XGR32_PaletteCache[i] = SDL_MapRGB(
+			SDL_GetPixelFormatDetails(XGR32_ScreenSurface->format),
+			SDL_GetSurfacePalette(XGR32_ScreenSurface),
+			XGR_Palette[i].r,
+			XGR_Palette[i].g,
+			XGR_Palette[i].b
+		);
 	}
   	averageColorPalette.r = XGR_Palette[220].r;
   	averageColorPalette.g = XGR_Palette[220].g;
@@ -2442,7 +2459,7 @@ void XGR_MouseFnc(SDL_Event* p)
 	//ErrH.Log("Mouse Event\n");
 
 	// Mouse motion
-	if (p->type == SDL_MOUSEMOTION) {
+	if (p->type == SDL_EVENT_MOUSE_MOTION) {
 		if (p->motion.which==SDL_TOUCH_MOUSEID) {
 			return;
 		}
@@ -2467,14 +2484,12 @@ void XGR_MouseFnc(SDL_Event* p)
 		XGR_MouseObj.Move(0, XGR_MouseObj.PosX, XGR_MouseObj.PosY);
 		//if(XGR_MouseVisible())
 		//	XGR_MouseRedraw();
-		rec_flag = 1;
 		return;
-	} else if (p->type == SDL_MOUSEWHEEL ) {
+	} else if (p->type == SDL_EVENT_MOUSE_WHEEL) {
 		XGR_MouseObj.LastPosZ = XGR_MouseObj.PosZ;
 		// TODO (amdmi3): mouse wheel may be reversed; change 1 <-> -1 if so
 		XGR_MouseObj.PosZ += XGR_MouseObj.MovementZ = (p->wheel.y > 0) ? 1 : -1;
-		rec_flag = 1;
-	} else if (p->type == SDL_MOUSEBUTTONDOWN || p->type == SDL_MOUSEBUTTONUP) {
+	} else if (p->type == SDL_EVENT_MOUSE_BUTTON_DOWN || p->type == SDL_EVENT_MOUSE_BUTTON_UP) {
 		int flag = 0;
 		switch (p->button.button) {
 		case SDL_BUTTON_LEFT: flag = XGM_LEFT_BUTTON; break;
@@ -2483,14 +2498,10 @@ void XGR_MouseFnc(SDL_Event* p)
 		}
 
 		// TODO(amdmi3): secound arg is button state; needed?
-		if (p->type == SDL_MOUSEBUTTONUP)
+		if (p->type == SDL_EVENT_MOUSE_BUTTON_UP)
 			XGR_MouseUnPress(flag, 0, XGR_MouseObj.PosX, XGR_MouseObj.PosY);
 		else
 			XGR_MousePress(flag, 0, XGR_MouseObj.PosX, XGR_MouseObj.PosY);
-		rec_flag = 1;
-	}
-	if(rec_flag && XRec.flags & XRC_RECORD_MODE){
-		//XRec.PutSysMessage(XRC_XMOUSE_MESSAGE,p -> message,p -> wParam,p -> lParam);
 	}
 }
 

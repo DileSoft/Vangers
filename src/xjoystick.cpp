@@ -18,72 +18,49 @@
 #include <string.h>
 #include <time.h>
 
-SDL_GameController *ctrl = NULL;
+SDL_Gamepad *gamepad = NULL;
 SDL_Joystick *joy = NULL;
 
 int JoystickMode = JOYSTICK_None;
 int JoystickStickSwitchButton = VK_BUTTON_2;
 int CurrentStickSwitchCode = 0;
-unsigned int next_joystick_input = 0;
+Uint64 next_joystick_input = 0;
 
 int JoystickAvailable = 0;
-char* XJoystickLastErrorString = 0;
-int XJoystickLastErrorCode = 0;
-static int XJoystickErrHUsed = 1;
-#define XJOYSTICK_ABORT(str,code) { if(XJoystickErrHUsed) ErrH.Abort(str,XERR_USER,code); else{ XJoystickLastErrorString = (char *)str; XJoystickLastErrorCode = code; }}
 
 // Global State of Joystick
-XJOYSTATE  XJoystickState;
+XJOYSTATE XJoystickState;
 
-int JoystickWhatsPressedNow()
-{
-	std::cout<<"JoystickWhatsPressedNow "<<std::endl;
-	if(!JoystickAvailable)
+int JoystickWhatsPressedNow() {
+	std::cout << "JoystickWhatsPressedNow " << std::endl;
+	if (!JoystickAvailable)
 		return 0;
-	if(SDL_GetTicks() > next_joystick_input){
+	if (SDL_GetTicks() > next_joystick_input) {
 		XJoystickInput();
 		next_joystick_input = SDL_GetTicks() + 20;
-		}
-	if(CurrentStickSwitchCode)
+	}
+	if (CurrentStickSwitchCode)
 		return CurrentStickSwitchCode;
-	for(int i = 0;i < 32;i++)
-		if(XJoystickState.rgbButtons[i])
+	for (int i = 0; i < 32; i++)
+		if (XJoystickState.rgbButtons[i])
 			return VK_BUTTON_1 + i;
 	return 0;
 }
 
-int isJoystickButtonPressed(int vk_code)
-{
-	std::cout<<"isJoystickButtonPressed "<<vk_code<<std::endl;
-	if(!JoystickAvailable)
+int isJoystickButtonPressed(int vk_code) {
+	std::cout << "isJoystickButtonPressed " << vk_code << std::endl;
+	if (!JoystickAvailable)
 		return 0;
-	if(SDL_GetTicks() > next_joystick_input){
+	if (SDL_GetTicks() > next_joystick_input) {
 		XJoystickInput();
 		next_joystick_input = SDL_GetTicks() + 20;
-		}
-	if(vk_code & VK_BUTTON)
+	}
+	if (vk_code & VK_BUTTON)
 		return XJoystickState.rgbButtons[vk_code - VK_BUTTON_1] ? 1 : 0;
-	if(vk_code & VK_STICK_SWITCH)
+	if (vk_code & VK_STICK_SWITCH)
 		return vk_code == CurrentStickSwitchCode ? 1 : 0;
 	return 0;
 }
-
-//===========================================================================
-// inputPrepareDevice
-//
-// Performs device preparation by setting the device's parameters (ie
-// deadzone).
-//
-// Parameters:
-//
-// Returns:
-//
-//===========================================================================
-static bool inputPrepareDevice(void)
-{
-    return true;
-} //** end inputPrepareDevice()
-
 
 //===========================================================================
 // XJoystickInit
@@ -96,39 +73,63 @@ static bool inputPrepareDevice(void)
 //
 //===========================================================================
 bool XJoystickInit() {
-	int i;
-	
-	SDL_InitSubSystem(SDL_INIT_JOYSTICK);
-	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
-	SDL_JoystickEventState(SDL_ENABLE);
-	SDL_GameControllerEventState(SDL_ENABLE);
-	
-	if(!SDL_WasInit(SDL_INIT_JOYSTICK) && SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
-		std::cout<<"Unable to initialize the joystick subsystem"<<std::endl;
+	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
+		std::cout << "Unable to initialize the joystick subsystem" << std::endl;
 		return false;
 	}
-	
-	for(i = 0; i < SDL_NumJoysticks(); ++i) {
-		if (SDL_IsGameController(i)) {
-			printf("Index \'%i\' is a compatible controller, named \'%s\'\n", i, SDL_GameControllerNameForIndex(i));
-			ctrl = SDL_GameControllerOpen(i);
-			joy = SDL_GameControllerGetJoystick(ctrl);
-			break;
+	SDL_SetJoystickEventsEnabled(true);
+	SDL_SetGamepadEventsEnabled(true);
+
+	int joystickCount = 0;
+	SDL_JoystickID *joysticks = SDL_GetJoysticks(&joystickCount);
+	if (!joysticks)
+		return false;
+
+	for (int i = 0; i < joystickCount; ++i) {
+		SDL_JoystickID id = joysticks[i];
+		if (SDL_IsGamepad(id)) {
+			const char *name = SDL_GetGamepadNameForID(id);
+			printf(
+				"Joystick \'%u\' is a compatible gamepad, named \'%s\'\n",
+				static_cast<unsigned>(id),
+				name ? name : "unknown"
+			);
+			gamepad = SDL_OpenGamepad(id);
+			joy = gamepad ? SDL_GetGamepadJoystick(gamepad) : nullptr;
+			if (joy)
+				break;
+			if (gamepad) {
+				SDL_CloseGamepad(gamepad);
+				gamepad = nullptr;
+			}
 		} else {
-			printf("Index \'%s\' is not a compatible controller.\n", SDL_JoystickNameForIndex(i));
+			const char *name = SDL_GetJoystickNameForID(id);
+			printf(
+				"Joystick \'%u\' named \'%s\' is not a compatible gamepad.\n",
+				static_cast<unsigned>(id),
+				name ? name : "unknown"
+			);
 		}
 	}
-	if (ctrl) {
+	if (gamepad) {
+		SDL_free(joysticks);
 		JoystickAvailable = 1;
 		return true;
 	}
-	for(i = 0; i < SDL_NumJoysticks(); ++i) {
-		joy = SDL_JoystickOpen(i);
+	for (int i = 0; i < joystickCount; ++i) {
+		SDL_JoystickID id = joysticks[i];
+		joy = SDL_OpenJoystick(id);
 		if (joy) {
-			printf("Index \'%i\' is a compatible joystick, named \'%s\'\n", i, SDL_JoystickNameForIndex(i));
+			const char *name = SDL_GetJoystickName(joy);
+			printf(
+				"Joystick \'%u\' is available, named \'%s\'\n",
+				static_cast<unsigned>(id),
+				name ? name : "unknown"
+			);
 			break;
 		}
 	}
+	SDL_free(joysticks);
 	if (joy) {
 		JoystickAvailable = 1;
 		return true;
@@ -137,47 +138,13 @@ bool XJoystickInit() {
 	}
 }
 
-SDL_GameController *get_gamecontroller() {
-	return ctrl;
+SDL_Gamepad *get_gamepad() {
+	return gamepad;
 }
 
 SDL_Joystick *get_joystick() {
 	return joy;
 }
-
-bool XJoystickInit_old(int ErrHUsed)
-{
-    JoystickAvailable = 0;
-    XJoystickErrHUsed = ErrHUsed;
-
-    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
-	//SDL_JoystickEventState(SDL_ENABLE);
-    //SDL_JoystickEventState(SDL_IGNORE); // we will poll ourselves
-
-    int nJoysticks = SDL_NumJoysticks();
-
-    // FIXME: pick first
-    if (nJoysticks < 1)
-	return false;
-
-	std::cout<<"Found "<<nJoysticks<<" joysticks"<<std::endl;
-    joy = SDL_JoystickOpen(0);
-    if (!joy)
-		return false;
-
-	std::cout<<"Init joystick: "<<SDL_JoystickNameForIndex(0)<<std::endl;
-    // set joystick parameters (deadzone, etc)
-    if(!inputPrepareDevice())
-    {
-        XJOYSTICK_ABORT("Device preparation failed\nXJoystick - Force Feedback", -1);
-        return false;
-    }
-
-    // if we get here, we succeeded
-    return true;
-/* */
-} //*** end XJoystickInit()
-
 
 //===========================================================================
 // XJoystickCleanup
@@ -189,11 +156,16 @@ bool XJoystickInit_old(int ErrHUsed)
 // Returns: nothing
 //
 //===========================================================================
-void XJoystickCleanup(void)
-{
-    //if (SDL_JoystickOpened(0) && joystick)
-	//SDL_JoystickClose(joystick);
-    JoystickAvailable = 0;
+void XJoystickCleanup(void) {
+	if (gamepad) {
+		SDL_CloseGamepad(gamepad);
+		gamepad = nullptr;
+		joy = nullptr;
+	} else if (joy) {
+		SDL_CloseJoystick(joy);
+		joy = nullptr;
+	}
+	JoystickAvailable = 0;
 } //*** end XJoystickCleanup()
 
 //===========================================================================
@@ -204,65 +176,55 @@ void XJoystickCleanup(void)
 // Returns: 1 if joysticks state was updated, 0 otherwise.
 //
 //===========================================================================
-int XJoystickInput()
-{
-	std::cout<<"XJoystickInput"<<std::endl;
-	if(!JoystickAvailable)
+int XJoystickInput() {
+	std::cout << "XJoystickInput" << std::endl;
+	if (!JoystickAvailable)
 		return 0;
 
-	SDL_JoystickUpdate(); // update all open joysticks
+	SDL_UpdateJoysticks(); // update all open joysticks
 
-	for (int i = 0; i < SDL_JoystickNumButtons(joy) && i < 32; i++)
-	    XJoystickState.rgbButtons[i] = SDL_JoystickGetButton(joy, i);
+	for (int i = 0; i < SDL_GetNumJoystickButtons(joy) && i < 32; i++)
+		XJoystickState.rgbButtons[i] = SDL_GetJoystickButton(joy, i);
 
-	for (int i = 0; i < SDL_JoystickNumAxes(joy) && i < 2; i++)
-	{
-	    if (i == 0)
-		XJoystickState.lX = SDL_JoystickGetAxis(joy, i);
-	    else if (i == 1)
-		XJoystickState.lY = SDL_JoystickGetAxis(joy, i);
+	for (int i = 0; i < SDL_GetNumJoystickAxes(joy) && i < 2; i++) {
+		if (i == 0)
+			XJoystickState.lX = SDL_GetJoystickAxis(joy, i);
+		else if (i == 1)
+			XJoystickState.lY = SDL_GetJoystickAxis(joy, i);
 	}
 
 	CurrentStickSwitchCode = 0;
-	if(JoystickStickSwitchButton && XJoystickState.rgbButtons[JoystickStickSwitchButton - VK_BUTTON_1])
-	{
+	if (JoystickStickSwitchButton &&
+		XJoystickState.rgbButtons[JoystickStickSwitchButton - VK_BUTTON_1]) {
 		int dx = XJoystickState.lX;
-		if(abs(dx) < RANGE_MAX/16)
+		if (abs(dx) < RANGE_MAX / 16)
 			dx = 0;
 		int dy = XJoystickState.lY;
-		if(abs(dy) < RANGE_MAX/16)
+		if (abs(dy) < RANGE_MAX / 16)
 			dy = 0;
 
-		if(dy < 0){
-			if(dx < 0)
+		if (dy < 0) {
+			if (dx < 0)
 				CurrentStickSwitchCode = VK_STICK_SWITCH_7;
+			else if (dx > 0)
+				CurrentStickSwitchCode = VK_STICK_SWITCH_9;
 			else
-				if(dx > 0)
-					CurrentStickSwitchCode = VK_STICK_SWITCH_9;
-				else
-					CurrentStickSwitchCode = VK_STICK_SWITCH_8;
-			}
+				CurrentStickSwitchCode = VK_STICK_SWITCH_8;
+		} else if (dy > 0) {
+			if (dx < 0)
+				CurrentStickSwitchCode = VK_STICK_SWITCH_1;
+			else if (dx > 0)
+				CurrentStickSwitchCode = VK_STICK_SWITCH_3;
+			else
+				CurrentStickSwitchCode = VK_STICK_SWITCH_2;
+		} else if (dx < 0)
+			CurrentStickSwitchCode = VK_STICK_SWITCH_4;
+		else if (dx > 0)
+			CurrentStickSwitchCode = VK_STICK_SWITCH_6;
 		else
-			if(dy > 0){
-				if(dx < 0)
-					CurrentStickSwitchCode = VK_STICK_SWITCH_1;
-				else
-					if(dx > 0)
-						CurrentStickSwitchCode = VK_STICK_SWITCH_3;
-					else
-						CurrentStickSwitchCode = VK_STICK_SWITCH_2;
-				}
-			else
-				if(dx < 0)
-					CurrentStickSwitchCode = VK_STICK_SWITCH_4;
-				else
-					if(dx > 0)
-						CurrentStickSwitchCode = VK_STICK_SWITCH_6;
-					else
-						CurrentStickSwitchCode = VK_STICK_SWITCH_5;
-		}
+			CurrentStickSwitchCode = VK_STICK_SWITCH_5;
+	}
 
 	return 1;
 
 } //*** end XJoystickInput()
-

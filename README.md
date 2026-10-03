@@ -23,6 +23,13 @@ You also need the original game resources (maps, sounds, textures, etc.), which 
 
 Follow action build script `.github\workflows\tauri-release.yml`
 
+* SDL 3.2 or newer
+* SDL_net 3.2 or newer
+* libvorbis
+* SDL3-native clunk from the `sdl3` branch (https://github.com/stalkerg/clunk/tree/sdl3)
+* ffmpeg 6.0 or newer
+* zlib
+
 ## Mobile APP 
 
 You must provide game data files, to do this use handy script:

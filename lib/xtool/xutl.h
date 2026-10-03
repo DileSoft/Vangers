@@ -1,5 +1,7 @@
 #ifndef __XUTIL_H
 #define __XUTIL_H
+
+#include <cstdint>
 #include <stdlib.h>
 
 void* xalloc(unsigned sz);
@@ -83,7 +85,7 @@ inline int BitSR(int x) {
 }
 
 void initclock(void);
-int clocki(void);
+std::uint64_t clocki(void);
 double clockf(void);
 
 void xtDeleteFile(char* fname);

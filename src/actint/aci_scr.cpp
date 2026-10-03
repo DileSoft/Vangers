@@ -881,7 +881,7 @@ void aciScreenDispatcher::KeyTrap(int code, SDL_Event *event)
 	if(activeInput) {
 		InputQuant(event);
 	}
-	if (event == nullptr || event->type != SDL_TEXTINPUT) {
+	if (event == nullptr || event->type != SDL_EVENT_TEXT_INPUT) {
 		curScr->KeyTrap(code);
 	}
 }
@@ -1576,7 +1576,8 @@ void aciScreenDispatcher::InputQuant(SDL_Event *event)
 		return;
 	}
 
-	if (!(event != nullptr && (event->type == SDL_KEYDOWN || event->type == SDL_TEXTINPUT)))
+	if (!(event != nullptr &&
+			(event->type == SDL_EVENT_KEY_DOWN || event->type == SDL_EVENT_TEXT_INPUT)))
 		return;
 
 	ptr = (unsigned char*)activeInput -> string;
@@ -1584,14 +1585,14 @@ void aciScreenDispatcher::InputQuant(SDL_Event *event)
 		hfnt = acsFntTable[activeInput -> font];
 	}
 
-	if (event != nullptr && event->type == SDL_KEYDOWN) {
-		if (event->key.keysym.sym > 0 && event->key.keysym.sym < 127) {
-			chr = event->key.keysym.sym;
+	if (event != nullptr && event->type == SDL_EVENT_KEY_DOWN) {
+		if (event->key.key > 0 && event->key.key < 127) {
+			chr = event->key.key;
 		} else {
 			return;
 		}
 
-		switch(event->key.keysym.sym) {
+switch (event->key.key) {
 			case SDLK_RETURN:
 				DoneInput();
 				break;
@@ -1608,7 +1609,7 @@ void aciScreenDispatcher::InputQuant(SDL_Event *event)
 				}
 				break;
 		}
-	} else if (event != nullptr && event->type == SDL_TEXTINPUT) {
+	} else if (event != nullptr && event->type == SDL_EVENT_TEXT_INPUT) {
 		if ((unsigned char)event->text.text[0] < 128) {
 			chr = event->text.text[0];
 		} else {
@@ -1670,7 +1671,8 @@ void aciScreenDispatcher::PrepareInput(int obj_id)
 		p -> string[sz] = 0;
 		p -> flags |= ACS_ACTIVE_STRING;
 		activeInput = p;
-		SDL_StartTextInput();
+		if (!SDL_StartTextInput(XGR_Obj.get_window()))
+			ErrH.Abort(SDL_GetError(), XERR_USER, 0);
 	}
 }
 
@@ -1786,7 +1788,7 @@ void aciScreenDispatcher::CancelInput(void)
 	activeInput = NULL;
 	delete[] acsBackupStr;
 	acsBackupStr = NULL;
-	SDL_StopTextInput();
+	SDL_StopTextInput(XGR_Obj.get_window());
 }
 
 void aciScreenDispatcher::DoneInput(void)
@@ -1799,7 +1801,7 @@ void aciScreenDispatcher::DoneInput(void)
 	activeInput = NULL;
 	delete[] acsBackupStr;
 	acsBackupStr = NULL;
-	SDL_StopTextInput();
+	SDL_StopTextInput(XGR_Obj.get_window());
 }
 
 void aciScreenInputField::Quant(void)

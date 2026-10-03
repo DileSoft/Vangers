@@ -62,8 +62,8 @@ OggStream::OggStream(const std::string &fname) {
 	_vorbis_info = ov_info(&_ogg_stream, -1);
 
 	sample_rate = _vorbis_info->rate;
-	//LOG_DEBUG(("open(%s) : %d", fname.c_str(), sample_rate));
-	format = AUDIO_S16LSB;
+	// LOG_DEBUG(("open(%s) : %d", fname.c_str(), sample_rate));
+	format = SDL_AUDIO_S16LE;
 	channels = _vorbis_info->channels;
 
 	//_vorbis_comment = ov_comment(&_ogg_stream, -1);

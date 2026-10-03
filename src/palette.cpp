@@ -20,9 +20,9 @@ PaletteTransform* palTr;
 void PalEvidence(char* tpal,char* pal)
 {
 	const int SPEED = 4;
-	int log = 1,i;
-	int t;
-	while(log){
+int log = 1, i;
+	Uint64 t;
+	while (log) {
 		t = CLOCK();
 		while(CLOCK() < t + 1);
 		log = 0;
@@ -44,9 +44,9 @@ void PalSlake(char* pal)
 {
 	const int SPEED = 4;
 
-	int log = 1,i;
-	int t;
-	while(log){
+int log = 1, i;
+	Uint64 t;
+	while (log) {
 		t = CLOCK();
 		while(CLOCK() < t + 1);
 		log = 0;
