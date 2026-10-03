@@ -842,9 +842,6 @@ struct iScreenDispatcher : public iList
 
 	void pal_quant(void);
 
-	void save_data(XStream* fh);
-	void load_data(XStream* fh);
-
 	iScreenDispatcher(void);
 };
 
@@ -868,13 +865,7 @@ struct iScreenFont
 #define iOPTION_VALUE_CUR	0
 #define iOPTION_VALUE_MAX	1
 
-// iScreenOption flags...
-#define iOPTION_NO_SAVE 	0x01
-
-struct iScreenOption
-{
-	int flags;
-
+struct iScreenOption {
 	int ObjectType;
 	int ValueType;
 
@@ -887,9 +878,6 @@ struct iScreenOption
 
 	char* GetValueCHR(void);
 	void SetValueCHR(const char* p);
-
-	void save(XStream* fh);
-	void load(XStream* fh);
 
 	void update(void);
 

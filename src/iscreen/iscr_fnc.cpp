@@ -1,6 +1,7 @@
 /* ---------------------------- INCLUDE SECTION ----------------------------- */
 
 #include "../global.h"
+#include "../settings/settings.h"
 #include "../sound/hsound.h"
 
 
@@ -16,6 +17,7 @@
 #include "ikeys.h"
 #include "iscreen.h"
 #include "iscript.h"
+#include "settings_adapter.h"
 
 #include "controls.h"
 
@@ -277,8 +279,6 @@ void aciResizeItem(double delta);
 void iSecondInit(void);
 
 /* --------------------------- DEFINITION SECTION --------------------------- */
-
-#define _SAVE_SCREEN_
 
 const int  iFRAME_CYCLE = 10;
 
@@ -2098,23 +2098,13 @@ void iUnlockExit(void)
 void iSaveData(void)
 {
 #ifndef _ACI_SKIP_MAINMENU_
-	XStream fh("options.dat", XS_OUT);
-	iScrDisp->save_data(&fh);
-	//		fh < aciAutoRun;
-		fh < iGetOptionValue(iAUTO_ACCELERATION);
-		fh.close();
+	vangers::settings::capture_settings_from_interface();
+	vangers::settings::save_settings();
 #endif
 }
 
-void iLoadData(void)
-{
-	XStream fh(0);
-
-	if (fh.open("options.dat", XS_IN)) {
-		iScrDisp->load_data(&fh);
-		fh > aciAutoRun;
-		fh.close();
-	}
+void iLoadData(void) {
+	vangers::settings::apply_settings_to_interface();
 
 	// These options live in localStorage (see the vss-default-options
 	// addon). iGetOptionValue() routes through vss and returns the

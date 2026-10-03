@@ -17,6 +17,23 @@ ELSE()
 	)
 ENDIF()
 
+ADD_LIBRARY(vangers_settings STATIC
+	settings/input_binding.cpp
+	settings/legacy_settings_import.cpp
+	settings/settings.cpp
+	settings/settings_io.cpp
+	settings/text_encoding.cpp
+)
+
+TARGET_INCLUDE_DIRECTORIES(vangers_settings PUBLIC
+	"${PROJECT_SOURCE_DIR}/src"
+)
+
+TARGET_LINK_LIBRARIES(vangers_settings PRIVATE
+	SDL3::SDL3
+	toml11::toml11
+)
+
 SET(vangers_SRCS
 	3d/3d_math.cpp
 	3d/3dgraph.cpp
@@ -44,6 +61,7 @@ SET(vangers_SRCS
 	iscreen/iscript.cpp
 	iscreen/ivmap.cpp
 	iscreen/script.cpp
+	iscreen/settings_adapter.cpp
 	iscreen/smooth.cpp
 	network.cpp
 	palette.cpp
@@ -139,6 +157,7 @@ else()
 	endif(ANDROID)
 
 TARGET_LINK_LIBRARIES(vangers PRIVATE
+	vangers_settings
 	SDL3::SDL3
 	SDL3_net::SDL3_net
 	Clunk::Clunk

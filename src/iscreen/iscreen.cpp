@@ -2,6 +2,7 @@
 
 #include "../common.h"
 #include "../global.h"
+#include "../settings/text_encoding.h"
 
 #include "ikeys.h"
 
@@ -3489,19 +3490,9 @@ void iScreenDispatcher::input_string_quant(void) {
 				}
 			} else if (event->type == SDL_EVENT_TEXT_INPUT) {
 				if (!(ActiveEl->flags & EL_NUMBER)) {
-					if ((unsigned char)event->text.text[0] < 128) {
-						code = event->text.text[0];
-					} else {
-						unsigned short utf = ((unsigned short *)event->text.text)[0];
-						utf = ntohs(utf);
-						code = 0xdb;
-						if ((utf & (1<<(7))) && !(utf & (1<<(10)))) {
-							code = UTF8toCP866(utf);
-						} else {
-							code = ' ';
-						}
-					}
-					if((hfnt -> data[code] -> Flags & NULL_HCHAR) && code != ' ') {
+					const std::string encoded = vangers::settings::utf8_to_cp866(event->text.text);
+					code = encoded.empty() ? ' ' : static_cast<unsigned char>(encoded.front());
+					if ((hfnt->data[code]->Flags & NULL_HCHAR) && code != ' ') {
 						break;
 					}
 					sz = strlen((char*)ptr);
@@ -4255,38 +4246,9 @@ int iScreenDispatcher::copy_text_prev(iScreen* scr,int mode)
 	return 0;
 }
 
-void iScreenDispatcher::save_data(XStream* fh)
-{
-	std::cout<<"iScreenDispatcher::save_data"<<std::endl;
-	int i,num_opt = iMAX_OPTION_ID;
-	*fh < num_opt;
-	for(i = 0; i < iMAX_OPTION_ID; i ++){
-		if(iScrOpt[i])
-			iScrOpt[i] -> save(fh);
-	}
-}
-
-void iScreenDispatcher::load_data(XStream* fh)
-{
-	int i,num_opt;
-	*fh > num_opt;
-	if(num_opt != iMAX_OPTION_ID) {
-		// Keep destroy terrain mode enabled
-		std::cout<<"iScreenDispatcher::load_data data is broken keep default"<<std::endl;
-		((iTriggerObject*)iScrOpt[iDESTR_MODE]->objPtr)->state = 1;
-		((iTriggerObject*)iScrOpt[iDESTR_MODE]->objPtr)->trigger_init();
-		return;
-	}
-	for(i = 0; i < iMAX_OPTION_ID; i ++){
-		if(iScrOpt[i])
-			iScrOpt[i] -> load(fh);
-	}
-}
-
-void iScreenDispatcher::end_event(void)
-{
-	if(ActiveEv){
-		ActiveEv -> flags &= ~EV_ACTIVE;
+void iScreenDispatcher::end_event(void) {
+	if (ActiveEv) {
+		ActiveEv->flags &= ~EV_ACTIVE;
 		ActiveEv = NULL;
 	}
 }

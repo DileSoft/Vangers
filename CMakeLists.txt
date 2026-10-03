@@ -29,6 +29,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 ADD_DEFINITIONS(-DRV_API_3)
 
+# toml11 is header-only; vcpkg provides the config package (see vcpkg.json).
+FIND_PACKAGE(toml11 4.4...<4.5 CONFIG REQUIRED)
+
 # depends
 IF(EMSCRIPTEN)
 	ADD_DEFINITIONS(-DEMSCRIPTEN)

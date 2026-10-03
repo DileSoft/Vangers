@@ -45,8 +45,46 @@ TARGET_INCLUDE_DIRECTORIES(sdl_event_buffer_test PRIVATE
 	${PROJECT_SOURCE_DIR}/src/iscreen
 	${PROJECT_SOURCE_DIR}/lib/xtool
 	${PROJECT_SOURCE_DIR}/lib/xgraph
+	# xgraph.h pulls in the external renderer compositor, and glad comes with
+	# it, so this test needs both include roots.
+	${PROJECT_SOURCE_DIR}/lib/renderer/src
+	${PROJECT_SOURCE_DIR}/lib/glad/include
 )
 
 TARGET_LINK_LIBRARIES(sdl_event_buffer_test PRIVATE SDL3::SDL3)
 
 ADD_TEST(NAME sdl_event_buffer COMMAND sdl_event_buffer_test)
+
+ADD_EXECUTABLE(settings_test
+	settings_test.cpp
+)
+
+FIND_PACKAGE(Threads REQUIRED)
+
+TARGET_LINK_LIBRARIES(settings_test PRIVATE
+	vangers_settings
+	Threads::Threads
+)
+
+ADD_TEST(NAME settings COMMAND settings_test)
+
+ADD_EXECUTABLE(text_encoding_test
+	text_encoding_test.cpp
+)
+
+TARGET_LINK_LIBRARIES(text_encoding_test PRIVATE
+	vangers_settings
+)
+
+ADD_TEST(NAME text_encoding COMMAND text_encoding_test)
+
+ADD_EXECUTABLE(legacy_settings_migration_test
+	legacy_settings_migration_test.cpp
+)
+
+TARGET_LINK_LIBRARIES(legacy_settings_migration_test PRIVATE
+	vangers_settings
+	SDL3::SDL3
+)
+
+ADD_TEST(NAME legacy_settings_migration COMMAND legacy_settings_migration_test)

@@ -91,3 +91,30 @@ inline int getDeltaX(int v0,int v1) { return XCYCL(v0 - v1 + H_SIZE); }
 Замечено при прогоне `wip-js-runtime-alpha-fixes`, но баг старый — код в
 `land.cpp`/`vmap.h` не менялся в этих коммитах. Требуется отдельная проверка на
 чистом `wip-js-runtime-alpha`.
+## settings тест падает на Windows: гонка при атомарной замене файла
+
+Открыт на этапе 5, наш merge его не вызывает: src/settings/* и
+	ests/settings_test.cpp побайтово совпадают с up-s5.
+
+Симптом: ctest даёт FAIL: a concurrent settings save failed, детерминированно
+(3 прогона из 3). Остальные 5 тестов проходят.
+
+Причина: eplace_file в src/settings/settings_io.cpp:372 на Windows один раз
+вызывает MoveFileExW(..., MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)
+и любой отказ считает фатальным - повторов нет. Тест запускает 24 потока, каждый
+из которых делает load() + save() по одному пути. Windows в этот момент может
+вернуть ERROR_ACCESS_DENIED или ERROR_SHARING_VIOLATION, потому что цель
+мгновенно занята заменой другого потока; tomic_write удаляет временный файл и
+возвращает alse.
+
+Ветка #else использует std::filesystem::rename, который в POSIX атомарно
+перезаписывает цель и такого отказа не даёт, поэтому на Linux тест проходит.
+
+Временные файлы при этом уже разведены (unique_temporary_path добавляет PID и
+атомарную последовательность), так что дело не в коллизии имён.
+
+Не «чинил»: по условиям задачи физика и тайминги в source/master считаются
+правильными, а здесь идёт логика конкурентной записи, которую привёз upstream и
+которую мы не меняли. Требуется решение upstream: повторять MoveFileExW на
+ERROR_ACCESS_DENIED/ERROR_SHARING_VIOLATION с небольшой задержкой, либо
+снимать блокировку цели перед заменой.
