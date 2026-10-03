@@ -82,10 +82,10 @@ char *win32_findfirst(const char *mask) {
 
 
 /* ----------------------------- EXTERN SECTION ---------------------------- */
-extern int frame; // kdsplus.cpp
-extern int ViewX,ViewY;
-extern iGameMap* curGMap;
-extern int MLstatus,MLprocess;
+extern int frame;
+extern int ViewX, ViewY;
+extern iGameMap *curGMap;
+extern int MLstatus, MLprocess;
 extern std::string path_to_world; 
 /* --------------------------- PROTOTYPE SECTION --------------------------- */
 char* GetTargetName(const char* name);

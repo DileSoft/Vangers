@@ -8,13 +8,13 @@
 
 //XStream VOVA("VOVA.LST", XS_OUT);
 
-#ifdef _DEBUG
-//#define _DEMO_
-#define STAND_REPORT
-#define TABU_REPORT
-#define TOTAL_CASH
-#define ALL_ITEM_IN_SHOP
-#define CHANGE_CYCLE_ON_NETWORK
+#ifdef _LEGACY_VS_DEBUG
+// #define _DEMO_
+#	define STAND_REPORT
+#	define TABU_REPORT
+#	define TOTAL_CASH
+#	define ALL_ITEM_IN_SHOP
+#	define CHANGE_CYCLE_ON_NETWORK
 #endif
 //#define MAX_ITEM_ON_WORLD 100 //unused
 #define CIRT_FOR_CONLARVER 16
@@ -8981,8 +8981,8 @@ uvsItem::uvsItem(XStream& pfile){
 	pfile > pos_z;
 	pfile > type;
 
-#ifdef _DEBUG
-	if (uvsItemTable[type] -> type == UVS_ITEM_STATUS::MECHOS_PART)
+#ifdef _LEGACY_VS_DEBUG
+	if (uvsItemTable[type]->type == UVS_ITEM_STATUS::MECHOS_PART)
 		XCon <= type < "\n";
 #endif
 

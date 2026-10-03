@@ -198,7 +198,7 @@ void aciSwapMatrices(void);
 void aciCancelMatrix(void);
 void aciShowScMatrix(void);
 
-#ifdef _DEBUG
+#ifdef _LEGACY_VS_DEBUG
 void aciChangeMouseItem(void);
 void iMapShot(void);
 #endif
@@ -278,7 +278,7 @@ void aMS_RightPress(int, int, int);
 void aMS_RightUnpress(int, int, int);
 void aMS_Movement(int, int, int);
 
-#ifdef _DEBUG
+#ifdef _LEGACY_VS_DEBUG
 void aciResizeItem(double delta);
 #endif
 
@@ -340,7 +340,7 @@ int iEndGameFlag = 0;
 int iCurHall = 0;
 int iEscaveTimer = 0;
 
-#ifdef _DEBUG
+#ifdef _LEGACY_VS_DEBUG
 int iTimerLog = 1;
 int iBoundsLog = 0;
 
@@ -734,7 +734,7 @@ void iQuantPrepare(void)
 int iQuantSecond(void)
 {
 	SDL_Event *k;
-#ifdef _DEBUG
+#ifdef _LEGACY_VS_DEBUG
 	int cr;
 	int count = 0;
 	XBuffer* XBufBMP,*XBufPAL;
@@ -2736,7 +2736,7 @@ ServerFindChain* iGetCurServer(void)
 	return p;
 }
 
-#ifdef _DEBUG
+#ifdef _LEGACY_VS_DEBUG
 int iMapShotCount = 0;
 void iMapShot(void)
 {

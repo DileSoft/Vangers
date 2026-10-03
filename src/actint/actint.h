@@ -9,8 +9,8 @@
 #define _ACI_CHECK_DIALOGS_
 //#define _ACI_SKIP_MAINMENU_
 
-#ifdef _DEBUG
-//#define _ACTINT_MEMSTAT_
+#ifdef _LEGACY_VS_DEBUG
+// #define _ACTINT_MEMSTAT_
 
 //#define _ACI_STARTUP_LOAD_GAME_
 
@@ -25,12 +25,12 @@
 /* -------------------------------------------------------------------------- */
 
 #define _ACI_BML_FONTS_
-#ifdef _DEBUG
-//#define _GENERATE_MATRIX_SHAPES_
-//#define _GENERATE_iMATRIX_SHAPES_
-//#define _GENERATE_ITEM_DATA_
-//#define _ACI_BOUND_TEST_
-//#define _ACI_LOGFILE_
+#ifdef _LEGACY_VS_DEBUG
+// #define _GENERATE_MATRIX_SHAPES_
+// #define _GENERATE_iMATRIX_SHAPES_
+// #define _GENERATE_ITEM_DATA_
+// #define _ACI_BOUND_TEST_
+// #define _ACI_LOGFILE_
 
 #ifdef _ACTINT_MEMSTAT_
 #define aMEMSTAT(a) aMemStatFile < "\r\n------->>>>>> " < a < " ->\t\t\t" <= memQ < "...";
@@ -1463,7 +1463,7 @@ struct actIntDispatcher
 	void save_data(XStream* fh);
 	void load_data(XStream* fh);
 
-#ifdef _DEBUG
+#ifdef _LEGACY_VS_DEBUG
 	void save_items(void);
 #endif
 

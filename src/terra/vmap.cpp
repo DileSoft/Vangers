@@ -1928,8 +1928,9 @@ void vrtMap::scaling(int XSrcSize,int cx,int cy,int xc,int yc,int xside,int ysid
 		return;
 	}
 
-#if defined(_ROAD_) && defined(_DEBUG)
-	if(!TotalDrawFlag) return;
+#if defined(_ROAD_) && defined(_LEGACY_VS_DEBUG)
+	if (!TotalDrawFlag)
+		return;
 #endif
 
 	int i,j,fx,fy;
@@ -1955,11 +1956,11 @@ void vrtMap::scaling(int XSrcSize,int cx,int cy,int xc,int yc,int xside,int ysid
 				vp += XADD;
 				}
 		else
-#if defined(_ROAD_) && defined(_DEBUG)
-		   if(debug_view){
-			static unsigned char old_pal[256*3];
-			static unsigned char new_pal[256*3];
-			if(debug_view == 1){
+#if defined(_ROAD_) && defined(_LEGACY_VS_DEBUG)
+		if (debug_view) {
+		static unsigned char old_pal[256 * 3];
+		static unsigned char new_pal[256 * 3];
+		if (debug_view == 1) {
 				XGR_GetPal(old_pal);
 				int i,j = 64*3;
 				for(i = 0;i < 64;i++)

@@ -26,16 +26,29 @@ build
 .vscode/
 *.code-workspace
 
+# Local development tools
+/.ropeproject/
+/.codex
+
 # VS cmake
 .vs/
 [Oo]ut/
 CMakeSettings.json
 
+# vcpkg (manifest mode)
+/vcpkg_installed/
+/build-msvc*/
+
+# External dependencies fetched by the build scripts
+/external/
+
 # compile stuff
 /ffmpeg
 /build
+/build_*/
 /clunk
 /vangers
+/external/
 /artifacts-flatpak
 /flatpak-build
 /flatpak-repo

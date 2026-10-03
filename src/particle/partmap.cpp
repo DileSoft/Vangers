@@ -4,8 +4,8 @@
 
 #include "../common.h"
 
-#ifdef _DEBUG
-#include "../win32f.h"
+#ifdef _LEGACY_VS_DEBUG
+#	include "../win32f.h"
 #endif
 
 #include "../backg.h"

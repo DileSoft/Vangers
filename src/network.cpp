@@ -37,9 +37,9 @@ NetRndType NetRnd;
 
 #define PLAYER_REMOVAL_EVENT(p) {NetCheckRemovePlayer(p);}
 
-#ifdef _DEBUG
-#define EVENTS_LOG
-#define _FOUT_
+#ifdef _LEGACY_VS_DEBUG
+#	define EVENTS_LOG
+#	define _FOUT_
 #endif
 
 #ifdef EVENTS_LOG

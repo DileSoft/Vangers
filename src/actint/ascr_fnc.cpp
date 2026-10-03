@@ -6,7 +6,7 @@
 #include "../vss/sys.h"
 
 #if defined(__APPLE__) || (defined(__GNUC__) && __GNUC__ < 9)
-#include <sys/stat.h>
+#	include <sys/stat.h>
 #else
 #include <filesystem>
 #endif
@@ -4437,10 +4437,9 @@ int aciGetCurCycle(void)
 #endif
 }
 
-#ifdef _DEBUG
-void aciChangeMouseItem(void)
-{
-	invItem* temp_item;
+#ifdef _LEGACY_VS_DEBUG
+void aciChangeMouseItem(void) {
+	invItem *temp_item;
 
 	if(aScrDisp -> flags & AS_ISCREEN){
 		temp_item = aScrDisp -> get_iitem(aScrDisp -> curItem -> ID + 1);
@@ -5273,7 +5272,7 @@ void acsPrepareSlotNameInput(int id,int slot_num)
 }
 
 #if defined(__APPLE__) || (defined(__GNUC__) && __GNUC__ < 9)
-void createDirIfNotExist(const char* dirName) {
+void createDirIfNotExist(const char *dirName) {
 	struct stat info;
 	if (stat(dirName, &info) != 0) {
 		std::cout<<"Directory "<<dirName<<" not found. Created it..."<< std::endl;
@@ -5835,11 +5834,10 @@ void aciShowFrags(void)
 	}
 }
 
-#ifdef _DEBUG
-void scale_bmp(int sx,int sy,int sx0,int sy0,void* dest,void* src)
-{
-	int x,y;
-	unsigned char* dest_buf,*src_buf;
+#ifdef _LEGACY_VS_DEBUG
+void scale_bmp(int sx, int sy, int sx0, int sy0, void *dest, void *src) {
+	int x, y;
+	unsigned char *dest_buf, *src_buf;
 
 	double ix,iy,dx,dy;
 

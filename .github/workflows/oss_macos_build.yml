@@ -20,7 +20,7 @@ concurrency:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  CLUNK_COMMIT: 3fa1e999ecc0ddb2f8eb550ca8203c7229127196
+  CLUNK_COMMIT: b52d1fda2237ef9ec81d09664ad2bb3aadd0de68
   MACOSX_DEPLOYMENT_TARGET: "13"
   TOML11_VERSION: 4.4.0
   TOML11_SHA256: 815bfe6792aa11a13a133b86e7f0f45edc5d71eb78f5fb6686c49c7f792b9049
@@ -132,7 +132,6 @@ jobs:
       - name: Show built binaries
         run: |
           file build/src/vangers
-          file build/server/vangers_server
           file build/surmap/surmap
           otool -L build/src/vangers
 
@@ -181,9 +180,8 @@ jobs:
 
           codesign --force --deep --sign - "$APP"
 
-          cp build/server/vangers_server artifacts/bin/
           cp build/surmap/surmap artifacts/bin/
-          chmod +x artifacts/bin/vangers_server artifacts/bin/surmap
+          chmod +x artifacts/bin/surmap
 
           otool -L "$APP/Contents/MacOS/Vangers"
 

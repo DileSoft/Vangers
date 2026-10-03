@@ -54,9 +54,9 @@ const int LAWN_MOWER_FLIGHT_MOTOR_TYPE = 6;
 #define UsingCutterig(t)	1
 #endif
 
-#ifdef _DEBUG
-#define ENTRIES_CONTROL
-#define MSG_OUT
+#ifdef _LEGACY_VS_DEBUG
+#	define ENTRIES_CONTROL
+#	define MSG_OUT
 #endif
 
 #define SPHERICAL_TEST (ID_INSECT | ID_JUMPBALL | ID_BULLET | ID_STATIC | ID_FIELD_SOURCE | ID_HORDE)

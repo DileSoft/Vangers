@@ -53,6 +53,7 @@
 #include "../actint/credits.h"
 
 #include "../vss/sys.h"
+#include <cstdint>
 
 #define INSECTOIDS
 
@@ -6993,11 +6994,10 @@ void VangerUnit::NewKeyHandler(void) {
 	StuffObject* p;
 	StuffObject* n;
 
-	
-	if(iKeyPressed(iKEY_USE_GLUEK)){
-		p = GetStuffObject(this,ACI_GLUEK);
-		if(p){
-			(ActD.Active)->Armor += 10 << 16;
+	if (iKeyPressed(iKEY_USE_GLUEK)) {
+		p = GetStuffObject(this, ACI_GLUEK);
+		if (p) {
+			ActD.Active->RestoreGluekArmor();
 			ObjectDestroy(p);
 			(ActD.Active)->CheckOutDevice(p);
 			ActD.CheckDevice(p);
@@ -8014,12 +8014,16 @@ void VangerUnit::CheckOutDevice(StuffObject* p)
 	};
 };
 
+void VangerUnit::RestoreGluekArmor(void) {
+	// Armor is 16.16 fixed-point. Widen before adding so the cap cannot overflow.
+	const std::int64_t healed = static_cast<std::int64_t>(Armor) + (10 << 16);
+	Armor = healed > MaxArmor ? MaxArmor : static_cast<int>(healed);
+}
 
-void VangerUnit::ItemQuant(void)
-{
-	StuffObject* p;
-	StuffObject* pp;
-	actintItemData* n;
+void VangerUnit::ItemQuant(void) {
+	StuffObject *p;
+	StuffObject *pp;
+	actintItemData *n;
 	int i;
 	
 	if(!VangerChanger){
@@ -8077,8 +8081,8 @@ void VangerUnit::ItemQuant(void)
 					else{
 						switch(p->ActIntBuffer.type){
 							case ACI_GLUEK:
-								if(Armor < MaxArmor / 2){
-									Armor += 10 << 16;
+							if (Armor < MaxArmor / 2) {
+								RestoreGluekArmor();
 									ObjectDestroy(p);
 									if(Status & SOBJ_ACTIVE){
 										aciSendEvent2actint(ACI_DROP_ITEM,&(p->ActIntBuffer));
@@ -8111,8 +8115,8 @@ void VangerUnit::ItemQuant(void)
 				pp = p->NextDeviceList;
 				switch(p->ActIntBuffer.type){
 					case ACI_GLUEK:
-						if(Armor < MaxArmor / 2){
-							Armor += 10 << 16;
+					if (Armor < MaxArmor / 2) {
+						RestoreGluekArmor();
 							ObjectDestroy(p);
 							if(Status & SOBJ_ACTIVE){
 								aciSendEvent2actint(ACI_DROP_ITEM,&(p->ActIntBuffer));
@@ -8472,9 +8476,10 @@ void aciSendEvent2itmdsp(int code,actintItemData* p,int data)
 						active->Status ^= SOBJ_AUTOMAT;
 						break;
 					case ACI_GLUEK:
-						dev = resolve_stuff_owner(active,p);
-						if(!dev) break;
-						active->Armor += 10 << 16;
+				dev = resolve_stuff_owner(active, p);
+				if (!dev)
+					break;
+				active->RestoreGluekArmor();
 						ObjectDestroy(dev);
 						active->CheckOutDevice(dev);
 						ActD.CheckDevice(dev);

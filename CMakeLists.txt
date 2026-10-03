@@ -95,14 +95,7 @@ IF(FFMPEG)
 	FIND_PACKAGE(FFMPEG REQUIRED)
 ENDIF(FFMPEG)
 
-IF(MSVC)
-	# The committed vangers.res was produced by windres as a 32-bit COFF
-	# object, which MSVC's x64 linker rejects (LNK1112). The icon is optional,
-	# so MSVC builds without an embedded resource for now.
-	SET(WINDOWS_RES "")
-ELSE()
-	set(WINDOWS_RES "../vangers.res")
-ENDIF()
+FIND_PACKAGE(ZLIB REQUIRED)
 
 IF(ACTINT)
 	ADD_DEFINITIONS(-DACTINT)
@@ -124,13 +117,8 @@ INCLUDE_DIRECTORIES(SYSTEM
 )
 
 INCLUDE(CheckCXXCompilerFlag)
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
-SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Os -ftree-vectorize")
-CHECK_CXX_COMPILER_FLAG("-msse2" HAVE_SIMDSSE)
-IF(HAVE_SIMDSSE)
-  SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse2")
-ENDIF()
-# For modern gcc
+
+# For modern MSVC
 add_definitions(-D_USE_MATH_DEFINES)
 
 IF(MSVC)
@@ -152,12 +140,19 @@ IF(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE)
 	add_definitions(-DNOMINMAX)
-	# clunk's export_clunk.h marks every symbol __declspec(dllimport) whenever
+	# clunk export_clunk.h marks every symbol __declspec(dllimport) whenever
 	# _MSC_VER is defined, but the project links clunk as a static library, so
 	# the linker would look for __imp_* entries. Override the macro with an
 	# empty definition; the header then leaves CLUNKAPI as-is.
 	add_definitions(-DCLUNKAPI=)
 ELSE()
+	SET(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
+	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2 -ftree-vectorize -ffast-math")
+	CHECK_CXX_COMPILER_FLAG("-msse2" HAVE_SIMDSSE)
+	IF(HAVE_SIMDSSE)
+		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse2")
+	ENDIF()
+
 	add_compile_options(-Werror=shift-negative-value)
 	add_compile_options(-Werror=dangling-else)
 	add_compile_options(-Werror=parentheses)
@@ -183,6 +178,14 @@ IF(WIN32)
 	SET(WIN_DBG
 		dbghelp
 	)
+	IF(MSVC)
+		# The committed vangers.res was produced by windres as a 32-bit COFF
+		# object, which MSVC's x64 linker rejects (LNK1112). The icon is optional,
+		# so MSVC builds without an embedded resource for now.
+		SET(WINDOWS_RES "")
+	ELSE()
+		SET(WINDOWS_RES "${PROJECT_SOURCE_DIR}/vangers.res")
+	ENDIF()
 ENDIF(WIN32)
 
 # Get the current working branch

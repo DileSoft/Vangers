@@ -26,7 +26,7 @@
 
 /* ----------------------------- EXTERN SECTION ----------------------------- */
 
-#ifdef _DEBUG
+#ifdef _LEGACY_VS_DEBUG
 extern int iBoundsLog;
 #endif
 
@@ -37,8 +37,7 @@ extern int actIntLog;
 extern actIntDispatcher* aScrDisp;
 extern unsigned char* aciCurColorScheme;
 
-
-extern const char* AVInotFound;
+extern const char *AVInotFound;
 
 extern int iFrameFlag;
 
@@ -99,8 +98,8 @@ void i_pal_quant(unsigned char* pal_buf,int lev,int n_lev);
 
 void aci_SendEvent(int cd,int dt = 0);
 
-#ifdef _DEBUG
-void map_rectangle(int x,int y,int sx,int sy,int col);
+#ifdef _LEGACY_VS_DEBUG
+void map_rectangle(int x, int y, int sx, int sy, int col);
 #endif
 
 /* --------------------------- DEFINITION SECTION --------------------------- */
@@ -1999,9 +1998,9 @@ void iScreenObject::redraw(int mode)
 			p -> redraw(PosX,PosY,curHeightScale,SmoothLevel,hide_mode);
 		p = (iScreenElement*)p -> prev;
 	}
-#ifdef _DEBUG
-	if(iBoundsLog)
-		map_rectangle(PosX + 1,PosY + 1,SizeX - 2,SizeY - 2,111);
+#ifdef _LEGACY_VS_DEBUG
+	if (iBoundsLog)
+		map_rectangle(PosX + 1, PosY + 1, SizeX - 2, SizeY - 2, 111);
 #endif
 	if(!(flags & OBJ_AVI_PRESENT) || flags & OBJ_AVI_STOPPED){
 		if(FlushX == -1){

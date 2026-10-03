@@ -21,6 +21,14 @@
 
 #include "xcompat.h"
 
+// __WORDSIZE is deliberately left undefined.
+// It used to be defined here as __WORDSIZE = 32 whenever __LP64__ was absent,
+// which is wrong twice over: the spaces make the macro expand to a bare
+// "= 32" that duk_config.h then evaluates inside #if, and MSVC does not
+// define __LP64__, so an x64 build would claim 32-bit pointers.
+// duk_config.h is the only reader and it has a documented fallback for the
+// neither-32-nor-64 case.
+
 #ifdef WIN32
 #define snprintf sprintf_s
 #endif
