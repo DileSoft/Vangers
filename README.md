@@ -14,6 +14,12 @@ All source code is published under the GPLv3 license.
 
 ## Download
 
+The Fostral world data in [`data/thechain/fostral`](data/thechain/fostral) is
+published by Association K-D Lab under the
+[Creative Commons Attribution-ShareAlike 4.0 International
+license](https://creativecommons.org/licenses/by-sa/4.0/). See
+[`LICENSES.md`](LICENSES.md) for the exact licensing scope and attribution.
+
 Grab the latest build for your platform from the
 [GitHub Releases page](https://github.com/vangers-app/vss/releases).
 
