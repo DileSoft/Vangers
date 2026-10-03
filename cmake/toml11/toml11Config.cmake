@@ -14,4 +14,5 @@ if(NOT TARGET toml11::toml11)
   )
 endif()
 
+set(toml11_VERSION "4.4.0")
 set(toml11_FOUND TRUE)

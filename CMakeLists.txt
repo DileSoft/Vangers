@@ -39,9 +39,19 @@ ADD_DEFINITIONS(-DRV_API_3)
 # vcpkg is not used for a wasm build, so point the search at the vendored config
 # in cmake/toml11 there - see that file for why the vcpkg one cannot be reused.
 IF(EMSCRIPTEN)
-	LIST(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/cmake")
+	# Emscripten sets CMAKE_FIND_ROOT_PATH_MODE_PACKAGE to ONLY and roots it at
+	# the sysroot. That hides any config package living in the source tree, and
+	# it applies to toml11_DIR too, so neither CMAKE_PREFIX_PATH nor an explicit
+	# package directory gets us out of it. Include the vendored config directly
+	# instead; it only defines toml11::toml11 and sets toml11_FOUND, and the
+	# version range is checked by hand below.
+	INCLUDE("${PROJECT_SOURCE_DIR}/cmake/toml11/toml11Config.cmake")
+	IF(NOT (toml11_VERSION VERSION_GREATER_EQUAL 4.4 AND toml11_VERSION VERSION_LESS 4.5))
+		MESSAGE(FATAL_ERROR "vendored toml11 is ${toml11_VERSION}, expected 4.4...<4.5")
+	ENDIF()
+ELSE()
+	FIND_PACKAGE(toml11 4.4...<4.5 CONFIG REQUIRED)
 ENDIF(EMSCRIPTEN)
-FIND_PACKAGE(toml11 4.4...<4.5 CONFIG REQUIRED)
 
 # depends
 IF(EMSCRIPTEN)
