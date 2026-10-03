@@ -324,3 +324,89 @@ line count after every write.
 vangers.exe builds clean. Stages 5 to 8 are still to do:
 up-s5 59f9e32ec, up-s6 3e8afe8c, up-s7 71e95b86, up-s8 8713913f, then
 reconcile vcpkg.json at stage 8 and push.
+## Stages 5 to 8: all upstream merged, branch is not pushed
+
+Final state at be50f016 on wip-js-runtime-staged-merge.
+
+Verification: HEAD..source/master is zero commits, so the whole upstream history
+is inside our branch. vangers.exe builds, every target builds, and all eight
+ctest cases pass.
+
+Conflict counts per stage, with -Xignore-space-change:
+
+| stage | subject | files | hunks left to resolve |
+|---|---|---|---|
+| 4 | SDL2 to SDL3 | 65 | 68, then fixed by the compiler |
+| 5 | TOML settings | 12 | 18 |
+| 6 | SDL3 gamepad | 15 | 41 |
+| 7 | Fostral licensing | 1 | 1 |
+| 8 | C++ server removal, MSVC/MSYS2 | 34 | 61 |
+
+Only four resolutions across stages 5 to 8 needed judgement; everything else was
+upstream's side.
+
+### iLoadData, stage 5
+
+The one that mattered. Upstream deleted the binary persistence and replaced
+iScrDisp->load_data with apply_settings_to_interface(), and that call is what our
+branch depended on, because iGetOptionValue() routes through vss to localStorage.
+Order is now deliberate: apply_settings_to_interface() runs first and performs the
+one-time migration, then our block reads each option back through vss and writes
+it into the C++ option state, so localStorage still wins over settings.toml.
+Verified beforehand that the vss hook sits at line 994 in iextern.cpp and the
+localStorage block at 2164 in iscr_fnc.cpp, both outside every conflict range.
+
+### __WORDSIZE in xglobal.h, stage 8
+
+Taking upstream reintroduced a block we had dropped at stage 4. It defines
+__WORDSIZE as "__WORDSIZE = 32" whenever __LP64__ is absent, which is wrong twice
+over: the spaces make the macro expand to a bare "= 32" that duk_config.h then
+evaluates inside an #if, and MSVC does not define __LP64__, so an x64 build would
+claim 32-bit pointers. Our vss bridge is what exposes it, because dynamics.cpp and
+road.cpp include global.h before vss/sys.h, so xglobal.h reaches duktape.
+duk_config.h is the only reader and has a documented fallback for the
+neither-32-nor-64 case, which is what stages 4 to 7 built in. The block stays out,
+with a comment explaining why.
+
+### surmap and lib/utils stay absent
+
+I restored both at stage 8, because upstream actively builds them and our branch
+had dropped them at stage 6 on the mistaken reading that they were dead. They are
+not dead, but they cannot be built against our integration: surmap compiles
+src/3d/dynamics.cpp and so needs duktape headers plus the vss symbols, and
+lib/utils links xtool while sys_fileOpenQuant lives in vangers' own sources
+rather than in a library. Upstream can build them because it has no vss bridge.
+Decision was to keep them absent rather than restructure the build around a vss
+static library at the last stage. If they are wanted later, the work is to extract
+src/vss into a library that vangers, surmap and xtool all link.
+
+### Renderer include roots moved to the root CMakeLists
+
+Structural rather than a merge decision. Stage 5 needed lib/renderer/src added to
+sdl_event_buffer_test, stage 6 needed it again for network_control_flags_test, and
+stages 7 and 8 add more tests. xgraph.h and 3dobject.h both expose the renderer in
+their own headers, so the roots now sit in the root CMakeLists and every target
+inherits them. The per-test duplication stage 5 introduced was removed.
+
+### Other keeps
+
+mechos.cpp keeps both vss/sys.h and cstdint, since ours serves the vss::sys()
+camera hook. xgraph.cpp keeps the compositor path for HDBackgroundTexture, since
+upstream would substitute SDL_SetTextureColorMod on an SDL_Texture we do not have.
+.gitignore keeps the vss build artefacts. README keeps both badge sets and both
+Mobile APP and Server sections. vcpkg.json is the add/add reconciliation the plan
+asked for: ours is a strict superset, same six dependencies plus a
+builtin-baseline that pins versions. xcompat.h keeps _CRT_NONSTDC_NO_DEPRECATE
+because that is the macro our CMakeLists actually defines.
+
+### Bugs
+
+bugs.md records one item and it is now closed: the settings test failed
+deterministically on stage 5, diagnosed as replace_file calling MoveFileExW with
+MOVEFILE_REPLACE_EXISTING once and no retry, and upstream fixed exactly that in
+4d226088 at stage 6 by adding a process-wide mutex and a bounded retry on the
+transient Windows errors. Reasoning kept, because unique temporary names do not
+make replacement of a shared destination reliable.
+
+The open bugs from bugs.md that predate this merge are untouched: the MLVOT crash,
+the terrain buffer overruns, and the video palette blue shift. Those come next.
