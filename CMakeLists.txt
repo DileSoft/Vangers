@@ -57,7 +57,23 @@ IF(EMSCRIPTEN)
 		COMMENT "Building rusty-vangers with cargo for wasm32-unknown-emscripten"
 		VERBATIM
 	)
+	# On a Windows host CMAKE_TOOLCHAIN_FILE arrives with backslashes, so the
+	# forward-slash REPLACE below would silently miss and leave
+	# EMSCRIPTEN_SYSROOT pointing at the toolchain file itself.
+	string(REPLACE "\\" "/" CMAKE_TOOLCHAIN_FILE "${CMAKE_TOOLCHAIN_FILE}")
 	string(REPLACE "/cmake/Modules/Platform/Emscripten.cmake" "/cache/sysroot" EMSCRIPTEN_SYSROOT "${CMAKE_TOOLCHAIN_FILE}")
+	# Emscripten supplies SDL3 through ports instead of CMake config packages, so
+	# SDL3::SDL3 / SDL3::SDL3_net never get defined. The subdirectories link both
+	# by name, so provide header-only interface targets pointing into the sysroot;
+	# the libraries themselves are pulled in by the -sUSE_SDL flags above.
+	ADD_LIBRARY(SDL3::SDL3 INTERFACE IMPORTED)
+	SET_TARGET_PROPERTIES(SDL3::SDL3 PROPERTIES
+		INTERFACE_INCLUDE_DIRECTORIES "${EMSCRIPTEN_SYSROOT}/include/SDL3"
+	)
+	ADD_LIBRARY(SDL3_net::SDL3_net INTERFACE IMPORTED)
+	SET_TARGET_PROPERTIES(SDL3_net::SDL3_net PROPERTIES
+		INTERFACE_INCLUDE_DIRECTORIES "${EMSCRIPTEN_SYSROOT}/include/SDL3"
+	)
 	SET(CLUNK_CMAKE_ARGS
 		-DSDL3_INCLUDE_DIR=${EMSCRIPTEN_SYSROOT}/include/SDL3
 		-DSDL3_LIBRARY_TEMP=${SDL3_LIBRARY}
@@ -89,13 +105,21 @@ ENDIF(EMSCRIPTEN)
 # FindClunk.cmake takes CLUNK_ROOT as its hint and defines the Clunk::Clunk
 # imported target that the subdirectories link against.
 SET(CLUNK_ROOT "${PROJECT_SOURCE_DIR}/external/clunk-install" CACHE PATH "clunk install prefix")
+IF(EMSCRIPTEN)
+	# The prebuilt prefix above holds a Windows clunk.dll, which wasm-ld cannot
+	# link. Emscripten needs clunk compiled for wasm32-emscripten, installed into
+	# its own prefix (build-emsdk/build-clunk-wasm.bat).
+	SET(CLUNK_ROOT "${PROJECT_SOURCE_DIR}/external/clunk-install-wasm" CACHE PATH "clunk install prefix" FORCE)
+ENDIF(EMSCRIPTEN)
 FIND_PACKAGE(Clunk REQUIRED)
 
 IF(FFMPEG)
 	FIND_PACKAGE(FFMPEG REQUIRED)
 ENDIF(FFMPEG)
 
-FIND_PACKAGE(ZLIB REQUIRED)
+IF(NOT EMSCRIPTEN)
+	FIND_PACKAGE(ZLIB REQUIRED)
+ENDIF(NOT EMSCRIPTEN)
 
 IF(ACTINT)
 	ADD_DEFINITIONS(-DACTINT)
