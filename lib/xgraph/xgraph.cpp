@@ -237,15 +237,15 @@ SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 	} else {
 		std::cout<<"Can't load icon vangers.bmp"<<std::endl;
 	}
-	std::cout << "SDL_SetRenderDrawColor" << std::endl;
-	if (!SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255))
-		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
-	std::cout << "SDL_RenderClear" << std::endl;
-	if (!SDL_RenderClear(sdlRenderer))
-		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
-	std::cout << "SDL_RenderPresent" << std::endl;
-	if (!SDL_RenderPresent(sdlRenderer))
-		ErrH.Abort(SDL_GetError(), XERR_USER, 0);
+	// Our pre-merge branch had these two lines here. Stage 4 resolved the conflict
+	// in this region by taking upstream's side, which dropped the compositor
+	// construction and substituted an SDL_Renderer init block that cannot work
+	// here: sdlRenderer is always NULL because we never call
+	// SDL_CreateWindowAndRenderer, so SDL_SetRenderDrawColor aborts at startup.
+	// The first real frame clears and presents through the compositor anyway, in
+	// XGR_Screen::blitRgba via render_begin and render_present.
+	compositor = new renderer::compositor::gles3::GLES3Compositor(this->hdWidth, this->hdHeight, (GLADloadproc)SDL_GL_GetProcAddress);
+	compositor->initialize();
 
 	create_surfaces(this->hdWidth, this->hdHeight);
 
