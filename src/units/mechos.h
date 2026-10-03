@@ -792,7 +792,8 @@ struct VangerUnit : TrackUnit , uvsUnitType , aiFactorType
 	SensorDataType* ExternalObject;
 	SensorDataType* ExternalLastSensor;
 	SensorDataType* ExternalSensor;
-	int RandomUpdate;
+	int UpdateStationActive;
+	int UpdateStationTouched;
 
 	PlayerData* pNetPlayer;	
 	
