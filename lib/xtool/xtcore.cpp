@@ -138,6 +138,13 @@ void xtSetAudioPauseHandler(void (*handler)(bool)) {
 	xtAudioPauseHandler = handler;
 }
 
+static void xtLoopStateInit();
+static bool xtLoopStateAlive();
+static bool xtLoopStep();
+#ifdef EMSCRIPTEN
+void em_normal_loop();
+#endif
+
 int main(int argc, char *argv[]) {
 	int id, prevID;
 	Uint64 clockDelta, clockCnt, clockNow, clockCntGlobal, clockNowGlobal;
@@ -153,7 +160,17 @@ int main(int argc, char *argv[]) {
 
 	for (int i = 1; i < argc; i++) {
 		std::string cmd_key = argv[i];
-		if (cmd_key == "-fullscreen") {
+		if (cmd_key == "-vss") {
+			// Initialises the vss context before anything else touches it. Without
+			// this, Sys::context stays null, every QuantBuilder is invalid, and no
+			// quant - including file_open - ever reaches the JavaScript side.
+			i++;
+			if (argc > i) {
+				sys_initScripts(argv[i]);
+			} else {
+				std::cout << "Invalid parameter usage: '-vss <file>' expected" << std::endl;
+			}
+		} else if (cmd_key == "-fullscreen") {
 			XGR_FULL_SCREEN = true;
 		} else if (cmd_key == "-skipintro") {
 			SkipIntro = 1;
@@ -241,57 +258,18 @@ int main(int argc, char *argv[]) {
 	xtRTO_Log.open("xt_rto_w.log", XS_OUT);
 #endif
 
-	while (XObj) {
-		XObj->Init(prevID);
-		prevID = id;
-		id = 0;
+	xtLoopStateInit();
 
-		clockCnt = clocki();
-		clockCntGlobal = clockCnt;
-		while (!id) {
-			if (XObj->Timer) {
-				const Uint64 frameTime = static_cast<Uint64>(XObj->Timer);
-				id = XObj->Quant();
-				clockNow = clockNowGlobal = clocki();
-				clockDelta = clockNow - clockCnt;
-				XTCORE_FRAME_DELTA = (clockNowGlobal - clockCntGlobal) / 1000.0;
-				XTCORE_FRAME_NORMAL = XTCORE_FRAME_DELTA / 0.050; // 20FPS
-				clockCntGlobal = clockNowGlobal;
-				// std::cout<<"XTCORE_FRAME_DELTA:"<<XTCORE_FRAME_DELTA
-				// 		 <<" XTCORE_FRAME_NORMAL:"<<XTCORE_FRAME_NORMAL
-				// 		 <<" clockDelta:"<<clockDelta<<std::endl;
-
-				if (clockDelta < frameTime) {
-					// std::cout<<"clockDelta:"<<clockDelta<<" Timer:"<<XObj->Timer<<std::endl;
-					SDL_Delay(static_cast<Uint32>(frameTime - clockDelta));
-				} else {
-					std::cout << "Strange deltas clockDelta:" << clockDelta
-							  << " Timer:" << XObj->Timer << std::endl;
-					if (clockDelta > 300) {
-						// something wrong and for preventing abnormal physics set something neutral
-						XTCORE_FRAME_NORMAL = 1.0;
-					}
-				}
-				clockCnt = clocki();
-			} else {
-				id = XObj->Quant();
-			}
-
-			if (!xtSysQuantDisabled)
-				xtEventQuant();
-			XGR_Flip();
-			if (xtExitRequested)
-				id = XT_TERMINATE_ID;
-		}
-
-		XObj->Finit();
-#ifdef _RTO_LOG_
-		xtRTO_Log < "\r\nChange RTO: " <= XObj->ID < " -> " <= id < " frame -> " <= xtFrameCount;
-#endif
-		XObj = xtGetRuntimeObject(id);
-		if (XObj)
-			sys_runtimeObjectQuant(XObj->ID);
+#ifdef EMSCRIPTEN
+	// Hand the loop to the browser instead of running it here: inline it would
+	// block the only thread the page has, so nothing would ever paint.
+	emscripten_set_main_loop(em_normal_loop, 0, true);
+#else
+	while (xtLoopStateAlive()) {
+		xtLoopStep();
 	}
+#endif
+
 	xtDoneApplication();
 	xtSysFinit();
 	SDL_Quit();
@@ -300,6 +278,102 @@ int main(int argc, char *argv[]) {
 	xtRTO_Log.close();
 #endif
 	return 0;
+}
+
+#ifdef EMSCRIPTEN
+void em_normal_loop() {
+	// Advance one RTO step. xtLoopStep returns false once the runtime table is
+	// empty, which is the only way out of the loop.
+	if (!xtLoopStep()) {
+		emscripten_cancel_main_loop();
+	}
+}
+#endif
+// State carried between frames. Emscripten calls the loop callback once per
+// animation frame rather than once per whole loop, so the locals that used
+// to live in main() have to outlive a single call.
+static int xtLoopStepId = 0;
+static int xtLoopStepPrevID = 0;
+static Uint64 xtLoopStepClockCnt = 0;
+static Uint64 xtLoopStepClockCntGlobal = 0;
+
+static void xtLoopStateInit() {
+	xtLoopStepId = 0;
+	xtLoopStepPrevID = 0;
+	xtLoopStepClockCnt = clocki();
+	xtLoopStepClockCntGlobal = xtLoopStepClockCnt;
+}
+
+static bool xtLoopStateAlive() { return XObj != nullptr; }
+
+// Advances the game by one RTO step: run the current object until it asks to
+// switch, then perform the switch. Returns false once the table is empty.
+static bool xtLoopStep() {
+	int id, prevID;
+	Uint64 clockDelta, clockCnt, clockNow, clockCntGlobal, clockNowGlobal;
+
+	if (!XObj) {
+		return false;
+	}
+
+	XObj->Init(xtLoopStepPrevID);
+	xtLoopStepPrevID = xtLoopStepId;
+	id = 0;
+
+	clockCnt = clocki();
+	clockCntGlobal = clockCnt;
+	while (!id) {
+		if (XObj->Timer) {
+			const Uint64 frameTime = static_cast<Uint64>(XObj->Timer);
+			id = XObj->Quant();
+			clockNow = clockNowGlobal = clocki();
+			clockDelta = clockNow - clockCnt;
+			XTCORE_FRAME_DELTA = (clockNowGlobal - clockCntGlobal) / 1000.0;
+			XTCORE_FRAME_NORMAL = XTCORE_FRAME_DELTA / 0.050; // 20FPS
+			clockCntGlobal = clockNowGlobal;
+			// std::cout<<"XTCORE_FRAME_DELTA:"<<XTCORE_FRAME_DELTA
+			// 		 <<" XTCORE_FRAME_NORMAL:"<<XTCORE_FRAME_NORMAL
+			// 		 <<" clockDelta:"<<clockDelta<<std::endl;
+
+			if (clockDelta < frameTime) {
+				// std::cout<<"clockDelta:"<<clockDelta<<" Timer:"<<XObj->Timer<<std::endl;
+				// Neither branch sleeps under Emscripten: the browser already
+				// paces us through emscripten_set_main_loop, and blocking here
+				// would stop the loop from ever reaching the next frame.
+#ifdef EMSCRIPTEN
+				XGR_Flip();
+#else
+				SDL_Delay(static_cast<Uint32>(frameTime - clockDelta));
+#endif
+			} else {
+				std::cout << "Strange deltas clockDelta:" << clockDelta
+						  << " Timer:" << XObj->Timer << std::endl;
+				if (clockDelta > 300) {
+					// something wrong and for preventing abnormal physics set something neutral
+					XTCORE_FRAME_NORMAL = 1.0;
+				}
+			}
+			clockCnt = clocki();
+		} else {
+			id = XObj->Quant();
+		}
+
+		if (!xtSysQuantDisabled)
+			xtEventQuant();
+		XGR_Flip();
+		if (xtExitRequested)
+			id = XT_TERMINATE_ID;
+	}
+
+	XObj->Finit();
+#ifdef _RTO_LOG_
+	xtRTO_Log < "\r\nChange RTO: " <= XObj->ID < " -> " <= id < " frame -> " <= xtFrameCount;
+#endif
+	XObj = xtGetRuntimeObject(id);
+	if (XObj)
+		sys_runtimeObjectQuant(XObj->ID);
+	xtLoopStepId = id;
+	return XObj != nullptr;
 }
 
 void xtCreateRuntimeObjectTable(int len)
