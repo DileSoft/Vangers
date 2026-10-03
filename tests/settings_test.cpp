@@ -158,7 +158,10 @@ bool test_defaults_and_round_trip() {
 	changed.audio.sound_volume = 17;
 	changed.network.player_name = "Tester";
 	changed.input.keyboard.bindings["fire_all"] = {"space"};
+	changed.input.controller.enabled = false;
+	changed.input.controller.cursor_speed = 1.5f;
 	changed.input.sdl_gamepad.bindings["fire_all"] = {"right_trigger", "south"};
+	changed.input.sdl_gamepad.bindings["fire_weapon_1"] = {"right_shoulder"};
 	if (!check(first.save(), "changed settings could not be saved"))
 		return false;
 
@@ -177,10 +180,105 @@ bool test_defaults_and_round_trip() {
 			   loaded.input.keyboard.bindings.at("fire_all") == BindingList{"space"},
 			   "keyboard binding was not restored"
 		   ) &&
+		   check(!loaded.input.controller.enabled, "controller enabled state was not restored") &&
+		   check(
+			   loaded.input.controller.cursor_speed == 1.5f,
+			   "controller cursor speed was not restored"
+		   ) &&
 		   check(
 			   loaded.input.sdl_gamepad.bindings.at("fire_all") ==
 				   BindingList{"right_trigger", "south"},
 			   "gamepad bindings were not restored"
+		   ) &&
+		   check(
+			   loaded.input.sdl_gamepad.bindings.at("fire_weapon_1") ==
+				   BindingList{"right_shoulder"},
+			   "non-default gamepad action was not restored"
+		   );
+}
+
+bool test_new_gamepad_defaults_extend_existing_settings() {
+	TemporaryDirectory directory;
+	const SettingsPaths paths = paths_for(directory.path());
+	write_file(
+		paths.settings_file,
+		"format_version = 1\n\n"
+		"[input.sdl_gamepad.bindings]\n"
+		"open = [\"east\"]\n"
+	);
+
+	SettingsManager manager(paths);
+	manager.load();
+	const GameSettings &settings = manager.get();
+	return check(
+			   settings.input.sdl_gamepad.bindings.at("open") == BindingList{"east"},
+			   "existing gamepad binding was replaced by a new default"
+		   ) &&
+		   check(
+			   settings.input.sdl_gamepad.bindings.at("activate_kid") == BindingList{"west"},
+			   "missing gamepad action did not receive its new default"
+		   ) &&
+		   check(
+			   settings.input.sdl_gamepad.axes.at("roll").axis == "right_x",
+			   "missing roll axis did not receive its new default"
+		   ) &&
+		   check(
+			   settings.input.sdl_gamepad.axes.at("rig").axis == "right_y" &&
+				   settings.input.sdl_gamepad.axes.at("rig").inverted,
+			   "missing rig axis did not receive its new default"
+		   );
+}
+
+bool test_restore_all_resets_bindings_without_controller_preferences() {
+	GameSettings settings = default_settings();
+	settings.input.keyboard.bindings["open"] = {"f12"};
+	settings.input.keyboard.bindings["custom"] = {"space"};
+	settings.input.sdl_gamepad.bindings["open"] = {"east"};
+	settings.input.sdl_gamepad.bindings["custom"] = {"north"};
+	settings.input.sdl_gamepad.axes["steering"] = {"right_x", true};
+	settings.input.controller.enabled = false;
+	settings.input.controller.cursor_speed = 1.75f;
+	settings.input.controller.rumble = false;
+	settings.input.sdl_gamepad.stick_deadzone = 0.27f;
+	settings.input.sdl_gamepad.trigger_deadzone = 0.11f;
+
+	reset_input_bindings_to_defaults(settings);
+	const GameSettings defaults = default_settings();
+	bool axes_match =
+		settings.input.sdl_gamepad.axes.size() == defaults.input.sdl_gamepad.axes.size();
+	for (const auto &[name, expected] : defaults.input.sdl_gamepad.axes) {
+		const auto actual = settings.input.sdl_gamepad.axes.find(name);
+		axes_match = axes_match && actual != settings.input.sdl_gamepad.axes.end() &&
+					 actual->second.axis == expected.axis &&
+					 actual->second.inverted == expected.inverted;
+	}
+
+	return check(
+			   settings.input.keyboard.bindings == defaults.input.keyboard.bindings,
+			   "Restore All did not restore every keyboard binding"
+		   ) &&
+		   check(
+			   settings.input.sdl_gamepad.bindings == defaults.input.sdl_gamepad.bindings,
+			   "Restore All did not restore every gamepad binding"
+		   ) &&
+		   check(axes_match, "Restore All did not restore gamepad axis bindings") &&
+		   check(
+			   !settings.input.controller.enabled, "Restore All changed controller enabled state"
+		   ) &&
+		   check(
+			   settings.input.controller.cursor_speed == 1.75f,
+			   "Restore All changed controller cursor speed"
+		   ) &&
+		   check(
+			   !settings.input.controller.rumble, "Restore All changed controller rumble setting"
+		   ) &&
+		   check(
+			   settings.input.sdl_gamepad.stick_deadzone == 0.27f,
+			   "Restore All changed stick deadzone"
+		   ) &&
+		   check(
+			   settings.input.sdl_gamepad.trigger_deadzone == 0.11f,
+			   "Restore All changed trigger deadzone"
 		   );
 }
 
@@ -488,11 +586,11 @@ bool test_concurrent_saves_use_independent_temporary_files() {
 }
 
 bool test_filesystem_errors_are_nonfatal_and_retryable() {
-	TemporaryDirectory directory;
-	const std::filesystem::path inaccessible = directory.path() / std::string(1024, 'x');
-
-	SettingsPaths paths = paths_for(directory.path());
-	paths.settings_file = inaccessible / "settings.toml";
+	TemporaryDirectory settings_directory;
+	SettingsPaths paths = paths_for(settings_directory.path());
+	// A directory where a regular file is required fails deterministically on
+	// every supported platform; path-length limits differ between filesystems.
+	std::filesystem::create_directory(paths.settings_file);
 	SettingsManager inaccessible_settings(paths);
 	const SettingsLoadResult settings_result = inaccessible_settings.load();
 	std::string save_diagnostic;
@@ -506,8 +604,9 @@ bool test_filesystem_errors_are_nonfatal_and_retryable() {
 		!check(!save_diagnostic.empty(), "read-only save has no diagnostic"))
 		return false;
 
-	paths = paths_for(directory.path());
-	paths.legacy_options_file = inaccessible / "options.dat";
+	TemporaryDirectory legacy_directory;
+	paths = paths_for(legacy_directory.path());
+	std::filesystem::create_directory(paths.legacy_options_file);
 	SettingsManager inaccessible_legacy(paths);
 	const SettingsLoadResult legacy_result = inaccessible_legacy.load();
 	return check(legacy_result.read_only, "legacy status error was not made read-only") &&
@@ -525,7 +624,9 @@ bool test_filesystem_errors_are_nonfatal_and_retryable() {
 } // namespace
 
 int main() {
-	return test_defaults_and_round_trip() && test_comments_unknown_keys_and_normalization() &&
+	return test_defaults_and_round_trip() && test_new_gamepad_defaults_extend_existing_settings() &&
+				   test_restore_all_resets_bindings_without_controller_preferences() &&
+				   test_comments_unknown_keys_and_normalization() &&
 				   test_future_version_is_read_only() && test_malformed_file_recovery() &&
 				   test_invalid_utf8_file_recovery() && test_old_version_is_upgraded() &&
 				   test_legacy_migration_is_one_time_and_read_only() &&

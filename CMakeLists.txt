@@ -27,6 +27,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# xgraph.h and 3dobject.h both expose the external renderer in their own
+# headers, so every target that includes them needs this root. Individual
+# subdirectories still list it, but tests do not know which headers they pull.
+include_directories("${PROJECT_SOURCE_DIR}/lib/renderer/src")
+include_directories("${PROJECT_SOURCE_DIR}/lib/glad/include")
+
 ADD_DEFINITIONS(-DRV_API_3)
 
 # toml11 is header-only; vcpkg provides the config package (see vcpkg.json).
@@ -97,10 +103,6 @@ IF(MSVC)
 ELSE()
 	set(WINDOWS_RES "../vangers.res")
 ENDIF()
-
-IF(BINARY_SCRIPT)
-	ADD_DEFINITIONS(-D_BINARY_SCRIPT_)
-ENDIF(BINARY_SCRIPT)
 
 IF(ACTINT)
 	ADD_DEFINITIONS(-DACTINT)

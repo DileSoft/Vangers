@@ -6,7 +6,7 @@
 
 
 #include "../network.h"
-#include "../xjoystick.h"
+#include "../xgamepad.h"
 
 #include "i_str.h"
 #include "ivmap.h"
@@ -106,7 +106,7 @@ int iGetEscaveTime(void);
 void aciVMapPrepare(void);
 
 void iPrepareHallOfFame(void);
-void iBlockJoystickOption(int mode);
+void iBlockGamepadOption(int mode);
 void iInitProxyOptions(void);
 //#define iMOVE_MOUSE_OBJECTS
 
@@ -172,6 +172,12 @@ void ipal_init(unsigned char* p);
 void ipal_iter(int r);
 
 void iKeyTrap(int k);
+
+static int gamepad_menu_navigation_code(SDL_GamepadButton button);
+static bool gamepad_shop_active();
+static bool gamepad_shop_menu_active();
+static int gamepad_shop_back_code();
+static int gamepad_shop_category_code(SDL_GamepadButton button);
 
 void iInitMultiGames(void);
 
@@ -800,24 +806,63 @@ int iQuantSecond(void)
 					}
 
 					if (k->type == SDL_EVENT_KEY_DOWN || k->type == SDL_EVENT_KEY_UP) {
+						if (k->type == SDL_EVENT_KEY_DOWN && XGamepadGeneratedKeyEvent(*k) &&
+							k->key.scancode == SDL_SCANCODE_RETURN && gamepad_shop_active() &&
+							!(aScrDisp->flags & AS_INV_MOVE_ITEM) && !gamepad_shop_menu_active() &&
+							!iScrDisp->ActiveEv) {
+							iScreenObject *preview =
+								(iScreenObject *)iScrDisp->curScr->get_object("Avi00");
+							if (!iScrDisp->curScr->HandlePrimaryAction(preview))
 						iKeyTrap(k->key.scancode);
-					} else if (k->type == SDL_EVENT_JOYSTICK_BUTTON_DOWN ||
-							   k->type == SDL_EVENT_JOYSTICK_BUTTON_UP) {
-						iKeyTrap(k->jbutton.button | SDLK_JOYSTICK_BUTTON_MASK);
+						} else {
+							iKeyTrap(k->key.scancode);
+						}
 					} else if (k->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN ||
 							   k->type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
-						iKeyTrap(k->gbutton.button | SDLK_GAMEPAD_BUTTON_MASK);
-					} else if (k->type == SDL_EVENT_JOYSTICK_HAT_MOTION) {
-						iKeyTrap((k->jhat.value + 10 * k->jhat.hat) | SDLK_JOYSTICK_HAT_MASK);
+						const auto button = static_cast<SDL_GamepadButton>(k->gbutton.button);
+						int code = button | SDLK_GAMEPAD_BUTTON_MASK;
+						if (k->type == SDL_EVENT_GAMEPAD_BUTTON_DOWN &&
+							XGamepadIsControllingCursor() &&
+							!SDL_TextInputActive(XGR_Obj.get_window())) {
+							if (XGamepadButtonMatchesAction("menu_cancel", button)) {
+								if (gamepad_shop_active() &&
+									!(aScrDisp->flags & AS_INV_MOVE_ITEM)) {
+									code = gamepad_shop_back_code();
+								} else if (!actIntLog) {
+									code = SDL_SCANCODE_ESCAPE;
+								}
+							} else if (gamepad_shop_active() &&
+									   !(aScrDisp->flags & AS_INV_MOVE_ITEM) &&
+									   button == SDL_GAMEPAD_BUTTON_DPAD_LEFT) {
+								code = gamepad_shop_back_code();
+							} else if (gamepad_shop_active() &&
+									   !(aScrDisp->flags & AS_INV_MOVE_ITEM) &&
+									   button == SDL_GAMEPAD_BUTTON_DPAD_RIGHT) {
+								// The shop is the rightmost Escave screen. Item browsing uses
+								// the vertical list, so Right has no second spatial destination.
+								code = button | SDLK_GAMEPAD_BUTTON_MASK;
+							} else if (gamepad_shop_active() &&
+									   !(aScrDisp->flags & AS_INV_MOVE_ITEM) &&
+									   (button == SDL_GAMEPAD_BUTTON_LEFT_SHOULDER ||
+										   button == SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER)) {
+								code = gamepad_shop_category_code(button);
+								XGamepadUseFocusNavigation();
+							} else if (gamepad_shop_active() &&
+									   !(aScrDisp->flags & AS_INV_MOVE_ITEM) &&
+									   !gamepad_shop_menu_active() &&
+									   (button == SDL_GAMEPAD_BUTTON_DPAD_UP ||
+										   button == SDL_GAMEPAD_BUTTON_DPAD_DOWN)) {
+								code = SDL_SCANCODE_RETURN;
+							} else {
+								code = gamepad_menu_navigation_code(button);
+							}
+						}
+						iKeyTrap(code);
+					}
 					}
 				}
-			} /*else {
-				k = JoystickWhatsPressedNow();
-				if(k)
-					KeyBuf -> put(k,CUR_KEY_PRESSED);
-			}*/
-			if(iScrDisp -> flags & MS_LEFT_PRESS){
-				iScrDisp -> flags &= ~MS_LEFT_PRESS;
+			if (iScrDisp->flags & MS_LEFT_PRESS) {
+				iScrDisp->flags &= ~MS_LEFT_PRESS;
 				iKeyTrap(iMOUSE_LEFT_PRESS_CODE);
 				if(iChatON) iChatMouseQuant(iMouseX,iMouseY,1);
 			}
@@ -2109,7 +2154,7 @@ void iLoadData(void) {
 	// These options live in localStorage (see the vss-default-options
 	// addon). iGetOptionValue() routes through vss and returns the
 	// localStorage value, so this pulls it back into the C++ option state:
-	// the options screen, options.dat persistence and gameplay all follow
+	// the options screen, settings.toml persistence and gameplay all follow
 	// localStorage instead of whatever options.dat happened to contain.
 	iOptionsDataLoading = 1;
 	for (int id : {iFPS_60, iAUTO_ACCELERATION, iCAMERA_TURN, iCAMERA_SLOPE})
@@ -2165,10 +2210,78 @@ void iKeyTrap(int k)
 	}
 }
 
-void i_mem_putspr(int x,int y,int sx,int sy,unsigned char* ptr)
-{
-	int i,j,_x,_y,_x1,_y1,_sx,_sy,dx = 0,dy = 0;
-	unsigned char* scrBuf,*memBuf;
+static int gamepad_menu_navigation_code(SDL_GamepadButton button) {
+	switch (button) {
+	case SDL_GAMEPAD_BUTTON_DPAD_UP:
+		return SDL_SCANCODE_UP;
+	case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+		return SDL_SCANCODE_DOWN;
+	case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+		return SDL_SCANCODE_LEFT;
+	case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+		return SDL_SCANCODE_RIGHT;
+	default:
+		return button | SDLK_GAMEPAD_BUTTON_MASK;
+	}
+}
+
+static bool gamepad_shop_active() {
+	return actIntLog && aScrDisp && (aScrDisp->flags & AS_ISCREEN_INV_MODE);
+}
+
+static bool gamepad_shop_menu_active() {
+	if (!gamepad_shop_active())
+		return false;
+	fncMenu *menu = aScrDisp->get_imenu(SHOP_ITEMS_MENU_ID);
+	return menu && (menu->flags & FM_ACTIVE);
+}
+
+static int gamepad_shop_back_code() {
+	return gamepad_shop_menu_active() ? SDL_SCANCODE_RETURN : SDL_SCANCODE_TAB;
+}
+
+static int gamepad_shop_category_code(SDL_GamepadButton button) {
+	int category;
+	switch (iEvLineID) {
+	case WEAPONS_MODE:
+	case WEAPONS_LIST_MODE:
+	case CHANGE_2_WEAPONS_MODE:
+		category = 0;
+		break;
+	case MECHOS_MODE:
+	case MECHOS_LIST_MODE:
+	case CHANGE_2_MECHOS_MODE:
+		category = 1;
+		break;
+	case ITEMS_MODE:
+	case ITEMS_LIST_MODE:
+	case CHANGE_2_ITEMS_MODE:
+		category = 2;
+		break;
+	default:
+		return button | SDLK_GAMEPAD_BUTTON_MASK;
+	}
+
+	if (button == SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)
+		category = (category + 2) % 3;
+	else if (button == SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER)
+		category = (category + 1) % 3;
+	else
+		return button | SDLK_GAMEPAD_BUTTON_MASK;
+
+	switch (category) {
+	case 0:
+		return SDL_SCANCODE_F1;
+	case 1:
+		return SDL_SCANCODE_F2;
+	default:
+		return SDL_SCANCODE_F3;
+	}
+}
+
+void i_mem_putspr(int x, int y, int sx, int sy, unsigned char *ptr) {
+	int i, j, _x, _y, _x1, _y1, _sx, _sy, dx = 0, dy = 0;
+	unsigned char *scrBuf, *memBuf;
 
 	_x = (x > 0) ? x : 0;
 	_y = (y > 0) ? y : 0;
@@ -2226,12 +2339,15 @@ void iHandleExtEvent(int code,int data)
 			iInitProxyOptions();
 			break;
 		case iEXT_INIT_JOYSTICK_OBJ:
-			iBlockJoystickOption(JoystickAvailable);
+		iBlockGamepadOption(XGamepadIsAvailable());
 			break;
-		case iEXT_INIT_JOYSTICK:
-			JoystickMode = iGetOptionValue(iJOYSTICK_TYPE);
-			JoystickStickSwitchButton = iGetControlCode(iKEY_JOYSTICK_SWITCH);
+	case iEXT_INIT_JOYSTICK: {
+		auto &manager = vangers::settings::settings_manager();
+		if (!manager.is_loaded())
+			manager.load();
+		manager.get_mutable().input.controller.enabled = iGetOptionValue(iJOYSTICK_TYPE) != 0;
 			break;
+	}
 		case iEXT_UPDATE_SOUND_MODE:
 			if(!iGetOptionValue(iSOUND_ON)) {
 				EffectInUsePriory = 1;
@@ -3025,12 +3141,11 @@ void iWriteScreenSummary(void)
 }
 #endif
 
-void iBlockJoystickOption(int mode)
-{
-	iScreenObject* obj = (iScreenObject*)iGetObject("Controls screen2","Joystick Option");
-	if(obj){
-		if(mode)
-			obj -> flags &= ~OBJ_LOCKED;
+void iBlockGamepadOption(int mode) {
+	iScreenObject *obj = (iScreenObject *)iGetObject("Controls screen2", "Joystick Option");
+	if (obj) {
+		if (mode)
+			obj->flags &= ~OBJ_LOCKED;
 		else
 			obj -> flags |= OBJ_LOCKED;
 	}
