@@ -296,12 +296,24 @@ static int xtLoopStepId = 0;
 static int xtLoopStepPrevID = 0;
 static Uint64 xtLoopStepClockCnt = 0;
 static Uint64 xtLoopStepClockCntGlobal = 0;
+#ifdef EMSCRIPTEN
+// The browser drives us from requestAnimationFrame, which runs faster than the
+// RTO timers ask for, and it cannot be blocked. Both waits the native build
+// does with SDL_Delay are therefore expressed by leaving xtLoopStep and letting
+// the next animation frame resume it.
+static Uint64 xtLoopStepDeadline = 0;   // clock at which the next Quant is due
+static bool xtLoopStepRunning = false;  // Init done, inner loop still unfinished
+#endif
 
 static void xtLoopStateInit() {
 	xtLoopStepId = 0;
 	xtLoopStepPrevID = 0;
 	xtLoopStepClockCnt = clocki();
 	xtLoopStepClockCntGlobal = xtLoopStepClockCnt;
+#ifdef EMSCRIPTEN
+	xtLoopStepDeadline = 0;
+	xtLoopStepRunning = false;
+#endif
 }
 
 static bool xtLoopStateAlive() { return XObj != nullptr; }
@@ -310,27 +322,93 @@ static bool xtLoopStateAlive() { return XObj != nullptr; }
 // switch, then perform the switch. Returns false once the table is empty.
 static bool xtLoopStep() {
 	int id, prevID;
-	Uint64 clockDelta, clockCnt, clockNow, clockCntGlobal, clockNowGlobal;
+	Uint64 clockDelta, clockNow, clockNowGlobal;
 
 	if (!XObj) {
 		return false;
 	}
 
+#ifdef EMSCRIPTEN
+	// SDL_Delay used to block out the remainder of the frame, which is what paced
+	// this loop to XObj->Timer. Blocking is not available on the browser, so pace
+	// by refusing the step instead: the Quant is skipped until the interval has
+	// elapsed. Returning true keeps the loop alive and leaves every game
+	// variable untouched.
+	//
+	// The schedule is a deadline rather than "wait since the last Quant", and it
+	// accumulates from the previous deadline instead of from the clock. A frame
+	// boundary lands on a multiple of ~16.7ms, so re-arming the wait from the
+	// instant a Quant happened to run carries that rounding error forward every
+	// frame and the period drifts long: at Timer=50ms a Quant landing 2ms into a
+	// frame waited for the one at 64ms, turning 20fps into 15.6fps. Advancing by
+	// exactly Timer each time absorbs the rounding instead and settles on the
+	// frame count that Timer really asks for.
+	//
+	// The guard also has to keep applying while a step is suspended: the inner
+	// loop below yields to the browser instead of sleeping, and without this a
+	// resumed step would run its Quants once per frame.
+	//
+	// Skipping without touching xtLoopStepClockCntGlobal matters as much as the
+	// skip itself: XTCORE_FRAME_DELTA is measured from the previous executed
+	// Quant to this one, so the skipped time stays inside the delta and
+	// XTCORE_FRAME_NORMAL keeps the ~1.0 that the whole world physics is
+	// normalised against.
+	if (XObj->Timer) {
+		const Uint64 now = clocki();
+		if (xtLoopStepDeadline == 0) {
+			// First step of an RTO: due immediately, as the native build is.
+			xtLoopStepDeadline = now;
+		} else if (now < xtLoopStepDeadline) {
+			return true;
+		}
+	}
+#endif
+
+#ifdef EMSCRIPTEN
+	// Resuming a suspended inner loop must not restart it: Init already ran, and
+	// the time the yield spent waiting belongs in the delta the next Quant
+	// measures, so only the per-Quant clock is rebased here - exactly what the
+	// SDL_Delay branch did by re-reading the clock after it returned.
+	if (!xtLoopStepRunning) {
+		XObj->Init(xtLoopStepPrevID);
+		xtLoopStepPrevID = xtLoopStepId;
+		xtLoopStepClockCnt = clocki();
+		xtLoopStepClockCntGlobal = xtLoopStepClockCnt;
+		xtLoopStepRunning = true;
+		id = 0;
+	} else {
+		id = xtLoopStepId;
+		xtLoopStepClockCnt = clocki();
+	}
+#else
 	XObj->Init(xtLoopStepPrevID);
 	xtLoopStepPrevID = xtLoopStepId;
 	id = 0;
+	xtLoopStepClockCnt = clocki();
+	xtLoopStepClockCntGlobal = xtLoopStepClockCnt;
+#endif
 
-	clockCnt = clocki();
-	clockCntGlobal = clockCnt;
 	while (!id) {
 		if (XObj->Timer) {
 			const Uint64 frameTime = static_cast<Uint64>(XObj->Timer);
 			id = XObj->Quant();
 			clockNow = clockNowGlobal = clocki();
-			clockDelta = clockNow - clockCnt;
-			XTCORE_FRAME_DELTA = (clockNowGlobal - clockCntGlobal) / 1000.0;
+			clockDelta = clockNow - xtLoopStepClockCnt;
+			XTCORE_FRAME_DELTA = (clockNowGlobal - xtLoopStepClockCntGlobal) / 1000.0;
 			XTCORE_FRAME_NORMAL = XTCORE_FRAME_DELTA / 0.050; // 20FPS
-			clockCntGlobal = clockNowGlobal;
+			xtLoopStepClockCntGlobal = clockNowGlobal;
+#ifdef EMSCRIPTEN
+			// Advance the schedule by exactly one interval, from the previous
+			// deadline and not from now: that is what keeps the period at Timer
+			// instead of letting frame-boundary rounding stretch it.
+			xtLoopStepDeadline += frameTime;
+			if (xtLoopStepDeadline <= clockNow) {
+				// Genuinely behind - a slow Init, or the tab coming back to the
+				// foreground after being throttled. Resynchronise rather than
+				// issue a burst of catch-up Quants.
+				xtLoopStepDeadline = clockNow + frameTime;
+			}
+#endif
 			// std::cout<<"XTCORE_FRAME_DELTA:"<<XTCORE_FRAME_DELTA
 			// 		 <<" XTCORE_FRAME_NORMAL:"<<XTCORE_FRAME_NORMAL
 			// 		 <<" clockDelta:"<<clockDelta<<std::endl;
@@ -341,7 +419,11 @@ static bool xtLoopStep() {
 				// paces us through emscripten_set_main_loop, and blocking here
 				// would stop the loop from ever reaching the next frame.
 #ifdef EMSCRIPTEN
-				XGR_Flip();
+				// Spin here and Quants would run as fast as the browser calls
+				// us, which is what made the menus and escapes race ahead. The
+				// wait is taken at the bottom of the loop instead, after the
+				// events and the flip below; the guard at the top of xtLoopStep
+				// is what enforces the interval.
 #else
 				SDL_Delay(static_cast<Uint32>(frameTime - clockDelta));
 #endif
@@ -353,7 +435,7 @@ static bool xtLoopStep() {
 					XTCORE_FRAME_NORMAL = 1.0;
 				}
 			}
-			clockCnt = clocki();
+			xtLoopStepClockCnt = clocki();
 		} else {
 			id = XObj->Quant();
 		}
@@ -363,6 +445,16 @@ static bool xtLoopStep() {
 		XGR_Flip();
 		if (xtExitRequested)
 			id = XT_TERMINATE_ID;
+#ifdef EMSCRIPTEN
+		// Same point SDL_Delay used to resume at: one whole Quant, events
+		// pumped and screen flipped. Hand the rest of the interval to the
+		// browser and continue in the next animation frame; xtLoopStepRunning
+		// keeps that call from re-running Init.
+		if (!id) {
+			xtLoopStepId = id;
+			return true;
+		}
+#endif
 	}
 
 	XObj->Finit();
@@ -372,6 +464,10 @@ static bool xtLoopStep() {
 	XObj = xtGetRuntimeObject(id);
 	if (XObj)
 		sys_runtimeObjectQuant(XObj->ID);
+#ifdef EMSCRIPTEN
+	xtLoopStepDeadline = 0;
+	xtLoopStepRunning = false;
+#endif
 	xtLoopStepId = id;
 	return XObj != nullptr;
 }
