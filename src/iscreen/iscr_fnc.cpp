@@ -792,7 +792,7 @@ int iQuantSecond(void)
 						if (!iPause)
 							ipal_iter(iScreenOffs);
 						iPause ^= 1;
-						acsScreenID = ACS_PAUSE_SCREEN2;
+						acsScreenID = ACS_PAUSE_SCREEN1;
 						if (iPause) {
 							XGR_Obj.fill(0, XGR_Obj.get_2d_render_buffer());
 							XGR_Obj.fill(0, XGR_Obj.get_2d_rgba_render_buffer());

@@ -5060,7 +5060,7 @@ void aciDeactivateItemFunction(int itemID,int fncID)
 
 int acsQuant(void)
 {
-	int ret,k,firstQuant = 0;
+	int ret = 0, k, firstQuant = 0;
 	if(!acsAllocFlag){
 		acsAllocFlag = 1;
 		if(NetworkON) aciKeyboardLocked = 1;
@@ -5093,6 +5093,40 @@ if (e->key.scancode == SDL_SCANCODE_ESCAPE && !acsScrD->QuantCode) {
 			}
 		}
 
+	}
+	// Mouse state that arrives as flags rather than as queued events has to be
+	// fed to the screen by hand. Without this the screen never sees the pointer.
+	if (aScrDisp->flags & aMS_MOVED) {
+		acsScrD->KeyTrap(iMOUSE_MOVE_CODE, nullptr);
+		aScrDisp->flags ^= aMS_MOVED;
+		if (aciMouseFlagL) {
+			acsScrD->KeyTrap(iMOUSE_LEFT_MOVE, nullptr);
+		}
+		if (aciMouseFlagR) {
+			acsScrD->KeyTrap(iMOUSE_RIGHT_MOVE, nullptr);
+		}
+	}
+	if (aScrDisp->flags & aMS_LEFT_PRESS) {
+		acsScrD->KeyTrap(iMOUSE_LEFT_PRESS_CODE, nullptr);
+		aScrDisp->flags ^= aMS_LEFT_PRESS;
+	}
+	if (aScrDisp->flags & aMS_RIGHT_PRESS) {
+		acsScrD->KeyTrap(iMOUSE_RIGHT_PRESS_CODE, nullptr);
+		aScrDisp->flags ^= aMS_RIGHT_PRESS;
+	}
+
+	// This is the screen's actual tick. Without it the pause script never runs,
+	// so the menu is never drawn, and ret below stays uninitialised.
+	if (NetworkON) {
+		acsScrD->flags |= ACS_FORCED_REDRAW;
+		ret = acsScrD->Quant(actIntLog);
+	} else {
+		ret = acsScrD->Quant();
+	}
+
+	if (firstQuant) {
+		acsPrepareSlotNameInput(acsCurrentSlotID, acsCurrentSlotNum);
+		acsScrD->PrepareInput(acsCurrentSlotID);
 	}
 	if (ret) {
 		aciFinishPauseScreen();
