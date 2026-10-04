@@ -493,11 +493,20 @@ void AVIDrawFrame(
 		file->converted = 0;
 	}
 
-#if SDL_BYTEORDER == SDL_LIL_ENDIAN
-	const AVPixelFormat output_format = AV_PIX_FMT_BGRA;
-#else
-	const AVPixelFormat output_format = AV_PIX_FMT_ARGB;
-#endif
+	// The decoded frame goes into XGR_Screen::get_2d_rgba_render_buffer(), the same
+	// plane blitRgba fills from XGR32_PaletteCache. That cache is built with
+	// SDL_MapRGB on XGR32_ScreenSurface (xgraph.cpp:1133), created as
+	// SDL_PIXELFORMAT_RGBA32 (xgraph.cpp:283) - on little-endian that resolves to
+	// SDL_PIXELFORMAT_ABGR8888, i.e. R,G,B,A in memory. The texture is
+	// TextureType::RGBA32 (xgraph.cpp:287), so the compositor reads it as RGBA too.
+	// ffmpeg names pixel formats by byte order in memory, unlike SDL which names
+	// them after the packed word - hence AV_PIX_FMT_RGBA, not AV_PIX_FMT_BGRA32.
+	// Emitting BGRA swapped red and blue on every video pixel; greys were
+	// unaffected, so it read as "some colours had turned blue". The endianness
+	// branch this replaced paired the frame with the old SDL_PIXELFORMAT_ARGB8888
+	// surface, whose little-endian layout is B,G,R,A - a format the renderer no
+	// longer uses.
+	const AVPixelFormat output_format = AV_PIX_FMT_RGBA;
 	if (!file->converted) {
 		file->swsContext = sws_getCachedContext(
 			file->swsContext,
