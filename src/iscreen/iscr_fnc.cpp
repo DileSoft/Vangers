@@ -792,7 +792,12 @@ int iQuantSecond(void)
 						if (!iPause)
 							ipal_iter(iScreenOffs);
 						iPause ^= 1;
-						acsScreenID = ACS_PAUSE_SCREEN1;
+						// ACS_PAUSE_SCREEN2 is the 800-wide variant (actint/acs_main.inc:
+						// PAUSE_RES_X 800, resources in resource/actint/iscreen/pause/). This handler
+						// runs on a base, where I_RES_X is 800; SCREEN1 is the 640x480 variant and
+						// centres its panel on 640, landing it 80px left. SCREEN1 stays right for the
+						// world, which is 640x480 (road.cpp, and the pause exits in ascr_fnc.cpp).
+						acsScreenID = ACS_PAUSE_SCREEN2;
 						if (iPause) {
 							XGR_Obj.fill(0, XGR_Obj.get_2d_render_buffer());
 							XGR_Obj.fill(0, XGR_Obj.get_2d_rgba_render_buffer());
