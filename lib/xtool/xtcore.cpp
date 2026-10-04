@@ -304,7 +304,6 @@ static Uint64 xtLoopStepClockCntGlobal = 0;
 static Uint64 xtLoopStepDeadline = 0;   // clock at which the next Quant is due
 static bool xtLoopStepRunning = false;  // Init done, inner loop still unfinished
 #endif
-
 static void xtLoopStateInit() {
 	xtLoopStepId = 0;
 	xtLoopStepPrevID = 0;
@@ -398,15 +397,14 @@ static bool xtLoopStep() {
 			XTCORE_FRAME_NORMAL = XTCORE_FRAME_DELTA / 0.050; // 20FPS
 			xtLoopStepClockCntGlobal = clockNowGlobal;
 #ifdef EMSCRIPTEN
-			// Advance the schedule by exactly one interval, from the previous
-			// deadline and not from now: that is what keeps the period at Timer
-			// instead of letting frame-boundary rounding stretch it.
-			xtLoopStepDeadline += frameTime;
-			if (xtLoopStepDeadline <= clockNow) {
-				// Genuinely behind - a slow Init, or the tab coming back to the
-				// foreground after being throttled. Resynchronise rather than
-				// issue a burst of catch-up Quants.
-				xtLoopStepDeadline = clockNow + frameTime;
+			// Arm the resume point one Timer from where this Quant started, which
+			// is what the native SDL_Delay(Timer - clockDelta) below amounts to.
+			// Measuring from clockNow instead would add the Quant's own duration
+			// twice, and then the deadline always lands past the next animation
+			// frame: the loop settles into running a Quant every other frame and
+			// stays there, at half rate.
+			if (clockDelta < frameTime) {
+				xtLoopStepDeadline = clockNow + (frameTime - clockDelta);
 			}
 #endif
 			// std::cout<<"XTCORE_FRAME_DELTA:"<<XTCORE_FRAME_DELTA
