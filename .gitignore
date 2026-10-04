@@ -77,3 +77,5 @@ emscripten
 game-data-*.zip
 .tmp
 /build-*/
+# local notes and machine-specific paths, not for the repo
+.local/
